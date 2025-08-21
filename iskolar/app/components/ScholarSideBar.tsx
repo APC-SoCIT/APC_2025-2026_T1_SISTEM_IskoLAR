@@ -162,7 +162,6 @@ const ScholarSidebar = () => {
                   ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
                   : 'text-black hover:bg-gray-100'
               }`}
-              style={{ marginLeft: '2rem' }}
               onClick={() => setIsSchoolYearOpen(!isSchoolYearOpen)}
             >
               <span>[School Year]</span>
@@ -190,7 +189,6 @@ const ScholarSidebar = () => {
                 {/* 1st Semester */}
                 <div
                   className="flex items-center justify-between py-3 px-4 pl-16 cursor-pointer hover:bg-gray-100"
-                  style={{ marginLeft: '2rem' }}
                   onClick={() => setIsFirstSemOpen(!isFirstSemOpen)}
                 >
                   <span>1st Semester</span>
@@ -220,12 +218,11 @@ const ScholarSidebar = () => {
                       return (
                         <Link href={sub.href} key={`1st-${sub.label}`}>
                           <div
-                            className={`flex items-center py-3 px-4 pl-24 transition-all cursor-pointer relative ${
+                            className={`flex items-center py-3 px-4 pl-20 transition-all cursor-pointer relative ${
                               isActive
                                 ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
                                 : 'text-black hover:bg-gray-100'
                             }`}
-                            style={{ marginLeft: '1rem' }}
                           >
                             {isActive && (
                               <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
@@ -241,7 +238,6 @@ const ScholarSidebar = () => {
                 {/* 2nd Semester */}
                 <div
                   className="flex items-center justify-between py-3 px-4 pl-16 cursor-pointer hover:bg-gray-100"
-                  style={{ marginLeft: '2rem' }}
                   onClick={() => setIsSecondSemOpen(!isSecondSemOpen)}
                 >
                   <span>2nd Semester</span>
@@ -276,7 +272,6 @@ const ScholarSidebar = () => {
                                 ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
                                 : 'text-black hover:bg-gray-100'
                             }`}
-                            style={{ marginLeft: '2rem' }}
                           >
                             {isActive && (
                               <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
