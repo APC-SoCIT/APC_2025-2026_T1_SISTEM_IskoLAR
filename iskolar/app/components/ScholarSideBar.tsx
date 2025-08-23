@@ -16,12 +16,14 @@ const ScholarSidebar = () => {
     {
       label: 'Announcements',
       href: '/scholar/announcements',
-      icon: '/icons/announcements.svg',
+      iconInactive: '/icons/announcements1.svg',
+      iconActive: '/icons/announcements2.svg',
     },
     {
       label: 'Profile',
       href: '/scholar/profile',
-      icon: '/icons/profile.svg',
+      iconInactive: '/icons/profile1.svg',
+      iconActive: '/icons/profile2.svg',
     },
   ];
 
@@ -29,7 +31,8 @@ const ScholarSidebar = () => {
     {
       label: 'User Manual',
       href: '/scholar/user-manual',
-      icon: '/icons/manual.svg',
+      iconInactive: '/icons/user-manual1.svg',
+      iconActive: '/icons/user-manual2.svg',
     },
   ];
 
@@ -39,9 +42,8 @@ const ScholarSidebar = () => {
   ];
 
   return (
-    <aside className="fixed top-0 left-0 z-50 h-screen w-64 font-geist flex flex-col border-r bg-white border-gray-300">
-      {/* Logo & Title */}
-      <div className="p-6 border-b flex items-center gap-2 border-gray-300">
+    <aside className="fixed top-0 left-0 z-50 h-screen w-64 font-geist flex flex-col border-r bg-white border-gray-300 text-sm shadow-[4px_0_6px_-2px_rgba(0,0,0,0.1)]">
+      <div className="p-4 pl-7 border-b flex items-center gap-2 border-gray-300">
         <Image
           src="/IskoLAR.png"
           alt="IskoLAR logo"
@@ -49,7 +51,7 @@ const ScholarSidebar = () => {
           height={28}
           className="transition-all duration-300"
         />
-        <span className="text-lg font-semibold">IskoLAR</span>
+        <span className="text-base font-semibold">IskoLAR</span>
       </div>
 
       {/* Navigation */}
@@ -57,7 +59,7 @@ const ScholarSidebar = () => {
         {/* Main Section Title */}
         <div className="flex items-center gap-3 py-2 px-4 pl-8">
           <div className="w-5 flex justify-center">
-            <span className="text-sm font-semibold text-gray-500">Main</span>
+            <span className="text-xs font-semibold text-gray-500">Main</span>
           </div>
         </div>
 
@@ -71,7 +73,7 @@ const ScholarSidebar = () => {
               <div
                 className={`flex items-center gap-3 py-3 px-4 pl-8 transition-all cursor-pointer relative ${
                   isActive
-                    ? 'bg-[#E3F2FD] text-black font-medium'
+                    ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
                     : 'text-black hover:bg-gray-100'
                 }`}
               >
@@ -80,14 +82,12 @@ const ScholarSidebar = () => {
                 )}
 
                 <div className="w-5 flex justify-center">
-                  {isActive && item.icon && (
-                    <Image
-                      src={item.icon}
-                      alt={`${item.label} icon`}
-                      width={18}
-                      height={18}
-                    />
-                  )}
+                  <Image
+                    src={isActive ? item.iconActive : item.iconInactive}
+                    alt={`${item.label} icon`}
+                    width={16}
+                    height={16}
+                  />
                 </div>
 
                 <span>{item.label}</span>
@@ -100,7 +100,7 @@ const ScholarSidebar = () => {
         <div
           className={`flex items-center gap-3 py-3 px-4 pl-8 transition-all cursor-pointer relative ${
             pathname.startsWith('/scholar/program')
-              ? 'bg-[#E3F2FD] text-black font-medium'
+              ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
               : 'text-black hover:bg-gray-100'
           }`}
           onClick={() => {
@@ -118,7 +118,18 @@ const ScholarSidebar = () => {
             <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
           )}
 
-          <div className="w-5 flex justify-center" />
+          <div className="w-5 flex justify-center">
+            <Image
+              src={
+                pathname.startsWith('/scholar/program')
+                  ? '/icons/program2.svg'
+                  : '/icons/program1.svg'
+              }
+              alt="Program icon"
+              width={15}
+              height={15}
+            />
+          </div>
 
           <span>Program</span>
 
@@ -148,13 +159,12 @@ const ScholarSidebar = () => {
               className={`flex items-center justify-between py-3 px-4 pl-12 transition-all cursor-pointer relative ${
                 pathname.includes('/scholar/program/1st-semester') ||
                 pathname.includes('/scholar/program/2nd-semester')
-                  ? 'bg-[#E3F2FD] text-black font-medium'
+                  ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
                   : 'text-black hover:bg-gray-100'
               }`}
-              style={{ marginLeft: '2rem' }}
               onClick={() => setIsSchoolYearOpen(!isSchoolYearOpen)}
             >
-              <span>School Year</span>
+              <span>[School Year]</span>
 
               {isSchoolYearOpen ? (
                 <Image
@@ -179,7 +189,6 @@ const ScholarSidebar = () => {
                 {/* 1st Semester */}
                 <div
                   className="flex items-center justify-between py-3 px-4 pl-16 cursor-pointer hover:bg-gray-100"
-                  style={{ marginLeft: '2rem' }}
                   onClick={() => setIsFirstSemOpen(!isFirstSemOpen)}
                 >
                   <span>1st Semester</span>
@@ -209,12 +218,11 @@ const ScholarSidebar = () => {
                       return (
                         <Link href={sub.href} key={`1st-${sub.label}`}>
                           <div
-                            className={`flex items-center py-3 px-4 pl-24 transition-all cursor-pointer relative ${
+                            className={`flex items-center py-3 px-4 pl-20 transition-all cursor-pointer relative ${
                               isActive
-                                ? 'bg-[#E3F2FD] text-black font-medium'
+                                ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
                                 : 'text-black hover:bg-gray-100'
                             }`}
-                            style={{ marginLeft: '1rem' }}
                           >
                             {isActive && (
                               <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
@@ -230,7 +238,6 @@ const ScholarSidebar = () => {
                 {/* 2nd Semester */}
                 <div
                   className="flex items-center justify-between py-3 px-4 pl-16 cursor-pointer hover:bg-gray-100"
-                  style={{ marginLeft: '2rem' }}
                   onClick={() => setIsSecondSemOpen(!isSecondSemOpen)}
                 >
                   <span>2nd Semester</span>
@@ -238,7 +245,7 @@ const ScholarSidebar = () => {
                     <Image
                       src="/icons/chevron_down.svg"
                       alt="Collapse 2nd Semester"
-                      width={11}
+                      width={10}
                       height={11}
                     />
                   ) : (
@@ -262,10 +269,9 @@ const ScholarSidebar = () => {
                           <div
                             className={`flex items-center py-3 px-4 pl-20 transition-all cursor-pointer relative ${
                               isActive
-                                ? 'bg-[#E3F2FD] text-black font-medium'
+                                ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
                                 : 'text-black hover:bg-gray-100'
                             }`}
-                            style={{ marginLeft: '2rem' }}
                           >
                             {isActive && (
                               <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
@@ -285,7 +291,7 @@ const ScholarSidebar = () => {
         {/* Extras Section */}
         <div className="mt-4 flex items-center gap-3 py-2 px-4 pl-8">
           <div className="w-5 flex justify-center">
-            <span className="text-sm font-semibold text-gray-500">Extras</span>
+            <span className="text-xs font-semibold text-gray-500">Extras</span>
           </div>
         </div>
 
@@ -298,7 +304,7 @@ const ScholarSidebar = () => {
               <div
                 className={`flex items-center gap-3 py-3 px-4 pl-8 transition-all cursor-pointer relative ${
                   isActive
-                    ? 'bg-[#E3F2FD] text-black font-medium'
+                    ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
                     : 'text-black hover:bg-gray-100'
                 }`}
               >
@@ -307,14 +313,12 @@ const ScholarSidebar = () => {
                 )}
 
                 <div className="w-5 flex justify-center">
-                  {isActive && item.icon && (
-                    <Image
-                      src={item.icon}
-                      alt={`${item.label} icon`}
-                      width={14}
-                      height={14}
-                    />
-                  )}
+                  <Image
+                    src={isActive ? item.iconActive : item.iconInactive}
+                    alt={`${item.label} icon`}
+                    width={13}
+                    height={13}
+                  />
                 </div>
 
                 <span>{item.label}</span>
