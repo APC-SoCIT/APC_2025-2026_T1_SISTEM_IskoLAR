@@ -3,9 +3,8 @@ import "@/app/globals.css";
 import ScholarSidebar from "@/app/components/ScholarSideBar";
 
 export const metadata: Metadata = {
-    title: "Announcements | IskoLAR",
-  description:
-    "Stay updated with the latest announcements from IskoLAR.",
+  title: "Announcements | IskoLAR",
+  description: "Stay updated with the latest announcements from IskoLAR.",
 };
 
 export default function AnnouncementsLayout({
@@ -14,12 +13,14 @@ export default function AnnouncementsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex">
+    <div className="flex min-h-screen">
       {/* Sidebar on the left */}
       <ScholarSidebar />
 
       {/* Page Content */}
-      <main className="flex-1 p-6">{children}</main>
+      <main className="flex-1 min-h-screen bg-[#f5f6fa]">
+        {children}
+      </main>
     </div>
   );
 }
