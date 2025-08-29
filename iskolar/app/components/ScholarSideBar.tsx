@@ -327,6 +327,22 @@ const ScholarSidebar = () => {
           );
         })}
       </nav>
+      {/* Logout Button */}
+      <div className="mt-auto mb-6 px-0">
+        <button
+          className="flex items-center gap-3 py-3 px-4 pl-8 w-full rounded transition-all cursor-pointer text-black hover:bg-gray-100"
+          // Add your logout logic to onClick if needed
+          type="button"
+        >
+          <Image
+            src="/icons/log-out.svg"
+            alt="Logout"
+            width={18}
+            height={18}
+          />
+          <span>Logout</span>
+        </button>
+      </div>
     </aside>
   );
 };
