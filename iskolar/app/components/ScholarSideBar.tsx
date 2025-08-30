@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
+import React from 'react';
 
 const ScholarSidebar = () => {
   const pathname = usePathname();
@@ -37,9 +38,45 @@ const ScholarSidebar = () => {
   ];
 
   const semesterSubItems = [
-    { label: 'Application', href: '/scholar/program/application' },
-    { label: 'Status', href: '/scholar/program/status' },
+    { label: 'Application', href: '/academicyearID/semesterID/application' },
+    { label: 'Status', href: '/academicyearID/semesterID/status' },
   ];
+
+  // Keep dropdowns open if on a subpage
+  // Add this before the return statement
+  // This ensures the dropdowns stay open when on Application/Status pages
+  React.useEffect(() => {
+    // Always open program and school year if on any semester page
+    if (
+      pathname.startsWith('/academicyearID/semesterID/') ||
+      pathname.includes('/scholar/scholarship/1st-semester') ||
+      pathname.includes('/scholar/scholarship/2nd-semester')
+    ) {
+      setIsProgramOpen(true);
+      setIsSchoolYearOpen(true);
+
+      // Open the correct semester dropdown if on its subpage
+      if (
+        pathname.includes('/scholar/scholarship/1st-semester') ||
+        pathname === '/academicyearID/semesterID/application' ||
+        pathname === '/academicyearID/semesterID/status'
+      ) {
+        setIsFirstSemOpen(true);
+      } else {
+        setIsFirstSemOpen(false);
+      }
+
+      if (pathname.includes('/scholar/scholarship/2nd-semester')) {
+        setIsSecondSemOpen(true);
+      } else {
+        setIsSecondSemOpen(false);
+      }
+    } else {
+      // Optionally close all if not in any semester page
+      setIsFirstSemOpen(false);
+      setIsSecondSemOpen(false);
+    }
+  }, [pathname]);
 
   return (
     <aside className="fixed top-0 left-0 z-50 h-screen w-64 font-geist flex flex-col border-r bg-white border-gray-300 text-sm shadow-[4px_0_6px_-2px_rgba(0,0,0,0.1)]">
@@ -57,10 +94,8 @@ const ScholarSidebar = () => {
       {/* Navigation */}
       <nav className="flex-1 mt-4 space-y-1">
         {/* Main Section Title */}
-        <div className="flex items-center gap-3 py-2 px-4 pl-8">
-          <div className="w-5 flex justify-center">
-            <span className="text-xs font-semibold text-gray-500">Main</span>
-          </div>
+        <div className="flex items-center gap-3 py-2 pl-7">
+          <span className="text-xs font-semibold text-gray-500">Main</span>
         </div>
 
         {/* Normal Nav Items */}
@@ -71,7 +106,7 @@ const ScholarSidebar = () => {
           return (
             <Link href={item.href} key={item.label}>
               <div
-                className={`flex items-center gap-3 py-3 px-4 pl-8 transition-all cursor-pointer relative ${
+                className={`flex items-center gap-3 py-3 pl-7 transition-all cursor-pointer relative ${
                   isActive
                     ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
                     : 'text-black hover:bg-gray-100'
@@ -96,10 +131,10 @@ const ScholarSidebar = () => {
           );
         })}
 
-        {/* Program Dropdown */}
+        {/* Scholarship Dropdown */}
         <div
-          className={`flex items-center gap-3 py-3 px-4 pl-8 transition-all cursor-pointer relative ${
-            pathname.startsWith('/scholar/program')
+          className={`flex items-center gap-3 py-3 pl-7 transition-all cursor-pointer relative ${
+            pathname.startsWith('/scholar/scholarship')
               ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
               : 'text-black hover:bg-gray-100'
           }`}
@@ -114,37 +149,37 @@ const ScholarSidebar = () => {
             }
           }}
         >
-          {pathname.startsWith('/scholar/program') && (
+          {pathname.startsWith('/scholar/scholarship') && (
             <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
           )}
 
           <div className="w-5 flex justify-center">
             <Image
               src={
-                pathname.startsWith('/scholar/program')
+                pathname.startsWith('/scholar/scholarship')
                   ? '/icons/program2.svg'
                   : '/icons/program1.svg'
               }
-              alt="Program icon"
+              alt="Scholarship icon"
               width={15}
               height={15}
             />
           </div>
 
-          <span>Program</span>
+          <span>Scholarship</span>
 
-          <div className="ml-auto">
+          <div className="ml-auto pr-4">
             {isProgramOpen ? (
               <Image
                 src="/icons/chevron_down.svg"
-                alt="Collapse Program"
+                alt="Collapse Scholarship"
                 width={10}
                 height={10}
               />
             ) : (
               <Image
                 src="/icons/chevron_left.svg"
-                alt="Expand Program"
+                alt="Expand Scholarship"
                 width={7}
                 height={7}
               />
@@ -156,31 +191,33 @@ const ScholarSidebar = () => {
           <div>
             {/* School Year */}
             <div
-              className={`flex items-center justify-between py-3 px-4 pl-12 transition-all cursor-pointer relative ${
-                pathname.includes('/scholar/program/1st-semester') ||
-                pathname.includes('/scholar/program/2nd-semester')
+              className={`flex items-center justify-between py-3 pl-12 transition-all cursor-pointer relative ${
+                pathname.includes('/scholar/scholarship/1st-semester') ||
+                pathname.includes('/scholar/scholarship/2nd-semester')
                   ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
                   : 'text-black hover:bg-gray-100'
               }`}
               onClick={() => setIsSchoolYearOpen(!isSchoolYearOpen)}
             >
-              <span>[School Year]</span>
+              <span>A.Y. 2025 – 2026</span>
 
-              {isSchoolYearOpen ? (
-                <Image
-                  src="/icons/chevron_down.svg"
-                  alt="Collapse School Year"
-                  width={10}
-                  height={10}
-                />
-              ) : (
-                <Image
-                  src="/icons/chevron_left.svg"
-                  alt="Expand School Year"
-                  width={7}
-                  height={7}
-                />
-              )}
+              <span className="pr-4">
+                {isSchoolYearOpen ? (
+                  <Image
+                    src="/icons/chevron_down.svg"
+                    alt="Collapse School Year"
+                    width={10}
+                    height={10}
+                  />
+                ) : (
+                  <Image
+                    src="/icons/chevron_left.svg"
+                    alt="Expand School Year"
+                    width={7}
+                    height={7}
+                  />
+                )}
+              </span>
             </div>
 
             {/* Semesters under School Year */}
@@ -188,25 +225,27 @@ const ScholarSidebar = () => {
               <div>
                 {/* 1st Semester */}
                 <div
-                  className="flex items-center justify-between py-3 px-4 pl-16 cursor-pointer hover:bg-gray-100"
+                  className="flex items-center justify-between py-3 pl-16 cursor-pointer hover:bg-gray-100"
                   onClick={() => setIsFirstSemOpen(!isFirstSemOpen)}
                 >
                   <span>1st Semester</span>
-                  {isFirstSemOpen ? (
-                    <Image
-                      src="/icons/chevron_down.svg"
-                      alt="Collapse 1st Semester"
-                      width={10}
-                      height={10}
-                    />
-                  ) : (
-                    <Image
-                      src="/icons/chevron_left.svg"
-                      alt="Expand 1st Semester"
-                      width={7}
-                      height={7}
-                    />
-                  )}
+                  <span className="pr-4">
+                    {isFirstSemOpen ? (
+                      <Image
+                        src="/icons/chevron_down.svg"
+                        alt="Collapse 1st Semester"
+                        width={10}
+                        height={10}
+                      />
+                    ) : (
+                      <Image
+                        src="/icons/chevron_left.svg"
+                        alt="Expand 1st Semester"
+                        width={7}
+                        height={7}
+                      />
+                    )}
+                  </span>
                 </div>
 
                 {isFirstSemOpen && (
@@ -216,19 +255,20 @@ const ScholarSidebar = () => {
                         pathname === sub.href || pathname.startsWith(sub.href);
 
                       return (
-                        <Link href={sub.href} key={`1st-${sub.label}`}>
-                          <div
-                            className={`flex items-center py-3 px-4 pl-20 transition-all cursor-pointer relative ${
+                        <Link href={sub.href} key={`1st-${sub.label}`} legacyBehavior>
+                          <a
+                            className={`flex items-center py-3 pl-20 transition-all cursor-pointer relative ${
                               isActive
                                 ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
                                 : 'text-black hover:bg-gray-100'
                             }`}
+                            // Removed onClick that would close the dropdown
                           >
                             {isActive && (
                               <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
                             )}
                             <span>{sub.label}</span>
-                          </div>
+                          </a>
                         </Link>
                       );
                     })}
@@ -237,25 +277,27 @@ const ScholarSidebar = () => {
 
                 {/* 2nd Semester */}
                 <div
-                  className="flex items-center justify-between py-3 px-4 pl-16 cursor-pointer hover:bg-gray-100"
+                  className="flex items-center justify-between py-3 pl-16 cursor-pointer hover:bg-gray-100"
                   onClick={() => setIsSecondSemOpen(!isSecondSemOpen)}
                 >
                   <span>2nd Semester</span>
-                  {isSecondSemOpen ? (
-                    <Image
-                      src="/icons/chevron_down.svg"
-                      alt="Collapse 2nd Semester"
-                      width={10}
-                      height={11}
-                    />
-                  ) : (
-                    <Image
-                      src="/icons/chevron_left.svg"
-                      alt="Expand 2nd Semester"
-                      width={7}
-                      height={7}
-                    />
-                  )}
+                  <span className="pr-4">
+                    {isSecondSemOpen ? (
+                      <Image
+                        src="/icons/chevron_down.svg"
+                        alt="Collapse 2nd Semester"
+                        width={10}
+                        height={11}
+                      />
+                    ) : (
+                      <Image
+                        src="/icons/chevron_left.svg"
+                        alt="Expand 2nd Semester"
+                        width={7}
+                        height={7}
+                      />
+                    )}
+                  </span>
                 </div>
 
                 {isSecondSemOpen && (
@@ -265,19 +307,20 @@ const ScholarSidebar = () => {
                         pathname === sub.href || pathname.startsWith(sub.href);
 
                       return (
-                        <Link href={sub.href} key={`2nd-${sub.label}`}>
-                          <div
-                            className={`flex items-center py-3 px-4 pl-20 transition-all cursor-pointer relative ${
+                        <Link href={sub.href} key={`2nd-${sub.label}`} legacyBehavior>
+                          <a
+                            className={`flex items-center py-3 pl-20 transition-all cursor-pointer relative ${
                               isActive
                                 ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
                                 : 'text-black hover:bg-gray-100'
                             }`}
+                            // Removed onClick that would close the dropdown
                           >
                             {isActive && (
                               <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
                             )}
                             <span>{sub.label}</span>
-                          </div>
+                          </a>
                         </Link>
                       );
                     })}
@@ -289,10 +332,8 @@ const ScholarSidebar = () => {
         )}
 
         {/* Extras Section */}
-        <div className="mt-4 flex items-center gap-3 py-2 px-4 pl-8">
-          <div className="w-5 flex justify-center">
-            <span className="text-xs font-semibold text-gray-500">Extras</span>
-          </div>
+        <div className="mt-4 flex items-center gap-3 py-2 pl-7">
+          <span className="text-xs font-semibold text-gray-500">Extras</span>
         </div>
 
         {extraItems.map((item) => {
@@ -302,7 +343,7 @@ const ScholarSidebar = () => {
           return (
             <Link href={item.href} key={item.label}>
               <div
-                className={`flex items-center gap-3 py-3 px-4 pl-8 transition-all cursor-pointer relative ${
+                className={`flex items-center gap-3 py-3 pl-7 transition-all cursor-pointer relative ${
                   isActive
                     ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
                     : 'text-black hover:bg-gray-100'
@@ -328,9 +369,9 @@ const ScholarSidebar = () => {
         })}
       </nav>
       {/* Logout Button */}
-      <div className="mt-auto mb-6 px-0">
+      <div className="mt-auto mb-6">
         <button
-          className="flex items-center gap-3 py-3 px-4 pl-8 w-full rounded transition-all cursor-pointer text-black hover:bg-gray-100"
+          className="flex items-center gap-3 py-3 pl-7 w-full rounded transition-all cursor-pointer text-black hover:bg-gray-100"
           // Add your logout logic to onClick if needed
           type="button"
         >
