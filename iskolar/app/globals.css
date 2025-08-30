@@ -24,3 +24,7 @@ body {
   color: var(--foreground);
   font-family: 'Inter', sans-serif;
 }
+
+input[type="file"]::file-selector-button {
+  cursor: pointer;
+}
