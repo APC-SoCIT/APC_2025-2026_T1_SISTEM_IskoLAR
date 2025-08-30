@@ -5,6 +5,23 @@ import { useState, useRef } from "react";
 
 export default function ProfilePage() {
   const [open, setOpen] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+
+  // Add state for each field
+  const [lastName, setLastName] = useState("Mones");
+  const [firstName, setFirstName] = useState("Hazel Ann");
+  const [middleName, setMiddleName] = useState("Besafez");
+  const [gender, setGender] = useState("Female");
+  const [birthdate, setBirthdate] = useState("04/08/2004");
+
+  // Add state for each document file
+  const [, setPsaFile] = useState<File | null>(null);
+  const [psaFileName, setPsaFileName] = useState("psabirthcert.pdf");
+  const [, setVoterFile] = useState<File | null>(null);
+  const [voterFileName, setVoterFileName] = useState("votercert.pdf");
+  const [, setNationalIdFile] = useState<File | null>(null);
+  const [nationalIdFileName, setNationalIdFileName] = useState("nationalid.pdf");
+
   const notifRef = useRef<HTMLDivElement>(null);
 
   // Refs for each card section
@@ -135,7 +152,7 @@ export default function ProfilePage() {
                 onClick={() => scrollToSection(programRef)}
                 type="button"
               >
-                <Image src="/icons/program.svg" alt="Program" width={16} height={16} />
+                <Image src="/icons/program.svg" alt="Program" width={20} height={20} />
                 Program
               </button>
               {/* Documents Button */}
@@ -149,9 +166,35 @@ export default function ProfilePage() {
               </button>
             </nav>
           </div>
-          <button className="cursor-pointer mt-6 bg-[#2196f3] text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-[#1976d2] transition">
-            Edit Profile
-          </button>
+          {isEdit ? (
+            <>
+              <button
+                className="cursor-pointer mt-6 mb-2 bg-[#219174] text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-[#17695a] transition"
+                onClick={() => {
+                  // TODO: Add your save logic here (API call, etc.)
+                  setIsEdit(false);
+                }}
+                type="button"
+              >
+                Save Changes
+              </button>
+              <button
+                className="cursor-pointer bg-[#f44336] text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-[#c62828] transition"
+                onClick={() => setIsEdit(false)}
+                type="button"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button
+              className="cursor-pointer mt-6 bg-[#2196f3] text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-[#1976d2] transition"
+              onClick={() => setIsEdit(true)}
+              type="button"
+            >
+              Edit Profile
+            </button>
+          )}
         </div>
         {/* Right Column */}
         <div
@@ -173,20 +216,33 @@ export default function ProfilePage() {
               <Image src="/icons/account.svg" alt="Account" width={19} height={19} />
               <span className="font-semibold text-gray-700 text-lg">Account</span>
             </div>
+            <hr className="border-gray-200 mb-4" />
             <div className="grid grid-cols-2 gap-4 mb-2">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Scholar ID</label>
-                <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="XXXX-XXXX" readOnly />
+                <input
+                  className="w-full bg-gray-100 rounded px-3 py-2 text-sm"
+                  value="XXXX-XXXX"
+                  readOnly
+                />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Email Address</label>
-                <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="example@gmail.com" readOnly />
+                <input
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value="example@gmail.com"
+                  readOnly={!isEdit}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 items-end">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Password</label>
-                <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="••••••••••••••••" readOnly />
+                <input
+                  className="w-full bg-gray-100 rounded px-3 py-2 text-sm"
+                  value="••••••••••••••••"
+                  readOnly
+                />
               </div>
               <div>
                 <button className="text-xs text-red-500 font-medium mt-2">Change Password</button>
@@ -199,28 +255,54 @@ export default function ProfilePage() {
               <Image src="/icons/personal.svg" alt="Personal" width={19} height={19} />
               <span className="font-semibold text-gray-700 text-lg">Personal</span>
             </div>
+            <hr className="border-gray-200 mb-4" />
             <div className="grid grid-cols-3 gap-4 mb-2">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Last Name</label>
-                <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Mones" readOnly />
+                <input
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value={lastName}
+                  readOnly={!isEdit}
+                  onChange={e => setLastName(e.target.value)}
+                />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">First Name</label>
-                <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Hazel Ann" readOnly />
+                <input
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value={firstName}
+                  readOnly={!isEdit}
+                  onChange={e => setFirstName(e.target.value)}
+                />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Middle Name</label>
-                <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Besafez" readOnly />
+                <input
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value={middleName}
+                  readOnly={!isEdit}
+                  onChange={e => setMiddleName(e.target.value)}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Gender</label>
-                <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Female" readOnly />
+                <input
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value={gender}
+                  readOnly={!isEdit}
+                  onChange={e => setGender(e.target.value)}
+                />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Birthdate</label>
-                <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="04/08/2004" readOnly />
+                <input
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value={birthdate}
+                  readOnly={!isEdit}
+                  onChange={e => setBirthdate(e.target.value)}
+                />
               </div>
             </div>
           </div>
@@ -230,14 +312,23 @@ export default function ProfilePage() {
               <Image src="/icons/contact.svg" alt="Contact" width={18.5} height={18.5} />
               <span className="font-semibold text-gray-700 text-lg">Contact</span>
             </div>
+            <hr className="border-gray-200 mb-4" />
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Email Address</label>
-                <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="example@gmail.com" readOnly />
+                <input
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value="example@gmail.com"
+                  readOnly={!isEdit}
+                />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Mobile Number</label>
-                <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="+639XXXXXXXXX" readOnly />
+                <input
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value="+639XXXXXXXXX"
+                  readOnly={!isEdit}
+                />
               </div>
             </div>
           </div>
@@ -247,31 +338,49 @@ export default function ProfilePage() {
               <Image src="/icons/address.svg" alt="Address" width={22} height={22} />
               <span className="font-semibold text-gray-700 text-lg">Address</span>
             </div>
+            <hr className="border-gray-200 mb-4" />
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Present Address</label>
-                <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Mones" readOnly />
+                <input
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value="Mones"
+                  readOnly={!isEdit}
+                />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Permanent Address</label>
-                <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Female" readOnly />
+                <input
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value="Female"
+                  readOnly={!isEdit}
+                />
               </div>
             </div>
           </div>
           {/* Program Section */}
           <div ref={programRef} className="bg-white rounded-xl shadow p-6 mb-2">
             <div className="flex items-center gap-2 mb-4">
-              <Image src="/icons/program.svg" alt="Program" width={18} height={18} />
+              <Image src="/icons/program.svg" alt="Program" width={20} height={20} />
               <span className="font-semibold text-gray-700 text-lg">Program</span>
             </div>
+            <hr className="border-gray-200 mb-4" />
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">College/University</label>
-                <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Asia Pacific College" readOnly />
+                <input
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value="Asia Pacific College"
+                  readOnly={!isEdit}
+                />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Course</label>
-                <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Bachelor of Science in Computer Science" readOnly />
+                <input
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value="Bachelor of Science in Computer Science"
+                  readOnly={!isEdit}
+                />
               </div>
             </div>
           </div>
@@ -279,20 +388,89 @@ export default function ProfilePage() {
           <div ref={documentsRef} className="bg-white rounded-xl shadow p-6 mb-2">
             <div className="flex items-center gap-2 mb-4">
               <Image src="/icons/documents.svg" alt="Documents" width={19} height={19} />
-              <span className="font-semibold text-gray-700 text-lg">Documents</span>
+              <span className="font-semibold text-gray-700 text-lg">Required Documents</span>
             </div>
-            <div className="grid grid-cols-1 gap-2">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">PSA Birth Certificate</label>
-                <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="psabirthcert.pdf" readOnly />
+            <hr className="border-gray-200 mb-4" />
+            <div className="mb-6 bg-gradient-to-r from-[#e3f2fd] to-[#f8fafc] rounded-xl px-5 py-4 border border-[#B6D6F6] shadow-sm flex flex-col justify-center">
+              <div className="text-[15px] text-[#1976d2] font-semibold">
+                Upload the following documents to complete your application.
               </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Voter&apos;s Certification</label>
-                <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="votercert.pdf" readOnly />
+              <div className="text-xs text-gray-500">
+                Please upload clear and valid copies of your documents below.
               </div>
+            </div>
+            <div className="grid grid-cols-1 gap-5">
+              {/* Certificate of Registration */}
               <div>
-                <label className="block text-xs text-gray-500 mb-1">National ID</label>
-                <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="nationalid.pdf" readOnly />
+                <label className="block text-xs text-gray-600 mb-1 font-medium">PSA Birth Certificate</label>
+                <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
+                  {isEdit ? (
+                    <>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="cursor-pointer block w-full text-sm text-gray-700 bg-transparent file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#e3f2fd] file:text-[#1976d2] file:font-medium"
+                        onChange={e => {
+                          if (e.target.files && e.target.files[0]) {
+                            setPsaFile(e.target.files[0]);
+                            setPsaFileName(e.target.files[0].name);
+                          }
+                        }}
+                      />
+                      <span className="text-xs text-gray-500 truncate">{psaFileName}</span>
+                    </>
+                  ) : (
+                    <span className="text-xs text-gray-700 truncate">{psaFileName}</span>
+                  )}
+                </div>
+              </div>
+              {/* Certificate of Grades */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-1 font-medium">Voter&apos;s Certification</label>
+                <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
+                  {isEdit ? (
+                    <>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="cursor-pointer block w-full text-sm text-gray-700 bg-transparent file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#e3f2fd] file:text-[#1976d2] file:font-medium"
+                        onChange={e => {
+                          if (e.target.files && e.target.files[0]) {
+                            setVoterFile(e.target.files[0]);
+                            setVoterFileName(e.target.files[0].name);
+                          }
+                        }}
+                      />
+                      <span className="text-xs text-gray-500 truncate">{voterFileName}</span>
+                    </>
+                  ) : (
+                    <span className="text-xs text-gray-700 truncate">{voterFileName}</span>
+                  )}
+                </div>
+              </div>
+              {/* School ID */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-1 font-medium">National ID</label>
+                <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
+                  {isEdit ? (
+                    <>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="cursor-pointer block w-full text-sm text-gray-700 bg-transparent file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#e3f2fd] file:text-[#1976d2] file:font-medium"
+                        onChange={e => {
+                          if (e.target.files && e.target.files[0]) {
+                            setNationalIdFile(e.target.files[0]);
+                            setNationalIdFileName(e.target.files[0].name);
+                          }
+                        }}
+                      />
+                      <span className="text-xs text-gray-500 truncate">{nationalIdFileName}</span>
+                    </>
+                  ) : (
+                    <span className="text-xs text-gray-700 truncate">{nationalIdFileName}</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
