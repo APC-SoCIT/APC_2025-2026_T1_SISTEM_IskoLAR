@@ -206,63 +206,63 @@ export default function DocumentsTab() {
       </div>
 
       {/* Status Summary */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200 flex justify-around">
-        <div className="text-center">
-          <div className="w-12 h-12 rounded-full bg-[#4CAF50] bg-opacity-10 flex items-center justify-center mx-auto mb-2">
-            <svg
-              stroke="currentColor"
-              fill="none"
-              strokeWidth="3"
-              viewBox="0 0 24 24"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-6 h-6 text-[#4CAF50]"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
+      <div className="grid grid-cols-3 gap-4">
+        {/* Verified Card */}
+        <div className="bg-white rounded-xl border border-green-100 p-4 relative overflow-hidden">
+          <div className="absolute right-0 top-0 w-24 h-24 transform translate-x-8 -translate-y-8">
+            <div className="w-full h-full rounded-full bg-green-500 bg-opacity-10"></div>
           </div>
-          <div className="text-sm font-medium text-gray-600">Verified</div>
-          <div className="text-3xl font-bold text-[#4CAF50]">{stats.verified}</div>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center">
+              <div className="w-5 h-5 relative">
+                <div className="absolute inset-0 border-2 border-white rounded-sm"></div>
+                <div className="absolute inset-0 transform rotate-45 translate-y-1.5">
+                  <div className="w-1.5 h-3 bg-white rounded-sm absolute right-0"></div>
+                  <div className="w-5 h-1.5 bg-white rounded-sm absolute bottom-0"></div>
+                </div>
+              </div>
+            </div>
+            <span className="font-medium text-gray-600">Verified</span>
+          </div>
+          <div className="text-4xl font-bold text-green-500">7</div>
         </div>
-        <div className="text-center">
-          <div className="w-12 h-12 rounded-full bg-[#FFC107] bg-opacity-10 flex items-center justify-center mx-auto mb-2">
-            <svg
-              stroke="currentColor"
-              fill="none"
-              strokeWidth="3"
-              viewBox="0 0 24 24"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-6 h-6 text-[#FFC107]"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-              <line x1="12" y1="9" x2="12" y2="13"></line>
-              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
+
+        {/* Needs Re-upload Card */}
+        <div className="bg-white rounded-xl border border-yellow-100 p-4 relative overflow-hidden">
+          <div className="absolute right-0 top-0 w-24 h-24 transform translate-x-8 -translate-y-8">
+            <div className="w-full h-full rounded-full bg-yellow-500 bg-opacity-10"></div>
           </div>
-          <div className="text-sm font-medium text-gray-600">Needs Re-upload</div>
-          <div className="text-3xl font-bold text-[#FFC107]">{stats.reupload}</div>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-yellow-500 flex items-center justify-center">
+              <div className="w-5 h-5 relative">
+                <div className="absolute inset-0 border-2 border-white"></div>
+                <div className="absolute inset-x-2.5 top-1 w-0.5 h-2 bg-white"></div>
+                <div className="absolute inset-x-2.5 bottom-1 w-0.5 h-0.5 bg-white rounded-full"></div>
+              </div>
+            </div>
+            <span className="font-medium text-gray-600">Needs Re-upload</span>
+          </div>
+          <div className="text-4xl font-bold text-yellow-500">2</div>
         </div>
-        <div className="text-center">
-          <div className="w-12 h-12 rounded-full bg-[#F44336] bg-opacity-10 flex items-center justify-center mx-auto mb-2">
-            <svg
-              stroke="currentColor"
-              fill="none"
-              strokeWidth="3"
-              viewBox="0 0 24 24"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-6 h-6 text-[#F44336]"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
+
+        {/* Missing/Denied Card */}
+        <div className="bg-white rounded-xl border border-red-100 p-4 relative overflow-hidden">
+          <div className="absolute right-0 top-0 w-24 h-24 transform translate-x-8 -translate-y-8">
+            <div className="w-full h-full rounded-full bg-red-500 bg-opacity-10"></div>
           </div>
-          <div className="text-sm font-medium text-gray-600">Missing/Denied</div>
-          <div className="text-3xl font-bold text-[#F44336]">{stats.denied}</div>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-red-500 flex items-center justify-center">
+              <div className="w-5 h-5 relative">
+                <div className="absolute inset-0 border-2 border-white"></div>
+                <div className="absolute inset-0 transform rotate-45">
+                  <div className="w-5 h-0.5 bg-white rounded-sm absolute top-1/2 -translate-y-1/2"></div>
+                  <div className="w-0.5 h-5 bg-white rounded-sm absolute left-1/2 -translate-x-1/2"></div>
+                </div>
+              </div>
+            </div>
+            <span className="font-medium text-gray-600">Missing/Denied</span>
+          </div>
+          <div className="text-4xl font-bold text-red-500">1</div>
         </div>
       </div>
 
