@@ -252,7 +252,7 @@ export default function ApplicationsPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-semibold text-gray-900">
-                Scholarship Applications
+                Recent Scholarship Applications
               </h2>
               <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-600">
                 {applicantsData.length} total
