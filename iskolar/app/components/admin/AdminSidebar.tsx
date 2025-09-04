@@ -36,8 +36,8 @@ const AdminSidebar = () => {
       ),
     },
     {
-      label: 'Releases',
-      href: '/admin/releases',
+      label: 'Disbursement Schedule',
+      href: '/admin/disbursement',
       icon: (
         <svg width="14" height="16" fill="none" viewBox="0 0 24 24">
           <path
