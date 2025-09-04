@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import AdjustCriteriaModal from './AdjustCriteriaModal';
 
 interface CriteriaItem {
   icon: string;
@@ -68,8 +69,11 @@ export default function EligibilityTab() {
     <div>
       {/* Page Title Section */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Eligibility Criteria</h1>
-        <p className="mt-2 text-gray-600">
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-2xl font-bold text-gray-900">Eligibility Criteria</h1>
+          <AdjustCriteriaModal />
+        </div>
+        <p className="text-gray-600">
           Verify the applicant meets all required eligibility criteria for the Taguig City Scholarship Program.
         </p>
       </div>
