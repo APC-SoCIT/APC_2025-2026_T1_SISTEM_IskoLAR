@@ -6,7 +6,7 @@ import { useState } from 'react';
 
 // Mock data for the application
 const applicationData = {
-  id: 'ISKOLAR-2025-001',
+  id: 'ID:','2025-001',
   status: 'Under Review',
   applicant: {
     name: 'Juan Dela Cruz',
