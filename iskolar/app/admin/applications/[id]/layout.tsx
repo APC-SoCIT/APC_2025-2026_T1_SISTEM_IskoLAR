@@ -2,6 +2,7 @@
 
 import React from 'react';
 import ApplicationNavbar from './components/ApplicationNavbar';
+import AdminTopNav from '../../components/AdminTopNav';
 
 // Shared mock data
 export const applicationData: any = {
@@ -37,34 +38,37 @@ export const StatusBadge = ({ status }: { status: string }) => {
 
 export default function ApplicationLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="p-6 max-w-[1600px] mx-auto space-y-6">
-      {/* Application Details Card */}
-      <div className="bg-white rounded-xl shadow-md border border-gray-100">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <button onClick={() => window.history.back()} 
-                      className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                <svg className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-              </button>
-              <h1 className="text-2xl font-semibold text-gray-900">Application Review</h1>
+    <div className="min-h-screen bg-gray-50">
+      <AdminTopNav />
+      <div className="p-6 max-w-[1600px] mx-auto space-y-6">
+        {/* Application Details Card */}
+        <div className="bg-white rounded-xl shadow-md border border-gray-100">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <button onClick={() => window.history.back()} 
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                  <svg className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                </button>
+                <h1 className="text-2xl font-semibold text-gray-900">Application Review</h1>
+              </div>
+              <div className="flex items-center gap-4">
+                <StatusBadge status={applicationData.status} />
+                <span className="text-sm text-gray-500 font-medium">
+                  {applicationData.id}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <StatusBadge status={applicationData.status} />
-              <span className="text-sm text-gray-500 font-medium">
-                {applicationData.id}
-              </span>
-            </div>
+
+            {/* Tabs */}
+            <ApplicationNavbar />
           </div>
 
-          {/* Tabs */}
-          <ApplicationNavbar />
-        </div>
-
-        <div className="p-6">
-          {children}
+          <div className="p-6">
+            {children}
+          </div>
         </div>
       </div>
     </div>
