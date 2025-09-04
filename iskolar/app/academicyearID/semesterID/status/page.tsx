@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useState, useRef } from "react";
 
+const hoverClassName = "transition-all duration-200 hover:shadow-lg hover:scale-[1.01]";
+
 export default function ApplicationStatusPage() {
   const [open, setOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -107,11 +109,16 @@ export default function ApplicationStatusPage() {
       {/* Main content area */}
       <div className="w-full max-w-2xl flex flex-col gap-8 px-8 pb-12 pt-[90px]">
         {/* Status Card */}
-        <div className={`rounded-xl shadow border ${statusColor} flex items-center gap-5 px-8 py-8`}>
-          <Image src={statusIcon} alt={status} width={60} height={60} />
+        <div className={`rounded-xl shadow-md ${statusColor} flex items-center gap-6 px-8 py-8 ${hoverClassName}`}>
+          <div className="bg-white rounded-full p-3 shadow-md">
+            <Image src={statusIcon} alt={status} width={45} height={45} />
+          </div>
           <div>
-            <div className="text-2xl font-bold mb-1">{status}</div>
-            <div className="text-gray-600 text-sm">
+            <div className="text-2xl font-bold mb-2 flex items-center gap-2">
+              {status}
+              {status === "Approved" && <span className="text-sm bg-green-200 text-green-800 px-3 py-0.5 rounded-full">✨ Congratulations</span>}
+            </div>
+            <div className="text-gray-700 text-sm leading-relaxed">
               {status === "Approved" && (
                 <>Congratulations! Your application has been approved. Please check your email for further instructions.</>
               )}
@@ -211,25 +218,43 @@ export default function ApplicationStatusPage() {
           </div>
           <hr className="border-gray-200 mb-4" />
           <div className="grid grid-cols-1 gap-5">
+            {/* Certificate of Registration */}
             <div>
               <label className="block text-xs text-gray-600 mb-1 font-medium">Certificate of Registration</label>
-              <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
+              <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9] group hover:bg-[#e3f2fd] transition-colors">
                 <span className="text-xs text-gray-700 truncate">regcert.pdf</span>
-                <a href="#" className="ml-auto text-[#1976d2] text-xs underline">View</a>
+                <a href="#" className="ml-auto text-[#1976d2] text-xs font-medium hover:underline flex items-center gap-1">
+                  View
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="transform group-hover:translate-x-0.5 transition-transform">
+                    <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </a>
               </div>
             </div>
+            {/* Certificate of Grades */}
             <div>
               <label className="block text-xs text-gray-600 mb-1 font-medium">Certificate of Grades</label>
-              <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
+              <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9] group hover:bg-[#e3f2fd] transition-colors">
                 <span className="text-xs text-gray-700 truncate">grades.pdf</span>
-                <a href="#" className="ml-auto text-[#1976d2] text-xs underline">View</a>
+                <a href="#" className="ml-auto text-[#1976d2] text-xs font-medium hover:underline flex items-center gap-1">
+                  View
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="transform group-hover:translate-x-0.5 transition-transform">
+                    <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </a>
               </div>
             </div>
+            {/* School ID */}
             <div>
               <label className="block text-xs text-gray-600 mb-1 font-medium">School ID</label>
-              <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
+              <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9] group hover:bg-[#e3f2fd] transition-colors">
                 <span className="text-xs text-gray-700 truncate">schoolid.pdf</span>
-                <a href="#" className="ml-auto text-[#1976d2] text-xs underline">View</a>
+                <a href="#" className="ml-auto text-[#1976d2] text-xs font-medium hover:underline flex items-center gap-1">
+                  View
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="transform group-hover:translate-x-0.5 transition-transform">
+                    <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </a>
               </div>
             </div>
           </div>
