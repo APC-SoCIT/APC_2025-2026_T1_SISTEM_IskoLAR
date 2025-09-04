@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import FilterModal from '../components/FilterModal';
+import AdminTopNav from '../../components/AdminTopNav';
 
 type Status = 'Pending' | 'Approved' | 'Rejected';
 
@@ -163,17 +164,27 @@ export default function AllApplicationsPage() {
   };
 
   return (
-    <div className="p-6 max-w-[1600px] mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Scholarship Applications</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            View and manage all scholarship applications
-          </p>
-        </div>
-        
-        {/* Filter Button */}
+    <div className="min-h-screen bg-gray-50">
+      <AdminTopNav />
+      <div className="p-6 max-w-[1600px] mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => window.history.back()} 
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <svg className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </button>
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900">Scholarship Applications</h1>
+              <p className="mt-1 text-sm text-gray-500">
+                View and manage all scholarship applications
+              </p>
+            </div>
+          </div>        {/* Filter Button */}
         <button
           onClick={() => setIsFilterModalOpen(true)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg
@@ -294,6 +305,7 @@ export default function AllApplicationsPage() {
         onReset={handleResetFilters}
         counts={counts}
       />
+      </div>
     </div>
   );
 }
