@@ -17,8 +17,8 @@ interface Applicant {
   id: string;
   name: string;
   avatar: string;
-  program: string;
-  school: string;
+  schoolType: 'Public' | 'Private';
+  barangay: string;
   status: Status;
   date: string;
   action: string;
@@ -26,41 +26,41 @@ interface Applicant {
 
 const applicantsData: Applicant[] = [
   {
-    id: 'APP-2025-001',
+    id: '2025-0001',
     name: 'Maria Santos',
     avatar: '/avatars/maria.jpg',
-    program: 'Premier',
-    school: 'UP',
+    schoolType: 'Public',
+    barangay: 'Bagumbayan',
     status: 'Pending',
     date: 'Aug 15, 2025',
     action: 'Review'
   },
   {
-    id: 'APP-2025-002',
+    id: '2025-0002',
     name: 'Juan Dela Cruz',
     avatar: '/avatars/juan.jpg',
-    program: 'Premier',
-    school: 'DLSU',
+    schoolType: 'Private',
+    barangay: 'Western Bicutan',
     status: 'Approved',
     date: 'Aug 14, 2025',
     action: 'View'
   },
   {
-    id: 'APP-2025-003',
+    id: '2025-0003',
     name: 'Sophia Reyes',
     avatar: '/avatars/sophia.jpg',
-    program: 'Priority',
-    school: 'ADMU',
+    schoolType: 'Private',
+    barangay: 'Bambang',
     status: 'Rejected',
     date: 'Aug 13, 2025',
     action: 'View'
   },
   {
-    id: 'APP-2025-004',
+    id: '2025-0004',
     name: 'Miguel Bautista',
     avatar: '/avatars/miguel.jpg',
-    program: 'SUC/LCU',
-    school: 'TCU',
+    schoolType: 'Public',
+    barangay: 'South Signal Village',
     status: 'Approved',
     date: 'Aug 12, 2025',
     action: 'View'
@@ -252,7 +252,7 @@ export default function ApplicationsPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <h2 className="text-lg font-semibold text-gray-900">
-                Recent Applications
+                Scholarship Applications
               </h2>
               <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-600">
                 {applicantsData.length} total
@@ -290,10 +290,10 @@ export default function ApplicationsPage() {
                   Applicant
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Program
+                  School Type
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  School
+                  Barangay
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Status
@@ -327,18 +327,18 @@ export default function ApplicationsPage() {
                         <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors duration-150">
                           {applicant.name}
                         </div>
-                        <div className="text-sm text-gray-500">{applicant.id}</div>
+                        <div className="text-sm text-gray-500">ID: {applicant.id}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm font-medium text-gray-900">
-                      {applicant.program}
+                      {applicant.schoolType}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-sm font-medium text-gray-900">
-                      {applicant.school}
+                      {applicant.barangay}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
