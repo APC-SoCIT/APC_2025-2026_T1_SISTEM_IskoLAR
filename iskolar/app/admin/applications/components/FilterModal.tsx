@@ -76,7 +76,7 @@ export default function FilterModal({ isOpen, onClose, onApply, onReset, counts 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div className="fixed inset-0 bg-black/25 overflow-y-auto h-full w-full z-50 transition-all duration-300 ease-in-out">
       <div className="relative top-20 mx-auto p-5 border w-full max-w-md bg-white rounded-lg shadow-xl">
         <div className="flex items-center justify-between border-b pb-4">
           <h3 className="text-xl font-semibold text-gray-900">Filter Applications</h3>
