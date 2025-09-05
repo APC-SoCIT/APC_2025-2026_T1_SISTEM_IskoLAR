@@ -24,3 +24,17 @@ body {
   color: var(--foreground);
   font-family: 'Inter', sans-serif;
 }
+
+input[type="file"]::file-selector-button {
+  cursor: pointer;
+}
+
+.fade-enter {
+  opacity: 0;
+  transform: translateX(10px);
+}
+.fade-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 300ms, transform 300ms;
+}
