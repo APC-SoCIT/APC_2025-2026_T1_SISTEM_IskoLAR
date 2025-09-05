@@ -34,7 +34,9 @@ export default function AnnouncementsPage() {
                 height={15}
               />
             </span>
-            <span className="absolute top-1 left-7 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+            <span className="absolute top-1 left-7">
+              <span className="block w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-[notification-pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]"></span>
+            </span>
             {/* Modal Dropdown - always directly below the notification */}
             {open && (
               <div className="absolute right-0" style={{ marginTop: "14rem" }}>

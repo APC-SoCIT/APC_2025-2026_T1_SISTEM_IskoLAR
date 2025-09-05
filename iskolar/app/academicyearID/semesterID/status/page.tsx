@@ -62,7 +62,9 @@ export default function ApplicationStatusPage() {
                 height={15}
               />
             </span>
-            <span className="absolute top-1 left-7 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+            <span className="absolute top-1 left-7">
+              <span className="block w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white notification-pulse"></span>
+            </span>
             {/* Modal Dropdown */}
             {open && (
               <div className="absolute right-0" style={{ marginTop: "14rem" }}>
@@ -174,38 +176,114 @@ export default function ApplicationStatusPage() {
             <span className="font-semibold text-gray-700 text-lg">Application Details</span>
           </div>
           <hr className="border-gray-200 mb-4" />
-          <div className="grid grid-cols-2 gap-4 mb-2">
+          
+          {/* Personal Information */}
+          <div className="space-y-6">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Scholar ID</label>
-              <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="XXXX-XXXX" readOnly />
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Personal Information</h3>
+              <div className="grid grid-cols-3 gap-4 mb-2">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Last Name</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Mones" readOnly />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">First Name</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Hazel Ann" readOnly />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Middle Name</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Besafez" readOnly />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mb-2">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Email Address</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="hazel.mones@example.com" readOnly />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Contact Number</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="+639123456789" readOnly />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mb-2">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Gender</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Female" readOnly />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Birthdate</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="January 15, 2000" readOnly />
+                </div>
+              </div>
             </div>
+
+            {/* Address Information */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Email Address</label>
-              <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="example@gmail.com" readOnly />
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Address Information</h3>
+              <div className="grid grid-cols-1 gap-4 mb-2">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Present Address</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="123 Main Street, Makati City, Metro Manila" readOnly />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Permanent Address</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="456 Secondary Road, Quezon City, Metro Manila" readOnly />
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="grid grid-cols-3 gap-4 mb-2">
+
+            {/* Educational Background */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Last Name</label>
-              <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Mones" readOnly />
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Educational Background</h3>
+              <div className="grid grid-cols-1 gap-4 mb-2">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Junior High School</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="St. Mary's Junior High School - 123 Education Ave, Manila" readOnly />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Senior High School</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="St. Mary's Senior High School - 123 Education Ave, Manila" readOnly />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Current College</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Asia Pacific College - 3 Humabon Place, Makati" readOnly />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mb-2">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Course</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="BS Information Technology" readOnly />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Year Level</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="3rd Year" readOnly />
+                </div>
+              </div>
             </div>
+
+            {/* Guardian Information */}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">First Name</label>
-              <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Hazel Ann" readOnly />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Middle Name</label>
-              <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Besafez" readOnly />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 mb-2">
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Contact Number</label>
-              <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="+639XXXXXXXXX" readOnly />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Present Address</label>
-              <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Sample Address" readOnly />
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Guardian Information</h3>
+              <div className="grid grid-cols-2 gap-4 mb-2">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Mother&apos;s Maiden Name</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Maria Santos" readOnly />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Mother&apos;s Occupation</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Teacher" readOnly />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Father&apos;s Name</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Juan Mones" readOnly />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Father&apos;s Occupation</label>
+                  <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Engineer" readOnly />
+                </div>
+              </div>
             </div>
           </div>
         </div>
