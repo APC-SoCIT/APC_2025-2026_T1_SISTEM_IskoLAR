@@ -1,8 +1,8 @@
 "use client";
-
+ 
 import Link from "next/link";
 import { useState } from "react";
-
+ 
 export default function SignUpPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -11,7 +11,7 @@ export default function SignUpPage() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [agree, setAgree] = useState(false);
     const [showModal, setShowModal] = useState(false);
-
+ 
     // New fields
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
@@ -19,7 +19,64 @@ export default function SignUpPage() {
     const [gender, setGender] = useState("");
     const [mobile, setMobile] = useState("");
     const [birthday, setBirthday] = useState("");
-
+    const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+ 
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+       
+        // Form validation
+        if (!firstName || !lastName || !email || !password || !confirmPassword || !birthday || !gender || !mobile) {
+            setError("Please fill in all required fields");
+            return;
+        }
+ 
+        if (password !== confirmPassword) {
+            setError("Passwords do not match");
+            return;
+        }
+ 
+        if (!agree) {
+            setError("Please agree to the Data Privacy Act");
+            return;
+        }
+ 
+        setIsLoading(true);
+        setError("");
+ 
+        try {
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    firstName,
+                    lastName,
+                    middleName,
+                    gender,
+                    birthdate: birthday,
+                    email,
+                    password,
+                    mobile,
+                }),
+            });
+ 
+            const data = await response.json();
+ 
+            if (!response.ok) {
+                throw new Error(data.error || 'Registration failed');
+            }
+ 
+            // Registration successful
+            window.location.href = '/auth/sign-in'; // Redirect to sign in page
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Registration failed');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+ 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#e3f0ff] via-[#f5f7fa] to-[#e3f0ff] py-16">
             {/* Top Spacer */}
@@ -255,12 +312,20 @@ export default function SignUpPage() {
                             </span>
                         </label>
                     </div>
+                    {/* Error Message */}
+                    {error && (
+                        <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+                            {error}
+                        </div>
+                    )}
                     {/* Register Button */}
                     <button
                         type="submit"
-                        className="cursor-pointer w-full py-2 rounded-lg bg-gradient-to-r from-[#D32F2F] to-[#B71C1C] text-white font-semibold text-lg shadow hover:opacity-90 transition"
+                        disabled={isLoading}
+                        onClick={handleSubmit}
+                        className={`cursor-pointer w-full py-2 rounded-lg bg-gradient-to-r from-[#D32F2F] to-[#B71C1C] text-white font-semibold text-lg shadow hover:opacity-90 transition ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                        Register
+                        {isLoading ? 'Registering...' : 'Register'}
                     </button>
                 </form>
                 {/* Modal for Terms and Conditions */}
