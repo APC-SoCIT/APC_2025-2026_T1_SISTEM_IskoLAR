@@ -2,8 +2,40 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function AdminSignInPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      const res = await fetch('/api/admin-auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email_address: email, password }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        setError(result.error || 'Invalid admin credentials');
+        setLoading(false);
+        return;
+      }
+      setSuccess('Sign in successful!');
+  router.push('/admin/dashboard');
+    } catch (err) {
+      setError('Network error');
+    } finally {
+      setLoading(false);
+    }
+  }
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
@@ -16,7 +48,9 @@ export default function AdminSignInPage() {
         <h2 className="text-2xl font-bold mb-1 text-gray-900">Welcome Back</h2>
         <p className="text-gray-500 mb-6">Sign in to your admin account</p>
 
-        <form className="w-full flex flex-col gap-4">
+  <form className="w-full flex flex-col gap-4" onSubmit={handleSubmit}>
+          {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
+          {success && <div className="text-green-600 text-sm mb-2">{success}</div>}
           {/* Email */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
