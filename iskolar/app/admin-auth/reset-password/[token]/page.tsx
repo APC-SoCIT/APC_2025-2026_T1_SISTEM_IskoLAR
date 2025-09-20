@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { use } from 'react';
 
 interface Props {
   params: {
@@ -11,6 +12,16 @@ interface Props {
 
 export default function ResetPasswordPage({ params }: Props) {
   const router = useRouter();
+  // Get token from URL path instead of params
+  const [token, setToken] = useState(params.token);
+
+  useEffect(() => {
+    // If we need to update token from URL, do it after component mounts
+    const pathToken = window.location.pathname.split('/').pop() || '';
+    if (pathToken !== token) {
+      setToken(pathToken);
+    }
+  }, [token]);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -60,7 +71,7 @@ export default function ResetPasswordPage({ params }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token: params.token,
+          token,
           password,
         }),
       });

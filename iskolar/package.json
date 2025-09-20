@@ -13,6 +13,8 @@
     "@sendgrid/mail": "^8.1.6",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.57.4",
+    "@types/bcrypt": "^6.0.0",
+    "bcrypt": "^6.0.0",
     "chart.js": "^4.5.0",
     "next": "15.5.0",
     "react": "19.1.0",
@@ -29,6 +31,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.0",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }

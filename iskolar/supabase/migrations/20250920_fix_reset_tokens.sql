@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS new_password_reset_tokens (
     token VARCHAR(255) NOT NULL UNIQUE,
     admin_id INTEGER REFERENCES admin(admin_id),
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    used_at TIMESTAMP WITH TIME ZONE,
     user_type VARCHAR(10) NOT NULL CHECK (user_type IN ('admin', 'scholar')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

@@ -1,10 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 import { randomBytes } from 'crypto';
 
-// Initialize Supabase client
+// Initialize Supabase client with service role key for admin operations
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!, // Using service role key for admin operations
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
 );
 
 export interface TokenData {
@@ -16,9 +22,9 @@ export async function createResetToken(data: TokenData): Promise<string> {
   // Generate a secure random token
   const token = randomBytes(32).toString('hex');
   
-  // Set expiry to 24 hours from now
+  // Set expiry to 72 hours (3 days) from now to account for time differences
   const expiresAt = new Date();
-  expiresAt.setHours(expiresAt.getHours() + 24);
+  expiresAt.setHours(expiresAt.getHours() + 72);
 
   // Store token in database
   const { error } = await supabase
@@ -39,33 +45,69 @@ export async function createResetToken(data: TokenData): Promise<string> {
 }
 
 export async function validateResetToken(token: string): Promise<TokenData | null> {
-  // Get token from database
-  const { data, error } = await supabase
-    .from('password_reset_tokens')
-    .select('*')
-    .eq('token', token)
-    .gt('expires_at', new Date().toISOString())
-    .single();
+  try {
+    // Get token from database
+    const { data, error } = await supabase
+      .from('password_reset_tokens')
+      .select('*')
+      .eq('token', token)
+      .is('used_at', null) // Check if token hasn't been used
+      .single();
 
-  if (error || !data) {
-    console.error('Error validating reset token:', error);
+    if (error) {
+      console.error('Database error validating reset token:', error);
+      return null;
+    }
+
+    if (!data) {
+      console.error('No token found or token already used');
+      return null;
+    }
+
+    // Check if we have admin_id in the data
+    if (!data.admin_id) {
+      console.error('No admin_id found in token data');
+      return null;
+    }
+
+    // Parse the expiration date
+    const expiresAt = new Date(data.expires_at);
+    const now = new Date();
+
+    // Add a 1-hour buffer to account for timezone differences
+    const bufferMs = 60 * 60 * 1000; // 1 hour in milliseconds
+    if (now.getTime() > (expiresAt.getTime() + bufferMs)) {
+      console.error('Token has expired. Expiry:', expiresAt.toISOString(), 'Current:', now.toISOString());
+      return null;
+    }
+
+    console.log('Token validated successfully for admin_id:', data.admin_id);
+
+    return {
+      userId: data.admin_id,
+      userType: data.user_type as 'admin' | 'scholar',
+    };
+  } catch (err) {
+    console.error('Unexpected error validating token:', err);
     return null;
   }
-
-  return {
-    userId: data.user_id,
-    userType: data.user_type as 'admin' | 'scholar',
-  };
 }
 
 export async function markTokenAsUsed(token: string): Promise<void> {
-  const { error } = await supabase
-    .from('password_reset_tokens')
-    .update({ used_at: new Date().toISOString() })
-    .eq('token', token);
+  try {
+    const { error } = await supabase
+      .from('password_reset_tokens')
+      .update({ used_at: new Date().toISOString() })
+      .eq('token', token);
 
-  if (error) {
-    console.error('Error marking token as used:', error);
-    throw new Error('Failed to update token status');
+    if (error) {
+      console.error('Database error marking token as used:', error);
+      throw new Error('Failed to update token status');
+    }
+
+    console.log('Token marked as used successfully:', token);
+  } catch (err) {
+    console.error('Unexpected error marking token as used:', err);
+    throw err;
   }
 }

@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    // Create Supabase admin client instead of auth client
+    // Create Supabase client
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -64,11 +64,13 @@ export async function POST(request: Request) {
       return NextResponse.json(response);
     }
 
+    console.log('User found, initiating password reset');
+
     console.log('User found, generating reset token');
     
     // Generate reset token using admin_id
     const token = await createResetToken({
-      userId: user.admin_id,  // Pass as number directly
+      userId: user.admin_id,
       userType: 'admin'
     });
 
@@ -86,12 +88,8 @@ export async function POST(request: Request) {
     
     console.log('Email template generated successfully');
 
-    // Send email with detailed error logging
+    // Send email
     try {
-      console.log('Attempting to send email to:', email);
-      console.log('SendGrid API Key exists:', !!process.env.SENDGRID_API_KEY);
-      console.log('Email From:', process.env.EMAIL_FROM);
-
       await sendEmail({
         to: email,
         subject: template.subject,
