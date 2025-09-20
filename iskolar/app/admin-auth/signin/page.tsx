@@ -130,7 +130,7 @@ export default function AdminSignInPage() {
               </span>
               Remember me
             </label>
-            <Link href="#" className="text-sm text-[#FFC107] font-medium hover:underline">
+            <Link href="/admin-auth/reset-password" className="text-sm text-[#FFC107] font-medium hover:underline">
               Forgot Password?
             </Link>
           </div>

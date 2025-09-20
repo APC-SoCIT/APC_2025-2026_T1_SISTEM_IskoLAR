@@ -130,7 +130,7 @@ export default function SignInPage() {
               </span>
               <span className="ml-1">Remember me</span>
             </label>
-            <Link href="#" className="text-sm text-[#FFC107] font-medium hover:underline">
+            <Link href="/auth/reset-password" className="text-sm text-[#FFC107] font-medium hover:underline">
               Forgot Password?
             </Link>
           </div>
