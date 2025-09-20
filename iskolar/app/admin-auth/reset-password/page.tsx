@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
         throw new Error(data.error || 'Failed to send reset email');
       }
 
-      setSuccess('Password reset email sent! Please check your inbox.');
+      setSuccess(data.message || 'If an account exists with this email, a password reset link will be sent.');
     } catch (err: any) {
       setError(err.message || 'Something went wrong');
     } finally {

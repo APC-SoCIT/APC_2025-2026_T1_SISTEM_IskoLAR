@@ -1,6 +1,9 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { sendEmail } from '@/lib/utils/email/sendEmail';
+import { getPasswordResetEmailTemplate } from '@/lib/utils/email/templates';
+import { createResetToken } from '@/lib/utils/tokens';
 
 export async function POST(request: Request) {
   try {
@@ -12,18 +15,53 @@ export async function POST(request: Request) {
 
     const supabase = createRouteHandlerClient({ cookies });
 
-    // Send password reset email through Supabase Auth
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password/confirm`,
-    });
+    // Check if user exists
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .eq('role', 'scholar')
+      .single();
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    // Always return the same message for security
+    const response = {
+      message: 'If an account exists with this email, a password reset link will be sent.'
+    };
+
+    // If user doesn't exist, return generic message
+    if (userError || !user) {
+      return NextResponse.json(response);
     }
 
-    return NextResponse.json({ message: 'Password reset email sent successfully' });
+    // Generate reset token
+    const token = await createResetToken({
+      userId: user.id,
+      userType: 'scholar'
+    });
+
+    // Create reset link
+    const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password/${token}`;
+
+    // Get email template
+    const template = getPasswordResetEmailTemplate({
+      resetLink,
+      userType: 'scholar'
+    });
+
+    // Send email
+    await sendEmail({
+      to: email,
+      subject: template.subject,
+      text: template.text,
+      html: template.html
+    });
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Password reset error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { message: 'If an account exists with this email, a password reset link will be sent.' },
+      { status: 200 }
+    );
   }
 }
