@@ -18,6 +18,7 @@ export default function SignUpPage() {
     const [middleName, setMiddleName] = useState("");
     const [gender, setGender] = useState("");
     const [mobile, setMobile] = useState("");
+    const [birthday, setBirthday] = useState("");
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#e3f0ff] via-[#f5f7fa] to-[#e3f0ff] py-16">
@@ -70,8 +71,21 @@ export default function SignUpPage() {
                             onChange={e => setMiddleName(e.target.value)}
                         />
                     </div>
-                    {/* Gender & Mobile Number in two columns */}
+                    {/* Birthday & Gender in two columns */}
                     <div className="grid grid-cols-2 gap-4">
+                        {/* Birthday */}
+                        <div>
+                            <label htmlFor="birthday" className="block text-sm font-medium text-gray-700 mb-1">
+                                Birthday <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                id="birthday"
+                                type="date"
+                                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
+                                value={birthday}
+                                onChange={e => setBirthday(e.target.value)}
+                            />
+                        </div>
                         {/* Gender */}
                         <div className="relative">
                             <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">
@@ -95,20 +109,20 @@ export default function SignUpPage() {
                                 </svg>
                             </span>
                         </div>
-                        {/* Mobile Number */}
-                        <div>
-                            <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 mb-1">
-                                Mobile Number <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                id="mobile"
-                                type="tel"
-                                placeholder="+639XXXXXXXXX"
-                                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
-                                value={mobile}
-                                onChange={e => setMobile(e.target.value)}
-                            />
-                        </div>
+                    </div>
+                    {/* Mobile Number */}
+                    <div>
+                        <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 mb-1">
+                            Mobile Number <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            id="mobile"
+                            type="tel"
+                            placeholder="+639XXXXXXXXX"
+                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
+                            value={mobile}
+                            onChange={e => setMobile(e.target.value)}
+                        />
                     </div>
                     {/* Email */}
                     <div>
