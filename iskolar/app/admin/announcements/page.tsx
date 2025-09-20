@@ -83,7 +83,7 @@ export default function AnnouncementManagementPage() {
     <div className="space-y-6">
       <header>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-          <div className="mb-4 lg:mb-0"> <h1 className="text-2xl font-bold text-gray-900">Announcement Management</h1> <p className="mt-1 text-sm text-gray-500">Create, edit, and publish updates for users.</p> </div>
+          <div className="mb-4 lg:mb-0"> <h1 className="text-2xl font-bold text-gray-900">Announcement Management</h1> <p className="mt-1 text-sm text-gray-500">Create, edit, and publish announcements for users.</p> </div>
           <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:space-y-0 lg:space-x-4"> <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"> <BellIcon className="h-6 w-6" /> <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span> </button> <button className="flex items-center space-x-3 p-2 hover:bg-gray-100 rounded-lg"> <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center"> <span className="text-white text-sm font-medium">AU</span> </div> <div className="text-left hidden lg:block"> <p className="text-sm font-medium text-gray-900">Admin User</p> <p className="text-xs text-gray-500">Administrator</p> </div> <ChevronDownIcon className="h-5 w-5 text-gray-400" /> </button> <div className="flex"> <button onClick={handleOpenCreateModal} className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"> <MegaphoneIcon className="h-5 w-5 mr-2" /> <span>Create Announcement</span> </button> </div> </div>
         </div>
       </header>
@@ -166,11 +166,40 @@ function ViewAnnouncementModal({ isOpen, onClose, announcement }: { isOpen: bool
 }
 
 function AnnouncementModal({ isOpen, onClose, onSave, announcement }: { isOpen: boolean; onClose: () => void; onSave: (data: Omit<Announcement, 'id'>) => void; announcement: Announcement | null; }) {
-  const [formData, setFormData] = useState({ title: '', content: '', publishDate: '', attachmentUrl: '', });
-  useEffect(() => { if (announcement) { setFormData({ title: announcement.title, content: announcement.content, publishDate: announcement.publishDate, attachmentUrl: announcement.attachmentUrl || '', }); } else { setFormData({ title: '', content: '', publishDate: new Date().toISOString().split('T')[0], attachmentUrl: '', }); } }, [announcement, isOpen]);
+  const [formData, setFormData] = useState<{ title: string; content: string; publishDate: string; attachmentFile: File | null }>({ title: '', content: '', publishDate: '', attachmentFile: null });
+  useEffect(() => {
+    if (announcement) {
+      setFormData({
+        title: announcement.title,
+        content: announcement.content,
+        publishDate: announcement.publishDate,
+        attachmentFile: null // Existing announcements don't have a file
+      });
+    } else {
+      setFormData({ title: '', content: '', publishDate: new Date().toISOString().split('T')[0], attachmentFile: null });
+    }
+  }, [announcement, isOpen]);
   if (!isOpen) return null;
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); onSave({ ...formData, attachmentUrl: formData.attachmentUrl || undefined, }); };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, files } = e.target as HTMLInputElement;
+    if (name === 'attachmentFile' && files) {
+      setFormData(prev => ({ ...prev, attachmentFile: files[0] || null }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({
+      title: formData.title,
+      content: formData.content,
+      publishDate: formData.publishDate,
+      // For demonstration, you can handle the file here. If you want to upload to a server, handle it separately.
+      attachmentUrl: formData.attachmentFile ? formData.attachmentFile.name : undefined,
+      // Optionally, pass the file object as well if needed for upload
+      attachmentFile: formData.attachmentFile || undefined,
+    });
+  };
 
   return (
     <div className="fixed inset-0 backdrop-blur-sm flex justify-center items-center z-50 p-4 transition-opacity">
@@ -183,7 +212,24 @@ function AnnouncementModal({ isOpen, onClose, onSave, announcement }: { isOpen: 
           <div><label htmlFor="title" className="block text-sm font-medium text-gray-700">Title</label><input type="text" name="title" id="title" value={formData.title} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500"/></div>
           <div><label htmlFor="content" className="block text-sm font-medium text-gray-700">Content</label><textarea name="content" id="content" rows={8} value={formData.content} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500"/></div>
           <div><label htmlFor="publishDate" className="block text-sm font-medium text-gray-700">Publish Date</label><input type="date" name="publishDate" id="publishDate" value={formData.publishDate} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500"/></div>
-          <div><label htmlFor="attachmentUrl" className="block text-sm font-medium text-gray-700">Attachment URL (Optional)</label><input type="url" name="attachmentUrl" id="attachmentUrl" placeholder="https://example.com/document.pdf" value={formData.attachmentUrl} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500"/></div>
+          <div>
+            <label htmlFor="attachmentFile" className="block text-sm font-medium text-gray-700 mb-1">Attachment (Optional)</label>
+            <div className="relative">
+              <input
+                type="file"
+                name="attachmentFile"
+                id="attachmentFile"
+                accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt"
+                onChange={handleChange}
+                className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-gray-300 rounded-md shadow-sm p-0 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+            <div className="mt-2 text-sm text-gray-500">
+              {formData.attachmentFile instanceof File
+                ? `Selected: ${formData.attachmentFile.name}`
+                : 'No file chosen'}
+            </div>
+          </div>
         </div>
   <div className="flex justify-end space-x-3 p-6 bg-gray-50 border-t border-gray-200 rounded-b-lg">
           <button type="button" onClick={onClose} className="px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
