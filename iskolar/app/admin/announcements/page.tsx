@@ -196,8 +196,6 @@ function AnnouncementModal({ isOpen, onClose, onSave, announcement }: { isOpen: 
       publishDate: formData.publishDate,
       // For demonstration, you can handle the file here. If you want to upload to a server, handle it separately.
       attachmentUrl: formData.attachmentFile ? formData.attachmentFile.name : undefined,
-      // Optionally, pass the file object as well if needed for upload
-      attachmentFile: formData.attachmentFile || undefined,
     });
   };
 
