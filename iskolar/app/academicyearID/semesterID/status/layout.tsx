@@ -3,11 +3,11 @@ import "@/app/globals.css";
 import ScholarSidebar from "@/app/components/ScholarSideBar";
 
 export const metadata: Metadata = {
-  title: "Profile | IskoLAR",
-  description: "View and edit your profile information on IskoLAR.",
+  title: "Status | IskoLAR",
+  description: "View your application status on IskoLAR.",
 };
 
-export default function ProfileLayout({
+export default function ApplicationLayout({
   children,
 }: {
   children: React.ReactNode;

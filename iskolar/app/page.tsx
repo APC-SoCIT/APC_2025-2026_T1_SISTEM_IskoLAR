@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#ffffff] py-8">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#e3f0ff] via-[#f5f7fa] to-[#e3f0ff] py-8">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center relative" style={{ boxShadow: "0 8px 32px 0 rgba(60,60,60,0.12)" }}>
         <Image
           src="/IskoLAR.png"
