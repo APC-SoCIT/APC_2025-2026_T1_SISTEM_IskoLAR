@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { ReactNode } from 'react';
 
 type Status = 'Pending' | 'Approved' | 'Rejected';
@@ -108,15 +107,6 @@ const StatusPill = ({ status }: { status: Status }) => {
                      ${config.bg} ${config.text} border ${config.border}
                      transition-all duration-150 group-hover:shadow-sm`}>
       {config.icon}
-      {status}
-    </span>
-  );
-
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
-                     ${statusConfig.bg} ${statusConfig.text} border ${statusConfig.border}
-                     transition-all duration-150 group-hover:shadow-sm`}>
-      {statusConfig.icon}
       {status}
     </span>
   );

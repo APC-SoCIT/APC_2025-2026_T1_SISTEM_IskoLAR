@@ -2,10 +2,21 @@
 
 import React from 'react';
 
+interface Filters {
+  searchQuery: string;
+  selectedStatuses: string[];
+  selectedSchoolType: string;
+  selectedBarangay: string;
+  dateRange: {
+    from: string;
+    to: string;
+  };
+}
+
 interface FilterModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onApply: (filters: any) => void;
+  onApply: (filters: Filters) => void;
   onReset: () => void;
   counts: {
     pending: number;
