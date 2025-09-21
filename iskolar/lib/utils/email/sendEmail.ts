@@ -49,6 +49,12 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
     const result = await sgMail.send(msg);
     return { success: true, response: result[0] };
   } catch (error: any) {
+    console.error('SendGrid Error:', {
+      error: error.message,
+      response: error.response?.body,
+      code: error.code
+    });
+    
     const errorMessage = error.response?.body?.errors?.[0]?.message || error.message;
     return { 
       success: false, 

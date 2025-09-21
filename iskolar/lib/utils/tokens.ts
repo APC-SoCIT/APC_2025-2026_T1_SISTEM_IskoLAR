@@ -14,8 +14,8 @@ const supabase = createClient(
 );
 
 export interface TokenData {
-  userId: number | string;  // admin_id is a number
-  userType: 'admin' | 'scholar';
+  userId: number | string;  // user_id
+  userType: 'admin' | 'user' | 'finance' | 'reviewer';  // All possible user types
 }
 
 export async function createResetToken(data: TokenData): Promise<string> {
@@ -26,15 +26,33 @@ export async function createResetToken(data: TokenData): Promise<string> {
   const expiresAt = new Date();
   expiresAt.setHours(expiresAt.getHours() + 72);
 
+  // Map the user type to the database format
+  // Map to valid database user_type values (only 'admin' and 'scholar' are allowed)
+  const dbUserType = data.userType === 'admin' ? 'admin' : 'scholar';
+
+  // Prepare the data based on user type
+  const insertData = data.userType === 'admin' 
+    ? {
+        admin_id: parseInt(data.userId.toString()), // Convert to integer for admin
+        user_id: null,
+        token,
+        user_type: dbUserType,
+        expires_at: expiresAt.toISOString(),
+        created_at: new Date().toISOString()
+      }
+    : {
+        admin_id: null,
+        user_id: data.userId, // Keep as UUID for users
+        token,
+        user_type: dbUserType,
+        expires_at: expiresAt.toISOString(),
+        created_at: new Date().toISOString()
+      };
+
   // Store token in database
   const { error } = await supabase
     .from('password_reset_tokens')
-    .insert({
-      admin_id: typeof data.userId === 'string' ? parseInt(data.userId) : data.userId,  // Ensure it's a number
-      token,
-      user_type: data.userType,
-      expires_at: expiresAt.toISOString(),
-    });
+    .insert(insertData);
 
   if (error) {
     console.error('Error creating reset token:', error);
@@ -64,9 +82,10 @@ export async function validateResetToken(token: string): Promise<TokenData | nul
       return null;
     }
 
-    // Check if we have admin_id in the data
-    if (!data.admin_id) {
-      console.error('No admin_id found in token data');
+    // Check if we have user_id in the data
+    // Check if we have either admin_id or user_id in the data
+    if (!data.admin_id && !data.user_id) {
+      console.error('No admin_id or user_id found in token data');
       return null;
     }
 
@@ -81,11 +100,16 @@ export async function validateResetToken(token: string): Promise<TokenData | nul
       return null;
     }
 
-    console.log('Token validated successfully for admin_id:', data.admin_id);
+    // Get the appropriate ID based on user type
+    const id = data.admin_id || data.user_id;
+    console.log(`Token validated successfully for ${data.admin_id ? 'admin_id' : 'user_id'}:`, id);
 
+    // Map database user type back to API user type
+    const apiUserType = data.user_type === 'admin' ? 'admin' : 'user';
+    
     return {
-      userId: data.admin_id,
-      userType: data.user_type as 'admin' | 'scholar',
+      userId: id,
+      userType: apiUserType as 'admin' | 'user' | 'finance' | 'reviewer',
     };
   } catch (err) {
     console.error('Unexpected error validating token:', err);

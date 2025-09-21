@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { validatePassword, validatePasswordMatch } from '@/lib/utils/password-validation';
+import { validatePassword } from '@/lib/utils/password-validation';
 
 interface Props {
   params: {
@@ -10,8 +10,19 @@ interface Props {
   };
 }
 
-export default function ScholarResetPasswordPage({ params }: Props) {
+export default function ResetPasswordPage({ params }: Props) {
   const router = useRouter();
+  // Get token from URL path instead of params
+  const [token, setToken] = useState(params.token);
+
+  useEffect(() => {
+    // If we need to update token from URL, do it after component mounts
+    const pathToken = window.location.pathname.split('/').pop() || '';
+    if (pathToken !== token) {
+      setToken(pathToken);
+    }
+  }, [token]);
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,9 +44,8 @@ export default function ScholarResetPasswordPage({ params }: Props) {
     }
 
     // Check if passwords match
-    const matchValidation = validatePasswordMatch(password, confirmPassword);
-    if (!matchValidation.isValid) {
-      setError(matchValidation.error);
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
       return;
     }
 
@@ -46,7 +56,7 @@ export default function ScholarResetPasswordPage({ params }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token: params.token,
+          token,
           password,
         }),
       });
