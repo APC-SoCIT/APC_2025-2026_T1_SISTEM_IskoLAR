@@ -34,7 +34,12 @@ const UserPill = ({ type, value }: { type: 'role' | 'status', value: UserRole | 
     type === 'role'
       ? configs.role[value as UserRole]
       : configs.status[value as UserStatus];
-  return (<span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${config.bg} ${config.text} border ${config.border}`}><span className={`h-1.5 w-1.5 rounded-full ${type === 'status' ? (value === 'Active' ? 'bg-green-500' : 'bg-red-500') : (value === 'Admin' ? 'bg-blue-500' : value === 'Scholar' ? 'bg-green-500' : 'bg-purple-500')}`}></span>{value}</span>);
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${config.bg} ${config.text} border ${config.border}`}>
+      <span className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${type === 'status' ? (value === 'Active' ? 'bg-green-500' : 'bg-red-500') : (value === 'Admin' ? 'bg-blue-500' : value === 'Scholar' ? 'bg-green-500' : 'bg-purple-500')}`}></span>
+      {value}
+    </span>
+  );
 };
 
 const formatLastLogin = (dateString: string) => {
