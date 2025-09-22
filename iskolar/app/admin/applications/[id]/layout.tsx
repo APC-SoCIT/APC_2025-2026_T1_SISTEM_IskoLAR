@@ -4,7 +4,25 @@ import React from 'react';
 import ApplicationNavbar from './components/ApplicationNavbar';
 
 // Shared mock data
-export const applicationData: any = {
+export type Applicant = {
+  name: string;
+  program: string;
+  school: string;
+  course: string;
+  gpa: string;
+  barangay: string;
+  submissionDate: string;
+  contactNumber: string;
+  summary: string;
+};
+
+export type ApplicationData = {
+  id: string;
+  status: 'Pending' | 'Approved' | 'Denied';
+  applicant: Applicant;
+};
+
+export const applicationData: ApplicationData = {
   id: 'ISKOLAR-2025-001',
   status: 'Pending',
   applicant: {

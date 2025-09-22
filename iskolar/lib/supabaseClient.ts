@@ -9,4 +9,5 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
   }
+  
 })
