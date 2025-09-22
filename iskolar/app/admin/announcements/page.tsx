@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { BellIcon, ChevronDownIcon, MegaphoneIcon, XMarkIcon } from '@heroicons/react/24/solid';
