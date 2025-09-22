@@ -220,14 +220,38 @@
               {/* Address Information */}
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Address Information</h3>
-                <div className="grid grid-cols-1 gap-4 mb-2">
+                <div className="grid grid-cols-2 gap-4 mb-3">
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Present Address</label>
-                    <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="123 Main Street, Makati City, Metro Manila" readOnly />
+                    <label className="block text-xs text-gray-500 mb-1">Address Line 1 (House/Unit/Building + Street)</label>
+                    <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="123 Main Street, Unit 4A" readOnly />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Permanent Address</label>
-                    <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="456 Secondary Road, Quezon City, Metro Manila" readOnly />
+                    <label className="block text-xs text-gray-500 mb-1">Address Line 2 (Subdivision/Village/Purok/Sitio) <span className="text-gray-400">(optional)</span></label>
+                    <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Sample Subdivision" readOnly />
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 gap-4 mb-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Barangay</label>
+                    <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Sample Barangay" readOnly />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">City/Municipality</label>
+                    <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Makati City" readOnly />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Province</label>
+                    <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="Metro Manila" readOnly />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">ZIP Code</label>
+                    <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="1234" readOnly />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Region <span className="text-gray-400">(auto-derived)</span></label>
+                    <input className="w-full bg-gray-100 rounded px-3 py-2 text-sm" value="NCR" readOnly />
                   </div>
                 </div>
               </div>

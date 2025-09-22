@@ -18,8 +18,51 @@ export default function ApplicationPage() {
   const [contactNumber, setContactNumber] = useState("");
   const [gender, setGender] = useState("");
   const [birthdate, setBirthdate] = useState("");
-  const [presentAddress, setPresentAddress] = useState("");
-  const [permanentAddress, setPermanentAddress] = useState("");
+  // Address states
+  const [addressLine1, setAddressLine1] = useState("");
+  const [addressLine2, setAddressLine2] = useState("");
+  const [barangay, setBarangay] = useState("");
+  const [city, setCity] = useState("");
+  const [province, setProvince] = useState("");
+  const [zipCode, setZipCode] = useState("");
+  const [region, setRegion] = useState("");
+
+  // Dropdown data for address fields
+  const provincesData = {
+    "Metro Manila": ["Makati City", "Quezon City", "Manila", "Pasig City", "Taguig City", "Marikina City", "Mandaluyong City", "San Juan City", "Caloocan City", "Malabon City", "Navotas City", "Las Piñas City", "Parañaque City", "Muntinlupa City", "Pateros", "Valenzuela City"],
+    "Laguna": ["Calamba City", "San Pablo City", "Biñan City", "Santa Rosa City", "Los Baños", "Cabuyao", "San Pedro", "Alaminos", "Bay", "Calauan", "Cavinti", "Famy", "Kalayaan", "Liliw", "Luisiana", "Lumban", "Mabitac", "Magdalena", "Majayjay", "Nagcarlan", "Paete", "Pagsanjan", "Pakil", "Pangil", "Pila", "Rizal", "Santa Cruz", "Santa Maria", "Siniloan", "Victoria"],
+    "Cavite": ["Bacoor", "Cavite City", "Dasmariñas", "Imus", "Tagaytay City", "Trece Martires City", "Alfonso", "Amadeo", "Carmona", "General Mariano Alvarez", "General Emilio Aguinaldo", "General Trias", "Indang", "Kawit", "Magallanes", "Maragondon", "Mendez", "Naic", "Noveleta", "Rosario", "Silang", "Tanza", "Ternate"],
+    "Rizal": ["Antipolo City", "Taytay", "Cainta", "Angono", "Baras", "Binangonan", "Cardona", "Jalajala", "Morong", "Pililla", "Rodriguez", "San Mateo", "Tanay", "Teresa"],
+    "Bulacan": ["Malolos City", "Meycauayan City", "San Jose del Monte City", "Angat", "Balagtas", "Baliuag", "Bocaue", "Bulakan", "Bustos", "Calumpit", "Doña Remedios Trinidad", "Guiguinto", "Hagonoy", "Marilao", "Norzagaray", "Obando", "Pandi", "Paombong", "Plaridel", "Pulilan", "San Ildefonso", "San Miguel", "San Rafael", "Santa Maria"],
+    "Pampanga": ["Angeles City", "San Fernando City", "Apalit", "Arayat", "Bacolor", "Candaba", "Floridablanca", "Guagua", "Lubao", "Mabalacat", "Macabebe", "Magalang", "Masantol", "Mexico", "Minalin", "Porac", "San Luis", "San Simon", "Santa Ana", "Santa Rita", "Santo Tomas", "Sasmuan"],
+    "Batangas": ["Batangas City", "Lipa City", "Tanauan City", "Agoncillo", "Alitagtag", "Balayan", "Balete", "Bauan", "Calaca", "Calatagan", "Cuenca", "Ibaan", "Laurel", "Lemery", "Lian", "Lobo", "Mabini", "Malvar", "Mataasnakahoy", "Nasugbu", "Padre Garcia", "Rosario", "San Jose", "San Juan", "San Luis", "San Nicolas", "San Pascual", "Santa Teresita", "Santo Tomas", "Taal", "Talisay", "Taysan", "Tingloy", "Tuy"]
+  };
+
+  const regionsData = {
+    "Metro Manila": "NCR",
+    "Laguna": "CALABARZON",
+    "Cavite": "CALABARZON", 
+    "Rizal": "CALABARZON",
+    "Bulacan": "Central Luzon",
+    "Pampanga": "Central Luzon",
+    "Batangas": "CALABARZON"
+  };
+
+  // Helper function to get cities based on province
+  const getCitiesByProvince = (province: string) => {
+    return provincesData[province as keyof typeof provincesData] || [];
+  };
+
+  // Helper function to get region by province
+  const getRegionByProvince = (province: string) => {
+    return regionsData[province as keyof typeof regionsData] || "";
+  };
+
+  // Validation functions
+  const validateZipCode = (zipCode: string) => {
+    return /^\d{4}$/.test(zipCode);
+  };
+
   const [juniorHighName, setJuniorHighName] = useState("");
   const [juniorHighAddress, setJuniorHighAddress] = useState("");
   const [seniorHighName, setSeniorHighName] = useState("");
@@ -200,14 +243,66 @@ export default function ApplicationPage() {
 
                 {/* Address */}
                 <div className="mt-6 mb-2 font-semibold text-gray-700">Address</div>
-                <div className="flex flex-col gap-4 mb-2">
+                <div className="grid grid-cols-2 gap-4 mb-3">
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Present Address <span className="text-red-500">*</span></label>
-                    <input required className={inputClassName} value={presentAddress} onChange={e => setPresentAddress(e.target.value)} />
+                    <label className="block text-xs text-gray-500 mb-1">Address Line 1 (House/Unit/Building + Street) <span className="text-red-500">*</span></label>
+                    <input required className={inputClassName} value={addressLine1} onChange={e => setAddressLine1(e.target.value)} placeholder="123 Main Street, Unit 4A" />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Permanent Address <span className="text-red-500">*</span></label>
-                    <input required className={inputClassName} value={permanentAddress} onChange={e => setPermanentAddress(e.target.value)} />
+                    <label className="block text-xs text-gray-500 mb-1">Address Line 2 (Subdivision/Village/Purok/Sitio) <span className="text-gray-400">(optional)</span></label>
+                    <input className={inputClassName} value={addressLine2} onChange={e => setAddressLine2(e.target.value)} placeholder="Sample Subdivision" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 gap-4 mb-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Barangay <span className="text-red-500">*</span></label>
+                    <input required className={inputClassName} value={barangay} onChange={e => setBarangay(e.target.value)} placeholder="Sample Barangay" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">City/Municipality <span className="text-red-500">*</span></label>
+                    <select required className={inputClassName} value={city} onChange={e => {
+                      setCity(e.target.value);
+                      const region = getRegionByProvince(province);
+                      setRegion(region);
+                    }}>
+                      <option value="">Select City</option>
+                      {getCitiesByProvince(province).map(cityOption => (
+                        <option key={cityOption} value={cityOption}>{cityOption}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Province <span className="text-red-500">*</span></label>
+                    <select required className={inputClassName} value={province} onChange={e => {
+                      setProvince(e.target.value);
+                      const cities = getCitiesByProvince(e.target.value);
+                      if (cities.length > 0) {
+                        setCity(cities[0]);
+                      }
+                      const region = getRegionByProvince(e.target.value);
+                      setRegion(region);
+                    }}>
+                      <option value="">Select Province</option>
+                      {Object.keys(provincesData).map(provinceOption => (
+                        <option key={provinceOption} value={provinceOption}>{provinceOption}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">ZIP Code <span className="text-red-500">*</span></label>
+                    <input required className={inputClassName} value={zipCode} onChange={e => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                      setZipCode(value);
+                    }} placeholder="1234" maxLength={4} />
+                    {zipCode && !validateZipCode(zipCode) && (
+                      <p className="text-xs text-red-500 mt-1">ZIP code must be exactly 4 digits</p>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Region <span className="text-gray-400">(auto-derived)</span></label>
+                    <input className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-gray-100" value={region} readOnly />
                   </div>
                 </div>
 
