@@ -14,6 +14,59 @@ export default function ProfilePage() {
   const [gender, setGender] = useState("Female");
   const [birthdate, setBirthdate] = useState("04/08/2004");
 
+  // Address states
+  const [addressLine1, setAddressLine1] = useState("123 Sample Street");
+  const [addressLine2, setAddressLine2] = useState("Sample Subdivision");
+  const [barangay, setBarangay] = useState("Sample Barangay");
+  const [city, setCity] = useState("Makati City");
+  const [province, setProvince] = useState("Metro Manila");
+  const [zipCode, setZipCode] = useState("1234");
+  const [region, setRegion] = useState("NCR");
+
+  // Dropdown data for address fields
+  const provincesData = {
+    "Metro Manila": ["Makati City", "Quezon City", "Manila", "Pasig City", "Taguig City", "Marikina City", "Mandaluyong City", "San Juan City", "Caloocan City", "Malabon City", "Navotas City", "Las Piñas City", "Parañaque City", "Muntinlupa City", "Pateros", "Valenzuela City"],
+    "Laguna": ["Calamba City", "San Pablo City", "Biñan City", "Santa Rosa City", "Los Baños", "Cabuyao", "San Pedro", "Alaminos", "Bay", "Calauan", "Cavinti", "Famy", "Kalayaan", "Liliw", "Luisiana", "Lumban", "Mabitac", "Magdalena", "Majayjay", "Nagcarlan", "Paete", "Pagsanjan", "Pakil", "Pangil", "Pila", "Rizal", "Santa Cruz", "Santa Maria", "Siniloan", "Victoria"],
+    "Cavite": ["Bacoor", "Cavite City", "Dasmariñas", "Imus", "Tagaytay City", "Trece Martires City", "Alfonso", "Amadeo", "Carmona", "General Mariano Alvarez", "General Emilio Aguinaldo", "General Trias", "Indang", "Kawit", "Magallanes", "Maragondon", "Mendez", "Naic", "Noveleta", "Rosario", "Silang", "Tanza", "Ternate"],
+    "Rizal": ["Antipolo City", "Taytay", "Cainta", "Angono", "Baras", "Binangonan", "Cardona", "Jalajala", "Morong", "Pililla", "Rodriguez", "San Mateo", "Tanay", "Teresa"],
+    "Bulacan": ["Malolos City", "Meycauayan City", "San Jose del Monte City", "Angat", "Balagtas", "Baliuag", "Bocaue", "Bulakan", "Bustos", "Calumpit", "Doña Remedios Trinidad", "Guiguinto", "Hagonoy", "Marilao", "Norzagaray", "Obando", "Pandi", "Paombong", "Plaridel", "Pulilan", "San Ildefonso", "San Miguel", "San Rafael", "Santa Maria"],
+    "Pampanga": ["Angeles City", "San Fernando City", "Apalit", "Arayat", "Bacolor", "Candaba", "Floridablanca", "Guagua", "Lubao", "Mabalacat", "Macabebe", "Magalang", "Masantol", "Mexico", "Minalin", "Porac", "San Luis", "San Simon", "Santa Ana", "Santa Rita", "Santo Tomas", "Sasmuan"],
+    "Batangas": ["Batangas City", "Lipa City", "Tanauan City", "Agoncillo", "Alitagtag", "Balayan", "Balete", "Bauan", "Calaca", "Calatagan", "Cuenca", "Ibaan", "Laurel", "Lemery", "Lian", "Lobo", "Mabini", "Malvar", "Mataasnakahoy", "Nasugbu", "Padre Garcia", "Rosario", "San Jose", "San Juan", "San Luis", "San Nicolas", "San Pascual", "Santa Teresita", "Santo Tomas", "Taal", "Talisay", "Taysan", "Tingloy", "Tuy"]
+  };
+
+  const regionsData = {
+    "Metro Manila": "NCR",
+    "Laguna": "CALABARZON",
+    "Cavite": "CALABARZON", 
+    "Rizal": "CALABARZON",
+    "Bulacan": "Central Luzon",
+    "Pampanga": "Central Luzon",
+    "Batangas": "CALABARZON"
+  };
+
+  // Helper function to get cities based on province
+  const getCitiesByProvince = (province: string) => {
+    return provincesData[province as keyof typeof provincesData] || [];
+  };
+
+  // Helper function to get region by province
+  const getRegionByProvince = (province: string) => {
+    return regionsData[province as keyof typeof regionsData] || "";
+  };
+
+  // Validation functions
+  const validateZipCode = (zipCode: string) => {
+    return /^\d{4}$/.test(zipCode);
+  };
+
+  const getZipCodeValidationMessage = (zipCode: string) => {
+    if (!zipCode) return "";
+    if (!validateZipCode(zipCode)) {
+      return "ZIP code must be exactly 4 digits";
+    }
+    return "";
+  };
+
   // Add state for each document file
   const [, setPsaFile] = useState<File | null>(null);
   const [psaFileName, setPsaFileName] = useState("psabirthcert.pdf");
@@ -341,21 +394,103 @@ export default function ProfilePage() {
               <span className="font-semibold text-gray-700 text-lg">Address</span>
             </div>
             <hr className="border-gray-200 mb-4" />
-            <div className="grid grid-cols-2 gap-4">
+            
+            <div className="grid grid-cols-2 gap-4 mb-3">
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Present Address</label>
+                <label className="block text-xs text-gray-500 mb-1">Address Line 1 (House/Unit/Building + Street)</label>
                 <input
                   className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
-                  value="Mones"
+                  value={addressLine1}
                   readOnly={!isEdit}
+                  onChange={e => setAddressLine1(e.target.value)}
+                  placeholder="123 Main Street, Unit 4A"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Permanent Address</label>
+                <label className="block text-xs text-gray-500 mb-1">Address Line 2 (Subdivision/Village/Purok/Sitio) <span className="text-gray-400">(optional)</span></label>
                 <input
                   className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
-                  value="Female"
+                  value={addressLine2}
                   readOnly={!isEdit}
+                  onChange={e => setAddressLine2(e.target.value)}
+                  placeholder="Sample Subdivision"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-4 mb-3">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Barangay</label>
+                <input
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value={barangay}
+                  readOnly={!isEdit}
+                  onChange={e => setBarangay(e.target.value)}
+                  placeholder="Sample Barangay"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">City/Municipality</label>
+                <select
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value={city}
+                  disabled={!isEdit}
+                  onChange={e => {
+                    setCity(e.target.value);
+                    const region = getRegionByProvince(province);
+                    setRegion(region);
+                  }}
+                >
+                  {getCitiesByProvince(province).map(cityOption => (
+                    <option key={cityOption} value={cityOption}>{cityOption}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Province</label>
+                <select
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value={province}
+                  disabled={!isEdit}
+                  onChange={e => {
+                    setProvince(e.target.value);
+                    const cities = getCitiesByProvince(e.target.value);
+                    if (cities.length > 0) {
+                      setCity(cities[0]);
+                    }
+                    const region = getRegionByProvince(e.target.value);
+                    setRegion(region);
+                  }}
+                >
+                  {Object.keys(provincesData).map(provinceOption => (
+                    <option key={provinceOption} value={provinceOption}>{provinceOption}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">ZIP Code</label>
+                <input
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value={zipCode}
+                  readOnly={!isEdit}
+                  onChange={e => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                    setZipCode(value);
+                  }}
+                  placeholder="1234"
+                  maxLength={4}
+                />
+                {isEdit && getZipCodeValidationMessage(zipCode) && (
+                  <p className="text-xs text-red-500 mt-1">{getZipCodeValidationMessage(zipCode)}</p>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Region <span className="text-gray-400">(auto-derived)</span></label>
+                <input
+                  className="w-full bg-gray-100 rounded px-3 py-2 text-sm"
+                  value={region}
+                  readOnly
                 />
               </div>
             </div>
