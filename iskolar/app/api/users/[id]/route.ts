@@ -18,7 +18,7 @@ export async function PATCH(
     const { error } = await supabaseAdmin
       .from('users')
       .update({ status: status })
-      .eq('user_id', id);
+      .eq('user_id', id); // Use user_id
 
     if (error) throw error;
     return NextResponse.json({ message: 'User status updated successfully' });
@@ -39,7 +39,11 @@ export async function DELETE(
     
     // This command deletes the user from Supabase Authentication
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(id);
-    if (authError) throw authError;
+
+    // FIX: You must check for an error here.
+    if (authError) {
+      throw new Error(`Supabase Auth Error: ${authError.message}`);
+    }
 
     // The user will be automatically deleted from your 'users' table
     // if its foreign key has ON DELETE CASCADE. This is a good safety net:

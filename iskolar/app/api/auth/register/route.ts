@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
     const { data: insertData, error: insertError } = await supabaseAdmin
       .from('users')
       .insert({
+        user_id: authData.user.id, // <-- FIX: Use the ID from the auth user
         last_name: lastName,
         first_name: firstName,
         middle_name: middleName || null,
