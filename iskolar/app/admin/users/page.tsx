@@ -268,41 +268,89 @@ function UserFilterModal({ isOpen, onClose, onApply, onReset, initialFilters, co
   const toggleCheckbox = <T extends string>(list: T[], setList: React.Dispatch<React.SetStateAction<T[]>>, value: T) => { setList((current: T[]) => current.includes(value) ? current.filter(item => item !== value) : [...current, value]); };
 
   return (
-    <div className="fixed inset-0 bg-black/25 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-full max-w-md bg-white rounded-lg shadow-xl">
-        <div className="flex items-center justify-between border-b pb-4"><h3 className="text-xl font-semibold text-gray-900">Filter Users</h3><button onClick={onClose} className="text-gray-400 hover:text-gray-500"><svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button></div>
-        <div className="space-y-6 mt-4">
+    <div className="fixed inset-0 bg-gray-900/50 overflow-y-auto flex justify-center items-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between p-6 border-b">
+          <h3 className="text-2xl font-bold text-gray-900">Filter Users</h3>
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-full">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div className="p-6 flex-grow overflow-y-auto space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">User Role</label>
-            <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">User Role Filter</label>
+            <div className="space-y-3">
               {(['Admin', 'User'] as UserRole[]).map(role => {
                 const roleColors = { Admin: 'bg-blue-50 text-blue-700 border-blue-200', User: 'bg-purple-50 text-purple-700 border-purple-200' };
-                return (<label key={role} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50"><div className="flex items-center justify-start w-full"><input type="checkbox" checked={selectedRoles.includes(role)} onChange={() => toggleCheckbox(selectedRoles, setSelectedRoles, role)} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 accent-blue-600 flex-shrink-0 mr-3"/><span className="text-sm font-medium text-gray-900">{role}</span></div><span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${roleColors[role]}`}>{counts.roles[role]}</span></label>);
+                return (
+                  <label key={role} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center justify-start w-full">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedRoles.includes(role)} 
+                        onChange={() => toggleCheckbox(selectedRoles, setSelectedRoles, role)} 
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 accent-blue-600 flex-shrink-0 mr-3"
+                      />
+                      <span className="text-sm font-medium text-gray-900">{role}</span>
+                    </div>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${roleColors[role]}`}>
+                      {counts.roles[role]}
+                    </span>
+                  </label>
+                );
               })}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Account Status</label>
-            <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">Account Status Filter</label>
+            <div className="space-y-3">
               {(['Approved', 'Pending', 'Rejected'] as UserStatus[]).map(status => {
                 const statusColors = { Approved: 'bg-green-50 text-green-700 border-green-200', Pending: 'bg-yellow-50 text-yellow-700 border-yellow-200', Rejected: 'bg-red-50 text-red-700 border-red-200' };
-                return (<label key={status} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50"><div className="flex items-center justify-start w-full"><input type="checkbox" checked={selectedStatuses.includes(status)} onChange={() => toggleCheckbox(selectedStatuses, setSelectedStatuses, status)} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 accent-blue-600 flex-shrink-0 mr-3"/><span className="text-sm font-medium text-gray-900">{status}</span></div><span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColors[status]}`}>{counts.statuses[status]}</span></label>);
+                return (
+                  <label key={status} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center justify-start w-full">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedStatuses.includes(status)} 
+                        onChange={() => toggleCheckbox(selectedStatuses, setSelectedStatuses, status)} 
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 accent-blue-600 flex-shrink-0 mr-3"
+                      />
+                      <span className="text-sm font-medium text-gray-900">{status}</span>
+                    </div>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusColors[status]}`}>
+                      {counts.statuses[status]}
+                    </span>
+                  </label>
+                );
               })}
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Last Login Activity</label>
-            <select value={lastLogin} onChange={(e) => setLastLogin(e.target.value as 'all' | '2months' | '3months')} className="w-full px-3 py-2 border border-black rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-              <option value="all">Anytime</option>
-              <option value="2months">Within last 2 months</option>
-              <option value="3months">Over 3 months ago</option>
+            <label className="block text-sm font-semibold text-gray-700 mb-3">Login Activity Filter</label>
+            <select 
+              value={lastLogin} 
+              onChange={(e) => setLastLogin(e.target.value as 'all' | '2months' | '3months')} 
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
+            >
+              <option value="all">Show All Users (Any Login Time)</option>
+              <option value="2months">Active Users (Within last 2 months)</option>
+              <option value="3months">Inactive Users (Over 3 months ago)</option>
             </select>
+            <p className="mt-1 text-xs text-gray-500">Filter users based on their last login activity</p>
           </div>
         </div>
-        <div className="flex items-center justify-end gap-3 mt-6 pt-6 border-t">
-          <button onClick={handleLocalReset} className="px-4 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg">Reset</button>
-          <button onClick={onClose} className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
-          <button onClick={handleApply} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700">Apply Filters</button>
+        <div className="flex items-center justify-end gap-3 p-6 bg-gray-50 border-t rounded-b-xl">
+          <button onClick={handleLocalReset} className="px-4 py-2 text-sm font-medium text-orange-600 rounded-lg transition-colors">
+            Reset
+          </button>
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            Cancel
+          </button>
+          <button onClick={handleApply} className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            Apply Filters
+          </button>
         </div>
       </div>
     </div>
@@ -312,21 +360,196 @@ function UserFilterModal({ isOpen, onClose, onApply, onReset, initialFilters, co
 function UserDetailsModal({ isOpen, onClose, user }: { isOpen: boolean, onClose: () => void, user: User | null }) { 
   if (!isOpen || !user) return null; 
   return (
-    <div className="fixed inset-0 bg-black/25 overflow-y-auto flex justify-center items-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
-        <div className="flex justify-between items-center px-6 pt-6 pb-4 border-b">
-          <h2 className="text-xl font-bold text-gray-900">User Account Details</h2>
-          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-full">&times;</button>
+    <div className="fixed inset-0 bg-gray-900/50 overflow-y-auto flex justify-center items-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl flex flex-col max-h-[90vh]">
+        <div className="flex justify-between items-center p-6 border-b">
+          <h2 className="text-2xl font-bold text-gray-900">User Account Details</h2>
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-full">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
         <div className="p-6 flex-grow overflow-y-auto space-y-6">
-          <div><h3 className="font-semibold text-gray-800 mb-2">Personal Information</h3><div className="text-sm space-y-1"><p><strong>Full Name:</strong> {getFullName(user)}</p><p><strong>Email:</strong> {user.email_address}</p><p><strong>Mobile Number:</strong> {user.mobile_number}</p><p><strong>Gender:</strong> {user.gender}</p><p><strong>Birthdate:</strong> {new Date(user.birthdate).toLocaleDateString()}</p><p><strong>Role:</strong> {user.role}</p><p><strong>Status:</strong> {user.status}</p></div></div>
-          {(user.present_address || user.permanent_address) && (<div><h3 className="font-semibold text-gray-800 mb-2">Address Information</h3><div className="text-sm space-y-1">{user.present_address && <p><strong>Present Address:</strong> {user.present_address}</p>}{user.permanent_address && <p><strong>Permanent Address:</strong> {user.permanent_address}</p>}</div></div>)}
-          {(user.college_university || user.course) && (<div><h3 className="font-semibold text-gray-800 mb-2">Educational Information</h3><div className="text-sm space-y-1">{user.college_university && <p><strong>College/University:</strong> {user.college_university}</p>}{user.course && <p><strong>Course:</strong> {user.course}</p>}</div></div>)}
-          <div><h3 className="font-semibold text-gray-800 mb-2">Account Information</h3><div className="text-sm space-y-1"><p><strong>User ID:</strong> {user.user_id}</p><p><strong>Role ID:</strong> {user.role_id}</p><p><strong>Created:</strong> {new Date(user.created_at).toLocaleString()}</p><p><strong>Last Updated:</strong> {new Date(user.updated_at).toLocaleString()}</p>{user.last_login && <p><strong>Last Login:</strong> {new Date(user.last_login).toLocaleString()}</p>}</div></div>
-          {user.activityLog && user.activityLog.length > 0 && (<div><h3 className="font-semibold text-gray-800 mb-2">Recent Activity Log</h3><ul className="text-sm space-y-2 border rounded-md p-2 max-h-48 overflow-y-auto">{user.activityLog.map(log => (<li key={log.id} className="border-b last:border-b-0 pb-1"><p><strong>Action:</strong> {log.action} - <span className="text-gray-500">{new Date(log.timestamp).toLocaleString()}</span></p><p className="text-xs text-gray-600">Details: {log.details}</p></li>))}</ul></div>)}
+          {/* Top Row: Most Important Information */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Personal Information - Primary */}
+            <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Personal Information
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                  <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-lg border-gray-200 border shadow-sm">{getFullName(user)}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                  <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-lg border-gray-200 border shadow-sm">{user.email_address}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+                    <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-lg border-gray-200 border shadow-sm">{user.mobile_number}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                    <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-lg border-gray-200 border shadow-sm">{user.gender}</p>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                  <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-lg border-gray-200 border shadow-sm">{new Date(user.birthdate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Account Status & Access - Critical for Admin */}
+            <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Account Access & Status
+              </h3>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">User Role</label>
+                    <div className="py-1">
+                      <UserPill type="role" value={user.role} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Account Status</label>
+                    <div className="py-1">
+                      <UserPill type="status" value={user.status} />
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Login Activity</label>
+                  <div className="text-sm bg-white px-3 py-2 rounded-lg border-gray-200 border shadow-sm">
+                    {formatLastLogin(user.last_login)}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Account Created</label>
+                  <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-lg border-gray-200 border shadow-sm">{new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+                  <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-lg border-gray-200 border shadow-sm font-mono">{user.user_id}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Educational Information - Important for scholarship context */}
+          {(user.college_university || user.course) && (
+            <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                Educational Background
+              </h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {user.college_university && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">College/University</label>
+                    <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-lg border-gray-200 border shadow-sm">{user.college_university}</p>
+                  </div>
+                )}
+                {user.course && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Course/Program</label>
+                    <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-lg border-gray-200 border shadow-sm">{user.course}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Address Information - Secondary importance */}
+          {(user.present_address || user.permanent_address) && (
+            <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Address Information
+              </h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {user.present_address && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Present Address</label>
+                    <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-lg border-gray-200 border shadow-sm">{user.present_address}</p>
+                  </div>
+                )}
+                {user.permanent_address && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Permanent Address</label>
+                    <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-lg border-gray-200 border shadow-sm">{user.permanent_address}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* System Information - Technical details */}
+          <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <svg className="w-5 h-5 mr-2 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              System Information
+            </h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last Updated</label>
+                <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-lg border-gray-200 border shadow-sm">{new Date(user.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+              </div>
+              {user.last_login && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Login (Detailed)</label>
+                  <p className="text-sm text-gray-900 bg-white px-3 py-2 rounded-lg border-gray-200 border shadow-sm">{new Date(user.last_login).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Activity Log - Least priority, shown last */}
+          {user.activityLog && user.activityLog.length > 0 && (
+            <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <svg className="w-5 h-5 mr-2 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                Recent Activity Log
+              </h3>
+              <div className="bg-white rounded-lg border-gray-200 border shadow-sm max-h-48 overflow-y-auto">
+                {user.activityLog.map((log, index) => (
+                  <div key={log.id} className={`p-3 ${index !== user.activityLog!.length - 1 ? 'border-b border-gray-200' : ''}`}>
+                    <div className="flex justify-between items-start mb-1">
+                      <p className="text-sm font-medium text-gray-900">{log.action}</p>
+                      <span className="text-xs text-gray-500">{new Date(log.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <p className="text-xs text-gray-600">{log.details}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-        <div className="p-6 bg-gray-50 border-t rounded-b-lg text-right">
-          <button onClick={onClose} className="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50">Close</button>
+        <div className="p-6 bg-gray-50 border-t rounded-b-xl">
+          <button onClick={onClose} className="w-full sm:w-auto inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            Close
+          </button>
         </div>
       </div>
     </div>
