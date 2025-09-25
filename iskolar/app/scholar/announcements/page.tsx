@@ -1,11 +1,41 @@
 'use client';
 
 import Image from "next/image";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useAuth } from "@/lib/useAuth";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function AnnouncementsPage() {
   const [open, setOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const [userName, setUserName] = useState({ firstName: '', lastName: '' });
+
+  useEffect(() => {
+    async function fetchUserName() {
+      if (user) {
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('first_name, last_name')
+          .eq('email_address', (user as { email: string }).email)
+          .single();
+
+        if (error) {
+          console.error('Error fetching user data:', error);
+          return;
+        }
+
+        if (userData) {
+          setUserName({
+            firstName: userData.first_name,
+            lastName: userData.last_name
+          });
+        }
+      }
+    }
+
+    fetchUserName();
+  }, [user]);
 
   return (
     <div className="min-h-screen w-full bg-[#f5f6fa] pl-64">
@@ -18,7 +48,7 @@ export default function AnnouncementsPage() {
           height={15}
           className="transition-all duration-300"
         />
-        <span className="text-lg font-semibold pl-2">Profile</span>
+        <span className="text-lg font-semibold pl-2">Announcements</span>
         <div className="ml-auto flex items-center gap-6">
           {/* Notification Icon */}
           <div
@@ -71,7 +101,7 @@ export default function AnnouncementsPage() {
           {/* Name and Role */}
           <div className="flex flex-col justify-center">
             <span className="text-sm font-semibold text-gray-900 leading-tight">
-              Hazel Mones
+              {userName.firstName} {userName.lastName}
             </span>
             <span className="text-xs text-gray-500 leading-tight">
               Scholar
