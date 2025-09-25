@@ -1,9 +1,42 @@
 'use client';
 
 import Image from "next/image";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useAuth } from "@/lib/useAuth";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function ProfilePage() {
+  const { user } = useAuth();
+
+  // State for user’s name
+  const [userName, setUserName] = useState({ firstName: "", lastName: "" });
+
+  useEffect(() => {
+    async function fetchUserName() {
+      if (user) {
+        const { data: userData, error } = await supabase
+          .from("users")
+          .select("first_name, last_name")
+          .eq("email_address", (user as { email: string }).email)
+          .single();
+
+        if (error) {
+          console.error("Error fetching user data:", error);
+          return;
+        }
+
+        if (userData) {
+          setUserName({
+            firstName: userData.first_name,
+            lastName: userData.last_name,
+          });
+        }
+      }
+    }
+    fetchUserName();
+  }, [user]);
+
+  // UI state
   const [open, setOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
 
@@ -154,7 +187,7 @@ export default function ProfilePage() {
           {/* Name and Role */}
           <div className="flex flex-col justify-center">
             <span className="text-sm font-semibold text-gray-900 leading-tight">
-              Hazel Mones
+              {userName.firstName} {userName.lastName}
             </span>
             <span className="text-xs text-gray-500 leading-tight">
               Scholar
