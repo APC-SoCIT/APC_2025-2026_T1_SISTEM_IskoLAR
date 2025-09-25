@@ -9,8 +9,23 @@ import { supabase } from '@/lib/supabaseClient';
 export default function ProfilePage() {
   const [open, setOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [userName, setUserName] = useState("");
+  
+  // Add state for each field
+  const [lastName, setLastName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [middleName, setMiddleName] = useState("");
+  const [gender, setGender] = useState("");
+  const [birthdate, setBirthdate] = useState("");
+  const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [scholarId, setScholarId] = useState("");
 
+  // Basic user data fetch (name only)
   useEffect(() => {
     const fetchUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -31,13 +46,6 @@ export default function ProfilePage() {
 
     fetchUserData();
   }, []);
-
-  // Add state for each field
-  const [lastName, setLastName] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [middleName, setMiddleName] = useState("Besafez");
-  const [gender, setGender] = useState("Female");
-  const [birthdate, setBirthdate] = useState("04/08/2004");
 
   // Address states
   const [addressLine1, setAddressLine1] = useState("");
@@ -884,16 +892,18 @@ export default function ProfilePage() {
                 <label className="block text-xs text-gray-500 mb-1">College/University</label>
                 <input
                   className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
-                  value="Asia Pacific College"
+                  value={college || "Asia Pacific College"}
                   readOnly={!isEdit}
+                  onChange={e => setCollege(e.target.value)}
                 />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Course</label>
                 <input
                   className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
-                  value="Bachelor of Science in Computer Science"
+                  value={course || "Bachelor of Science in Computer Science"}
                   readOnly={!isEdit}
+                  onChange={e => setCourse(e.target.value)}
                 />
               </div>
             </div>
