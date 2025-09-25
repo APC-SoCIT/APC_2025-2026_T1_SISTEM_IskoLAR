@@ -11,21 +11,73 @@ export default function SignUpPage() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [agree, setAgree] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const [showAddressFields, setShowAddressFields] = useState(false);
+    const [showEducationFields, setShowEducationFields] = useState(false);
  
-    // New fields
+    // Personal Information fields
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [middleName, setMiddleName] = useState("");
     const [gender, setGender] = useState("");
     const [mobile, setMobile] = useState("");
     const [birthday, setBirthday] = useState("");
+    
+    // Address fields (optional)
+    const [addressLine1, setAddressLine1] = useState("");
+    const [addressLine2, setAddressLine2] = useState("");
+    const [barangay, setBarangay] = useState("");
+    const [city, setCity] = useState("");
+    const [province, setProvince] = useState("");
+    const [zipCode, setZipCode] = useState("");
+    const [region, setRegion] = useState("");
+    
+    // Education fields (optional)
+    const [college, setCollege] = useState("");
+    const [course, setCourse] = useState("");
+    
+    // UI state
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    
+    // Dropdown data for address fields - same as profile page
+    const provincesData = {
+        "Metro Manila": ["Makati City", "Quezon City", "Manila", "Pasig City", "Taguig City", "Marikina City", "Mandaluyong City", "San Juan City", "Caloocan City", "Malabon City", "Navotas City", "Las Piñas City", "Parañaque City", "Muntinlupa City", "Pateros", "Valenzuela City"],
+        "Laguna": ["Calamba City", "San Pablo City", "Biñan City", "Santa Rosa City", "Los Baños", "Cabuyao", "San Pedro"],
+        "Cavite": ["Bacoor", "Cavite City", "Dasmariñas", "Imus", "Tagaytay City", "Trece Martires City"],
+        "Rizal": ["Antipolo City", "Taytay", "Cainta", "Angono", "Baras", "Binangonan"],
+        "Bulacan": ["Malolos City", "Meycauayan City", "San Jose del Monte City", "Angat", "Balagtas"],
+        "Pampanga": ["Angeles City", "San Fernando City", "Apalit", "Arayat", "Bacolor"],
+        "Batangas": ["Batangas City", "Lipa City", "Tanauan City", "Agoncillo", "Alitagtag"]
+    };
+
+    const regionsData = {
+        "Metro Manila": "NCR",
+        "Laguna": "CALABARZON",
+        "Cavite": "CALABARZON", 
+        "Rizal": "CALABARZON",
+        "Bulacan": "Central Luzon",
+        "Pampanga": "Central Luzon",
+        "Batangas": "CALABARZON"
+    };
+
+    // Helper functions for address
+    const getCitiesByProvince = (province: string) => {
+        return provincesData[province as keyof typeof provincesData] || [];
+    };
+
+    const getRegionByProvince = (province: string) => {
+        return regionsData[province as keyof typeof regionsData] || "";
+    };
+
+    // Validation function for ZIP code
+    const validateZipCode = (zipCode: string) => {
+        return /^\d{4}$/.test(zipCode);
+    };
  
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
        
-        // Form validation
+        // Form validation for required fields
         if (!firstName || !lastName || !email || !password || !confirmPassword || !birthday || !gender || !mobile) {
             setError("Please fill in all required fields");
             return;
@@ -40,26 +92,53 @@ export default function SignUpPage() {
             setError("Please agree to the Data Privacy Act");
             return;
         }
+        
+        // Validate ZIP code if provided
+        if (zipCode && !validateZipCode(zipCode)) {
+            setError("ZIP code must be exactly 4 digits");
+            return;
+        }
  
         setIsLoading(true);
         setError("");
  
         try {
+            // Prepare request payload with all available fields
+            const payload = {
+                // Required personal fields
+                firstName,
+                lastName,
+                middleName,
+                gender,
+                birthdate: birthday, // Send in ISO format
+                email,
+                password,
+                mobile,
+                
+                // Optional address fields (if provided)
+                ...(showAddressFields && {
+                    addressLine1,
+                    addressLine2,
+                    barangay,
+                    city,
+                    province,
+                    zipCode,
+                    region,
+                }),
+                
+                // Optional education fields (if provided)
+                ...(showEducationFields && {
+                    college,
+                    course,
+                }),
+            };
+            
             const response = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    firstName,
-                    lastName,
-                    middleName,
-                    gender,
-                    birthdate: birthday,
-                    email,
-                    password,
-                    mobile,
-                }),
+                body: JSON.stringify(payload),
             });
  
             const data = await response.json();
@@ -201,6 +280,193 @@ export default function SignUpPage() {
                             />
                         </div>
                     </div>
+                    
+                    {/* Optional Sections Toggle Buttons */}
+                    <div className="flex justify-between gap-4">
+                        <button
+                            type="button"
+                            className={`flex-1 py-2 text-sm border rounded-lg ${showAddressFields 
+                                ? 'bg-[#e3f2fd] border-[#90caf9] text-[#1976D2]' 
+                                : 'bg-white border-gray-300 text-gray-700'}`}
+                            onClick={() => setShowAddressFields(!showAddressFields)}
+                        >
+                            {showAddressFields ? 'Hide Address Fields' : 'Add Address Information'}
+                        </button>
+                        <button
+                            type="button"
+                            className={`flex-1 py-2 text-sm border rounded-lg ${showEducationFields 
+                                ? 'bg-[#e3f2fd] border-[#90caf9] text-[#1976D2]' 
+                                : 'bg-white border-gray-300 text-gray-700'}`}
+                            onClick={() => setShowEducationFields(!showEducationFields)}
+                        >
+                            {showEducationFields ? 'Hide Education Fields' : 'Add Education Information'}
+                        </button>
+                    </div>
+                    
+                    {/* Optional Address Fields */}
+                    {showAddressFields && (
+                        <div className="border border-[#90caf9] bg-[#f8fafc] rounded-lg p-4 space-y-4">
+                            <h3 className="text-sm font-semibold text-gray-700">Address Information (Optional)</h3>
+                            
+                            {/* Address Line 1 & 2 */}
+                            <div className="grid grid-cols-1 gap-4">
+                                <div>
+                                    <label htmlFor="addressLine1" className="block text-xs text-gray-600 mb-1">
+                                        Address Line 1 (House/Unit/Building + Street)
+                                    </label>
+                                    <input
+                                        id="addressLine1"
+                                        type="text"
+                                        placeholder="123 Main Street, Unit 4A"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
+                                        value={addressLine1}
+                                        onChange={e => setAddressLine1(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="addressLine2" className="block text-xs text-gray-600 mb-1">
+                                        Address Line 2 (Subdivision/Village/Purok/Sitio)
+                                    </label>
+                                    <input
+                                        id="addressLine2"
+                                        type="text"
+                                        placeholder="Sample Subdivision"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
+                                        value={addressLine2}
+                                        onChange={e => setAddressLine2(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            
+                            {/* Barangay, City, Province, ZIP */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label htmlFor="barangay" className="block text-xs text-gray-600 mb-1">
+                                        Barangay
+                                    </label>
+                                    <input
+                                        id="barangay"
+                                        type="text"
+                                        placeholder="Sample Barangay"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
+                                        value={barangay}
+                                        onChange={e => setBarangay(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="province" className="block text-xs text-gray-600 mb-1">
+                                        Province
+                                    </label>
+                                    <select
+                                        id="province"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900"
+                                        value={province}
+                                        onChange={e => {
+                                            setProvince(e.target.value);
+                                            const cities = getCitiesByProvince(e.target.value);
+                                            if (cities.length > 0) {
+                                                setCity(cities[0]);
+                                            }
+                                            const region = getRegionByProvince(e.target.value);
+                                            setRegion(region);
+                                        }}
+                                    >
+                                        <option value="">Select Province</option>
+                                        {Object.keys(provincesData).map(provinceOption => (
+                                            <option key={provinceOption} value={provinceOption}>{provinceOption}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label htmlFor="city" className="block text-xs text-gray-600 mb-1">
+                                        City/Municipality
+                                    </label>
+                                    <select
+                                        id="city"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900"
+                                        value={city}
+                                        onChange={e => setCity(e.target.value)}
+                                        disabled={!province}
+                                    >
+                                        <option value="">Select City</option>
+                                        {getCitiesByProvince(province).map(cityOption => (
+                                            <option key={cityOption} value={cityOption}>{cityOption}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label htmlFor="zipCode" className="block text-xs text-gray-600 mb-1">
+                                        ZIP Code
+                                    </label>
+                                    <input
+                                        id="zipCode"
+                                        type="text"
+                                        placeholder="1234"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
+                                        value={zipCode}
+                                        onChange={e => {
+                                            const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                                            setZipCode(value);
+                                        }}
+                                        maxLength={4}
+                                    />
+                                    {zipCode && !validateZipCode(zipCode) && (
+                                        <p className="text-xs text-red-500 mt-1">ZIP code must be exactly 4 digits</p>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            {/* Region (Auto-derived) */}
+                            <div>
+                                <label htmlFor="region" className="block text-xs text-gray-600 mb-1">
+                                    Region <span className="text-gray-400">(auto-derived)</span>
+                                </label>
+                                <input
+                                    id="region"
+                                    type="text"
+                                    className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-gray-100 text-gray-900"
+                                    value={region}
+                                    readOnly
+                                />
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Optional Education Fields */}
+                    {showEducationFields && (
+                        <div className="border border-[#90caf9] bg-[#f8fafc] rounded-lg p-4 space-y-4">
+                            <h3 className="text-sm font-semibold text-gray-700">Education Information (Optional)</h3>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label htmlFor="college" className="block text-xs text-gray-600 mb-1">
+                                        College/University
+                                    </label>
+                                    <input
+                                        id="college"
+                                        type="text"
+                                        placeholder="Asia Pacific College"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
+                                        value={college}
+                                        onChange={e => setCollege(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="course" className="block text-xs text-gray-600 mb-1">
+                                        Course
+                                    </label>
+                                    <input
+                                        id="course"
+                                        type="text"
+                                        placeholder="Bachelor of Science in Computer Science"
+                                        className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
+                                        value={course}
+                                        onChange={e => setCourse(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     {/* Password */}
                     <div>
                         <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
