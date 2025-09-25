@@ -1,11 +1,23 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useAuth } from '@/lib/useAuth';
 
 const AdminSidebar = () => {
   const pathname = usePathname();
+  const router = useRouter();
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      router.push('/admin-auth/signin');
+    } catch (error) {
+      console.error('Error during sign out:', error);
+    }
+  };
 
   const mainNavItems = [
     {
@@ -179,6 +191,17 @@ const AdminSidebar = () => {
           );
         })}
       </nav>
+
+      {/* Sign Out Button */}
+      <button
+        onClick={handleSignOut}
+        className="flex items-center gap-3 py-3 px-4 mb-6 w-full transition-all cursor-pointer text-red-600 hover:bg-red-50"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+        <span className="font-medium">Sign out</span>
+      </button>
     </aside>
   );
 };
