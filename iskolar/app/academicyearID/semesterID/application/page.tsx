@@ -1,16 +1,48 @@
 'use client';
 
 import Image from "next/image";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/lib/useAuth";
+
 
 // Common input style
-const inputClassName = "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm transition-all duration-200 focus:ring-2 focus:ring-[#2196f3] focus:border-[#2196f3] focus:outline-none bg-white hover:border-gray-400";
+const inputClassName =
+  "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm transition-all duration-200 focus:ring-2 focus:ring-[#2196f3] focus:border-[#2196f3] focus:outline-none bg-white hover:border-gray-400";
 
 export default function ApplicationPage() {
-  // Stepper state: 0 = Personal Info, 1 = Documents
+  // Stepper state
   const [step, setStep] = useState(0);
 
-  // Personal Info
+  // User info from auth
+  const { user } = useAuth();
+  const [fullName, setFullName] = useState("");
+
+  // Fetch user profile details
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("users")
+        .select("first_name, last_name")
+        .eq("user_id", user.id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching user profile:", error);
+        return;
+      }
+
+      if (data) {
+        setFullName(`${data.first_name} ${data.last_name}`);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user]);
+
+  // --- states for form (same as your code) ---
   const [lastName, setLastName] = useState("");
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
@@ -18,7 +50,7 @@ export default function ApplicationPage() {
   const [contactNumber, setContactNumber] = useState("");
   const [gender, setGender] = useState("");
   const [birthdate, setBirthdate] = useState("");
-  // Address states
+
   const [addressLine1, setAddressLine1] = useState("");
   const [addressLine2, setAddressLine2] = useState("");
   const [barangay, setBarangay] = useState("");
@@ -27,7 +59,7 @@ export default function ApplicationPage() {
   const [zipCode, setZipCode] = useState("");
   const [region, setRegion] = useState("");
 
-  // Dropdown data for address fields
+  // Province/Region data
   const provincesData = {
     "Metro Manila": ["Makati City", "Quezon City", "Manila", "Pasig City", "Taguig City", "Marikina City", "Mandaluyong City", "San Juan City", "Caloocan City", "Malabon City", "Navotas City", "Las Piñas City", "Parañaque City", "Muntinlupa City", "Pateros", "Valenzuela City"],
     "Laguna": ["Calamba City", "San Pablo City", "Biñan City", "Santa Rosa City", "Los Baños", "Cabuyao", "San Pedro", "Alaminos", "Bay", "Calauan", "Cavinti", "Famy", "Kalayaan", "Liliw", "Luisiana", "Lumban", "Mabitac", "Magdalena", "Majayjay", "Nagcarlan", "Paete", "Pagsanjan", "Pakil", "Pangil", "Pila", "Rizal", "Santa Cruz", "Santa Maria", "Siniloan", "Victoria"],
@@ -41,28 +73,26 @@ export default function ApplicationPage() {
   const regionsData = {
     "Metro Manila": "NCR",
     "Laguna": "CALABARZON",
-    "Cavite": "CALABARZON", 
+    "Cavite": "CALABARZON",
     "Rizal": "CALABARZON",
     "Bulacan": "Central Luzon",
     "Pampanga": "Central Luzon",
     "Batangas": "CALABARZON"
   };
 
-  // Helper function to get cities based on province
   const getCitiesByProvince = (province: string) => {
     return provincesData[province as keyof typeof provincesData] || [];
   };
 
-  // Helper function to get region by province
   const getRegionByProvince = (province: string) => {
     return regionsData[province as keyof typeof regionsData] || "";
   };
 
-  // Validation functions
   const validateZipCode = (zipCode: string) => {
     return /^\d{4}$/.test(zipCode);
   };
 
+  // Education & Guardian
   const [juniorHighName, setJuniorHighName] = useState("");
   const [juniorHighAddress, setJuniorHighAddress] = useState("");
   const [seniorHighName, setSeniorHighName] = useState("");
@@ -76,7 +106,7 @@ export default function ApplicationPage() {
   const [fatherName, setFatherName] = useState("");
   const [fatherJob, setFatherJob] = useState("");
 
-  // Document Uploads
+  // Documents
   const [, setRegFile] = useState<File | null>(null);
   const [regFileName, setRegFileName] = useState("");
   const [, setGradesFile] = useState<File | null>(null);
@@ -84,13 +114,47 @@ export default function ApplicationPage() {
   const [, setIdFile] = useState<File | null>(null);
   const [idFileName, setIdFileName] = useState("");
 
-  const steps = [
-    { label: "Personal" },
-    { label: "Documents" },
-  ];
+  const steps = [{ label: "Personal" }, { label: "Documents" }];
 
   const [open, setOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+
+  const handleSubmit = async () => {
+    if (!user) {
+      alert("Not logged in");
+      return;
+    }
+
+    const applicationData = {
+      junior_hs_name: juniorHighName,
+      junior_hs_address: juniorHighAddress,
+      senior_hs_name: seniorHighName,
+      senior_hs_address: seniorHighAddress,
+      college_address: collegeAddress,
+      year_level: yearLevel,
+      mother_maiden_name: motherMaidenName,
+      mother_occupation: motherJob,
+      father_full_name: fatherName,
+      father_occupation: fatherJob,
+      user_id: user.id, // ✅ link to logged-in user
+    };
+
+    const res = await fetch("/api/applications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(applicationData),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      console.error(result.error);
+      alert("Error: " + result.error);
+      return;
+    }
+
+    alert("Application submitted successfully!");
+  };
 
   return (
     <div className="min-h-screen w-full bg-[#f5f6fa] pl-64 flex flex-col items-center">
@@ -116,7 +180,6 @@ export default function ApplicationPage() {
             <span className="absolute top-1 left-7">
               <span className="block w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white notification-pulse"></span>
             </span>
-            {/* Modal Dropdown */}
             {open && (
               <div className="absolute right-0" style={{ marginTop: "14rem" }}>
                 <div className="w-[380px] bg-white rounded-lg shadow-xl border border-gray-200 z-50 p-3 flex flex-col gap-2">
@@ -150,7 +213,7 @@ export default function ApplicationPage() {
           {/* Name and Role */}
           <div className="flex flex-col justify-center">
             <span className="text-sm font-semibold text-gray-900 leading-tight">
-              Hazel Mones
+              {fullName || "Loading..."}
             </span>
             <span className="text-xs text-gray-500 leading-tight">
               Scholar
@@ -462,7 +525,7 @@ export default function ApplicationPage() {
               </button>
               <button
                 className="cursor-pointer bg-[#2196f3] text-white px-8 py-2 rounded-lg font-medium shadow hover:bg-[#1976d2] transition"
-                onClick={() => alert("Submitted!")}
+                onClick={handleSubmit}
                 type="button"
               >
                 Submit Application
