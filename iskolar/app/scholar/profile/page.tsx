@@ -1,27 +1,41 @@
 'use client';
 
 import Image from "next/image";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { UserProfile, userValidation } from "@/lib/types/user";
+import { getAuthToken } from "@/lib/useAuth";
+import { supabase } from '@/lib/supabaseClient';
 
 export default function ProfilePage() {
   const [open, setOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
-
-  // Add state for each field
-  const [lastName, setLastName] = useState("Mones");
-  const [firstName, setFirstName] = useState("Hazel Ann");
-  const [middleName, setMiddleName] = useState("Besafez");
-  const [gender, setGender] = useState("Female");
-  const [birthdate, setBirthdate] = useState("04/08/2004");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  
+  // State for form fields
+  const [lastName, setLastName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [middleName, setMiddleName] = useState("");
+  const [gender, setGender] = useState("");
+  const [birthdate, setBirthdate] = useState("");
+  const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [scholarId, setScholarId] = useState("");
 
   // Address states
-  const [addressLine1, setAddressLine1] = useState("123 Sample Street");
-  const [addressLine2, setAddressLine2] = useState("Sample Subdivision");
-  const [barangay, setBarangay] = useState("Sample Barangay");
-  const [city, setCity] = useState("Makati City");
-  const [province, setProvince] = useState("Metro Manila");
-  const [zipCode, setZipCode] = useState("1234");
-  const [region, setRegion] = useState("NCR");
+  const [addressLine1, setAddressLine1] = useState("");
+  const [addressLine2, setAddressLine2] = useState("");
+  const [barangay, setBarangay] = useState("");
+  const [city, setCity] = useState("");
+  const [province, setProvince] = useState("");
+  const [zipCode, setZipCode] = useState("");
+  const [region, setRegion] = useState("");
+  
+  // Education states
+  const [college, setCollege] = useState("");
+  const [course, setCourse] = useState("");
 
   // Dropdown data for address fields
   const provincesData = {
@@ -54,17 +68,310 @@ export default function ProfilePage() {
     return regionsData[province as keyof typeof regionsData] || "";
   };
 
-  // Validation functions
-  const validateZipCode = (zipCode: string) => {
-    return /^\d{4}$/.test(zipCode);
-  };
-
+  // Validation functions - use shared validation from our model
   const getZipCodeValidationMessage = (zipCode: string) => {
     if (!zipCode) return "";
-    if (!validateZipCode(zipCode)) {
+    if (!userValidation.validateZipCode(zipCode)) {
       return "ZIP code must be exactly 4 digits";
     }
     return "";
+  };
+  
+  // Note: We now use the centralized getAuthToken function from useAuth.ts
+  
+  // This function will redirect the user to the sign-in page if they are not authenticated
+  const redirectToSignIn = () => {
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname;
+      window.location.href = `/auth/sign-in?redirectTo=${encodeURIComponent(currentPath)}`;
+    }
+  };
+  
+  // Fetch user profile data on component mount
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        setIsLoading(true);
+        setSuccessMessage(''); // Clear any previous messages
+        setError(''); // Clear any previous errors
+        
+        // Get auth token using the centralized helper function
+        const token = getAuthToken();
+        
+        // If no token is found, redirect to sign-in
+        if (!token) {
+          console.log('No authentication token found. Redirecting to sign-in page.');
+          redirectToSignIn();
+          return;
+        }
+        
+        // Use Supabase Auth directly to get the user
+        // This is more reliable than the validate-token endpoint
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          console.warn('Session validation failed:', authError?.message);
+          setError('Your session has expired. Please sign in again.');
+          setTimeout(redirectToSignIn, 2000);
+          return;
+        }
+        
+        // Fetch profile data from Supabase directly
+        // This avoids potential API issues and ensures we get the most up-to-date data
+        let { data: profile, error: profileError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (profileError) {
+          console.error('Error fetching profile from database:', profileError);
+          
+          // If the profile doesn't exist, we need to create it
+          if (profileError.code === 'PGRST116') { // PostgreSQL error for no rows
+            console.log('User profile does not exist, creating a new one');
+            
+            // Create a basic profile for the user
+            const newProfile = {
+              user_id: user.id,
+              email_address: user.email,
+              first_name: user.user_metadata?.first_name || '',
+              last_name: user.user_metadata?.last_name || '',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              status: 'active'
+            };
+            
+            // Insert the new profile
+            const { data: createdProfile, error: createError } = await supabase
+              .from('users')
+              .insert([newProfile])
+              .select()
+              .single();
+              
+            if (createError) {
+              console.error('Failed to create user profile:', createError);
+              setError('Failed to create your profile. Please contact support.');
+              return;
+            }
+            
+            // Use the newly created profile
+            profile = createdProfile;
+          } else {
+            setError('Failed to fetch your profile. Please try again later.');
+            return;
+          }
+        }
+        
+        if (!profile) {
+          setError('Profile not found. Please contact support.');
+          return;
+        }
+        
+        // Format the profile data to match our UserProfile interface
+        const userData: UserProfile = {
+          userId: profile.user_id,
+          firstName: profile.first_name,
+          lastName: profile.last_name,
+          middleName: profile.middle_name || '',
+          gender: profile.gender || '',
+          birthdate: profile.birthdate || '',
+          email: profile.email_address,
+          mobile: profile.mobile_number || '',
+          
+          addressLine1: profile.address_line1 || '',
+          addressLine2: profile.address_line2 || '',
+          barangay: profile.barangay || '',
+          city: profile.city || '',
+          province: profile.province || '',
+          zipCode: profile.zip_code || '',
+          region: profile.region || '',
+          
+          college: profile.college || '',
+          course: profile.course || '',
+          
+          scholarId: profile.scholar_id || '',
+          createdAt: profile.created_at || '',
+          updatedAt: profile.updated_at || '',
+          status: profile.status || '',
+        };
+        
+        // Set the user profile data
+        setUserProfile(userData);
+        
+        // Populate form fields with the fetched data
+        setFirstName(userData.firstName);
+        setLastName(userData.lastName);
+        setMiddleName(userData.middleName || '');
+        setGender(userData.gender || '');
+        setEmail(userData.email || '');
+        setMobile(userData.mobile || '');
+        setScholarId(userData.scholarId || '');
+        
+        // Format date from ISO to MM/DD/YYYY for display
+        if (userData.birthdate) {
+          const displayDate = userValidation.formatDateForDisplay(userData.birthdate);
+          setBirthdate(displayDate);
+        }
+        
+        // Address fields
+        setAddressLine1(userData.addressLine1 || '');
+        setAddressLine2(userData.addressLine2 || '');
+        setBarangay(userData.barangay || '');
+        setCity(userData.city || '');
+        setProvince(userData.province || '');
+        setZipCode(userData.zipCode || '');
+        setRegion(userData.region || '');
+        
+        // Education fields
+        setCollege(userData.college || '');
+        setCourse(userData.course || '');
+        
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        setError(error instanceof Error ? error.message : 'Failed to fetch profile');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchUserProfile();
+  }, []);
+  
+  // Handle profile update
+  const handleUpdateProfile = async () => {
+    try {
+      setIsLoading(true);
+      setError('');
+      setSuccessMessage('');
+      
+      // Validate ZIP code
+      if (zipCode && !userValidation.validateZipCode(zipCode)) {
+        setError('ZIP code must be exactly 4 digits');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Get the current user session directly from Supabase
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      // If no user or auth error, we can't make a real update
+      if (authError || !user) {
+        console.warn('Auth error during profile update:', authError?.message);
+        setError('Authentication required to update profile. Please sign in.');
+        setTimeout(redirectToSignIn, 2000);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Format the data for database update
+      const userUpdateData = {
+        // Personal info
+        first_name: firstName,
+        last_name: lastName,
+        middle_name: middleName || null,
+        gender: gender || null,
+        birthdate: userValidation.parseDisplayDate(birthdate) || null,
+        mobile_number: mobile,
+        
+        // Address info
+        address_line1: addressLine1 || null,
+        address_line2: addressLine2 || null,
+        barangay: barangay || null,
+        city: city || null,
+        province: province || null,
+        zip_code: zipCode || null,
+        region: region || null,
+        
+        // Education info
+        college: college || null,
+        course: course || null,
+        
+        // Timestamp
+        updated_at: new Date().toISOString(),
+      };
+
+      // Update user_metadata in auth.users
+      const { error: updateAuthError } = await supabase.auth.updateUser({
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          middle_name: middleName,
+          gender: gender,
+          birthdate: userValidation.parseDisplayDate(birthdate),
+          mobile_number: mobile,
+        }
+      });
+
+      if (updateAuthError) {
+        console.error('Error updating auth user metadata:', updateAuthError);
+        throw new Error('Failed to update user metadata');
+      }
+
+      // Update in users table
+      const { error: updateError } = await supabase
+        .from('users')
+        .update(userUpdateData)
+        .eq('user_id', user.id);
+
+      if (updateError) {
+        console.error('Error updating user profile:', updateError);
+        throw new Error(updateError.message || 'Failed to update profile');
+      }
+
+      // Get the updated user profile
+      const { data: updatedProfile, error: fetchError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching updated profile:', fetchError);
+        // Still consider the update successful even if we can't fetch the updated profile
+        setSuccessMessage('Profile updated successfully');
+        setIsEdit(false);
+        return;
+      }
+
+      // Format the data to match our UserProfile interface and update state
+      setUserProfile({
+        userId: updatedProfile.user_id,
+        firstName: updatedProfile.first_name,
+        lastName: updatedProfile.last_name,
+        middleName: updatedProfile.middle_name || '',
+        gender: updatedProfile.gender || '',
+        birthdate: updatedProfile.birthdate || '',
+        email: updatedProfile.email_address,
+        mobile: updatedProfile.mobile_number || '',
+        
+        addressLine1: updatedProfile.address_line1 || '',
+        addressLine2: updatedProfile.address_line2 || '',
+        barangay: updatedProfile.barangay || '',
+        city: updatedProfile.city || '',
+        province: updatedProfile.province || '',
+        zipCode: updatedProfile.zip_code || '',
+        region: updatedProfile.region || '',
+        
+        college: updatedProfile.college || '',
+        course: updatedProfile.course || '',
+        
+        scholarId: updatedProfile.scholar_id || '',
+        createdAt: updatedProfile.created_at || '',
+        updatedAt: updatedProfile.updated_at || '',
+        status: updatedProfile.status || '',
+      });
+      
+      // Update was successful
+      setSuccessMessage('Profile updated successfully');
+      setIsEdit(false);
+      
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setError(error instanceof Error ? error.message : 'Failed to update profile');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Add state for each document file
@@ -154,7 +461,7 @@ export default function ProfilePage() {
           {/* Name and Role */}
           <div className="flex flex-col justify-center">
             <span className="text-sm font-semibold text-gray-900 leading-tight">
-              Hazel Mones
+              {firstName} {lastName}
             </span>
             <span className="text-xs text-gray-500 leading-tight">
               Scholar
@@ -224,31 +531,83 @@ export default function ProfilePage() {
           {isEdit ? (
             <>
               <button
-                className="cursor-pointer mt-6 mb-2 bg-[#219174] text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-[#17695a] transition"
-                onClick={() => {
-                  // TODO: Add your save logic here (API call, etc.)
-                  setIsEdit(false);
-                }}
+                className={`cursor-pointer mt-6 mb-2 bg-[#219174] hover:bg-[#17695a] text-white px-5 py-2 rounded-lg font-medium shadow transition ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                onClick={handleUpdateProfile}
+                disabled={isLoading}
                 type="button"
               >
-                Save Changes
+                {isLoading ? 'Saving...' : 'Save Changes'}
               </button>
               <button
                 className="cursor-pointer bg-[#f44336] text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-[#c62828] transition"
-                onClick={() => setIsEdit(false)}
+                onClick={() => {
+                  setIsEdit(false);
+                  setError('');
+                  // Reset form to current profile data
+                  if (userProfile) {
+                    setFirstName(userProfile.firstName);
+                    setLastName(userProfile.lastName);
+                    setMiddleName(userProfile.middleName || '');
+                    setGender(userProfile.gender || '');
+                    setEmail(userProfile.email || '');
+                    setMobile(userProfile.mobile || '');
+                    setBirthdate(userProfile.birthdate 
+                      ? userValidation.formatDateForDisplay(userProfile.birthdate) 
+                      : '');
+                    
+                    // Address fields
+                    setAddressLine1(userProfile.addressLine1 || '');
+                    setAddressLine2(userProfile.addressLine2 || '');
+                    setBarangay(userProfile.barangay || '');
+                    setCity(userProfile.city || '');
+                    setProvince(userProfile.province || '');
+                    setZipCode(userProfile.zipCode || '');
+                    setRegion(userProfile.region || '');
+                    
+                    // Education fields
+                    setCollege(userProfile.college || '');
+                    setCourse(userProfile.course || '');
+                  }
+                }}
+                disabled={isLoading}
                 type="button"
               >
                 Cancel
               </button>
+              
+              {/* Error/Success messages */}
+              {error && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-lg text-red-600 text-sm">
+                  {error}
+                </div>
+              )}
+              {successMessage && (
+                <div className="mt-4 p-3 bg-green-50 border-green-100 text-green-600 rounded-lg text-sm">
+                  {successMessage}
+                </div>
+              )}
             </>
           ) : (
-            <button
-              className="cursor-pointer mt-6 bg-[#2196f3] text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-[#1976d2] transition"
-              onClick={() => setIsEdit(true)}
-              type="button"
-            >
-              Edit Profile
-            </button>
+            <>
+              <button
+                className="cursor-pointer mt-6 bg-[#2196f3] hover:bg-[#1976d2] text-white px-5 py-2 rounded-lg font-medium shadow transition"
+                onClick={() => {
+                  setIsEdit(true);
+                  setError('');
+                  setSuccessMessage('');
+                }}
+                type="button"
+              >
+                Edit Profile
+              </button>
+              
+              {/* Only show success message in view mode */}
+              {successMessage && (
+                <div className="mt-4 p-3 bg-green-50 border-green-100 text-green-600 rounded-lg text-sm">
+                  {successMessage}
+                </div>
+              )}
+            </>
           )}
         </div>
         {/* Right Column */}
@@ -277,7 +636,7 @@ export default function ProfilePage() {
                 <label className="block text-xs text-gray-500 mb-1">Scholar ID</label>
                 <input
                   className="w-full bg-gray-100 rounded px-3 py-2 text-sm"
-                  value="XXXX-XXXX"
+                  value={scholarId || "Not assigned yet"}
                   readOnly
                 />
               </div>
@@ -285,8 +644,9 @@ export default function ProfilePage() {
                 <label className="block text-xs text-gray-500 mb-1">Email Address</label>
                 <input
                   className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
-                  value="example@gmail.com"
+                  value={email}
                   readOnly={!isEdit}
+                  onChange={e => setEmail(e.target.value)}
                 />
               </div>
             </div>
@@ -373,16 +733,18 @@ export default function ProfilePage() {
                 <label className="block text-xs text-gray-500 mb-1">Email Address</label>
                 <input
                   className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
-                  value="example@gmail.com"
+                  value={email}
                   readOnly={!isEdit}
+                  onChange={e => setEmail(e.target.value)}
                 />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Mobile Number</label>
                 <input
                   className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
-                  value="+639XXXXXXXXX"
+                  value={mobile}
                   readOnly={!isEdit}
+                  onChange={e => setMobile(e.target.value)}
                 />
               </div>
             </div>
