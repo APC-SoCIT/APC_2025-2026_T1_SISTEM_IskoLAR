@@ -23,6 +23,25 @@ export default function SignInPage() {
       if (signInError) {
         setError(signInError.message || "Sign in failed");
       } else if (data.session) {
+        // Save auth token in localStorage or sessionStorage depending on "remember me" setting
+        const token = data.session.access_token;
+        
+        if (remember) {
+          // For persistent login across browser sessions
+          localStorage.setItem('authToken', token);
+          
+          // Also set a cookie with a 30-day expiration
+          const expirationDate = new Date();
+          expirationDate.setDate(expirationDate.getDate() + 30);
+          document.cookie = `authToken=${token}; path=/; expires=${expirationDate.toUTCString()}; SameSite=Strict`;
+        } else {
+          // For current browser session only
+          sessionStorage.setItem('authToken', token);
+          
+          // Also set a session cookie (expires when browser closes)
+          document.cookie = `authToken=${token}; path=/; SameSite=Strict`;
+        }
+        
         setSuccess("Sign in successful!");
         // Redirect to scholar announcements page
         router.push("/scholar/announcements");
