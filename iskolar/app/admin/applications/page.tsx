@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ReactNode } from 'react';
+import AdminNavbar from '@/app/components/admin/AdminNavbar';
 
 type Status = 'Pending' | 'Approved' | 'Rejected';
 

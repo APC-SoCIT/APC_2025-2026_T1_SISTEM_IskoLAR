@@ -9,20 +9,35 @@ import { supabase } from '@/lib/supabaseClient';
 export default function ProfilePage() {
   const [open, setOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  
-  // State for form fields
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('first_name, last_name')
+          .eq('email_address', user.email)
+          .single();
+        
+        if (userData) {
+          setUserName(`${userData.first_name} ${userData.last_name}`);
+          setFirstName(userData.first_name);
+          setLastName(userData.last_name);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  // Add state for each field
   const [lastName, setLastName] = useState("");
   const [firstName, setFirstName] = useState("");
-  const [middleName, setMiddleName] = useState("");
-  const [gender, setGender] = useState("");
-  const [birthdate, setBirthdate] = useState("");
-  const [email, setEmail] = useState("");
-  const [mobile, setMobile] = useState("");
-  const [scholarId, setScholarId] = useState("");
+  const [middleName, setMiddleName] = useState("Besafez");
+  const [gender, setGender] = useState("Female");
+  const [birthdate, setBirthdate] = useState("04/08/2004");
 
   // Address states
   const [addressLine1, setAddressLine1] = useState("");
