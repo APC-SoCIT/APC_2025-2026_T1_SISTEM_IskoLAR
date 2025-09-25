@@ -1,15 +1,38 @@
 'use client';
 
 import Image from "next/image";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function ProfilePage() {
   const [open, setOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('first_name, last_name')
+          .eq('email_address', user.email)
+          .single();
+        
+        if (userData) {
+          setUserName(`${userData.first_name} ${userData.last_name}`);
+          setFirstName(userData.first_name);
+          setLastName(userData.last_name);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   // Add state for each field
-  const [lastName, setLastName] = useState("Mones");
-  const [firstName, setFirstName] = useState("Hazel Ann");
+  const [lastName, setLastName] = useState("");
+  const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("Besafez");
   const [gender, setGender] = useState("Female");
   const [birthdate, setBirthdate] = useState("04/08/2004");
@@ -154,7 +177,7 @@ export default function ProfilePage() {
           {/* Name and Role */}
           <div className="flex flex-col justify-center">
             <span className="text-sm font-semibold text-gray-900 leading-tight">
-              Hazel Mones
+              {userName || 'Loading...'}
             </span>
             <span className="text-xs text-gray-500 leading-tight">
               Scholar

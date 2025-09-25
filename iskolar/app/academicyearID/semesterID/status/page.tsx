@@ -1,13 +1,34 @@
   'use client';
 
   import Image from "next/image";
-  import { useState, useRef } from "react";
+  import { useState, useRef, useEffect } from "react";
+  import { supabase } from "@/lib/supabaseClient";
 
   const hoverClassName = "transition-all duration-200 hover:shadow-lg hover:scale-[1.01]";
 
   export default function ApplicationStatusPage() {
     const [open, setOpen] = useState(false);
     const notifRef = useRef<HTMLDivElement>(null);
+    const [userName, setUserName] = useState("");
+
+    useEffect(() => {
+      const fetchUserData = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('email_address', user.email)
+            .single();
+          
+          if (userData) {
+            setUserName(`${userData.first_name} ${userData.last_name}`);
+          }
+        }
+      };
+
+      fetchUserData();
+    }, []);
 
     // Fix: Explicitly type status as a union of possible values
     const [status] = useState<"Approved" | "Pending" | "Rejected">("Approved");
@@ -99,7 +120,7 @@
             {/* Name and Role */}
             <div className="flex flex-col justify-center">
               <span className="text-sm font-semibold text-gray-900 leading-tight">
-                Hazel Mones
+                {userName || 'Loading...'}
               </span>
               <span className="text-xs text-gray-500 leading-tight">
                 Scholar

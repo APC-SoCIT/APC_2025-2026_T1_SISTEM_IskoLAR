@@ -1,7 +1,8 @@
 'use client';
 
 import Image from "next/image";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 // Common input style
 const inputClassName = "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm transition-all duration-200 focus:ring-2 focus:ring-[#2196f3] focus:border-[#2196f3] focus:outline-none bg-white hover:border-gray-400";
@@ -9,6 +10,26 @@ const inputClassName = "w-full border border-gray-300 rounded-lg px-3 py-2.5 tex
 export default function ApplicationPage() {
   // Stepper state: 0 = Personal Info, 1 = Documents
   const [step, setStep] = useState(0);
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('first_name, last_name')
+          .eq('email_address', user.email)
+          .single();
+        
+        if (userData) {
+          setUserName(`${userData.first_name} ${userData.last_name}`);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   // Personal Info
   const [lastName, setLastName] = useState("");
@@ -150,7 +171,7 @@ export default function ApplicationPage() {
           {/* Name and Role */}
           <div className="flex flex-col justify-center">
             <span className="text-sm font-semibold text-gray-900 leading-tight">
-              Hazel Mones
+              {userName || 'Loading...'}
             </span>
             <span className="text-xs text-gray-500 leading-tight">
               Scholar
