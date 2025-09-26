@@ -116,29 +116,29 @@ const ScholarSidebar = () => {
             pathname === item.href || pathname.startsWith(item.href);
 
           return (
-            <Link href={item.href} key={item.label}>
-              <div
-                className={`flex items-center gap-3 py-3 pl-7 transition-all cursor-pointer relative ${
-                  isActive
-                    ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
-                    : 'text-black hover:bg-gray-100'
-                }`}
-              >
-                {isActive && (
-                  <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
-                )}
+            <Link
+              href={item.href}
+              key={item.label}
+              className={`flex items-center gap-3 py-3 pl-7 transition-all cursor-pointer relative ${
+                isActive
+                  ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
+                  : 'text-black hover:bg-gray-100'
+              }`}
+            >
+              {isActive && (
+                <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
+              )}
 
-                <div className="w-5 flex justify-center">
-                  <Image
-                    src={isActive ? item.iconActive : item.iconInactive}
-                    alt={`${item.label} icon`}
-                    width={16}
-                    height={16}
-                  />
-                </div>
-
-                <span>{item.label}</span>
+              <div className="w-5 flex justify-center">
+                <Image
+                  src={isActive ? item.iconActive : item.iconInactive}
+                  alt={`${item.label} icon`}
+                  width={16}
+                  height={16}
+                />
               </div>
+
+              <span>{item.label}</span>
             </Link>
           );
         })}
@@ -267,20 +267,19 @@ const ScholarSidebar = () => {
                         pathname === sub.href || pathname.startsWith(sub.href);
 
                       return (
-                        <Link href={sub.href} key={`1st-${sub.label}`} legacyBehavior>
-                          <a
-                            className={`flex items-center py-3 pl-20 transition-all cursor-pointer relative ${
-                              isActive
-                                ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
-                                : 'text-black hover:bg-gray-100'
-                            }`}
-                            // Removed onClick that would close the dropdown
-                          >
-                            {isActive && (
-                              <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
-                            )}
-                            <span>{sub.label}</span>
-                          </a>
+                        <Link
+                          href={sub.href}
+                          key={`1st-${sub.label}`}
+                          className={`flex items-center py-3 pl-20 transition-all cursor-pointer relative ${
+                            isActive
+                              ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
+                              : 'text-black hover:bg-gray-100'
+                          }`}
+                        >
+                          {isActive && (
+                            <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
+                          )}
+                          <span>{sub.label}</span>
                         </Link>
                       );
                     })}
@@ -319,20 +318,19 @@ const ScholarSidebar = () => {
                         pathname === sub.href || pathname.startsWith(sub.href);
 
                       return (
-                        <Link href={sub.href} key={`2nd-${sub.label}`} legacyBehavior>
-                          <a
-                            className={`flex items-center py-3 pl-20 transition-all cursor-pointer relative ${
-                              isActive
-                                ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
-                                : 'text-black hover:bg-gray-100'
-                            }`}
-                            // Removed onClick that would close the dropdown
-                          >
-                            {isActive && (
-                              <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
-                            )}
-                            <span>{sub.label}</span>
-                          </a>
+                        <Link
+                          href={sub.href}
+                          key={`2nd-${sub.label}`}
+                          className={`flex items-center py-3 pl-20 transition-all cursor-pointer relative ${
+                            isActive
+                              ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
+                              : 'text-black hover:bg-gray-100'
+                          }`}
+                        >
+                          {isActive && (
+                            <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
+                          )}
+                          <span>{sub.label}</span>
                         </Link>
                       );
                     })}
@@ -353,29 +351,29 @@ const ScholarSidebar = () => {
             pathname === item.href || pathname.startsWith(item.href);
 
           return (
-            <Link href={item.href} key={item.label}>
-              <div
-                className={`flex items-center gap-3 py-3 pl-7 transition-all cursor-pointer relative ${
-                  isActive
-                    ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
-                    : 'text-black hover:bg-gray-100'
-                }`}
-              >
-                {isActive && (
-                  <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
-                )}
+            <Link
+              href={item.href}
+              key={item.label}
+              className={`flex items-center gap-3 py-3 pl-7 transition-all cursor-pointer relative ${
+                isActive
+                  ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
+                  : 'text-black hover:bg-gray-100'
+              }`}
+            >
+              {isActive && (
+                <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
+              )}
 
-                <div className="w-5 flex justify-center">
-                  <Image
-                    src={isActive ? item.iconActive : item.iconInactive}
-                    alt={`${item.label} icon`}
-                    width={13}
-                    height={13}
-                  />
-                </div>
-
-                <span>{item.label}</span>
+              <div className="w-5 flex justify-center">
+                <Image
+                  src={isActive ? item.iconActive : item.iconInactive}
+                  alt={`${item.label} icon`}
+                  width={13}
+                  height={13}
+                />
               </div>
+
+              <span>{item.label}</span>
             </Link>
           );
         })}
