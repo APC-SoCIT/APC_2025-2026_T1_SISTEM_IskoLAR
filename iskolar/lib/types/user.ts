@@ -23,7 +23,7 @@ export interface UserBase {
   region?: string;
   
   // Education Information (optional during registration, required in profile)
-  college?: string;
+  college?: string; // maps to college in DB
   course?: string;
 }
 
@@ -47,10 +47,15 @@ export interface UserProfile extends UserBase {
   voterDocumentUrl?: string;
   nationalIdDocumentUrl?: string;
   
+  // Academic information
+  yearLevel?: string;
+  gpa?: string;
+  
   // Additional fields that may be needed for profile
   createdAt?: string;
   updatedAt?: string;
   status?: string;
+  lastLogin?: string;
 }
 
 /**

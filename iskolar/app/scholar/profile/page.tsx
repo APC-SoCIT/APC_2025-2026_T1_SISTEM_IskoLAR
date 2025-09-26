@@ -59,6 +59,8 @@ export default function ProfilePage() {
   // Education states
   const [college, setCollege] = useState("");
   const [course, setCourse] = useState("");
+  const [yearLevel, setYearLevel] = useState("");
+  const [gpa, setGpa] = useState("");
 
   // Dropdown data for address fields
   const provincesData = {
@@ -113,10 +115,10 @@ export default function ProfilePage() {
   // Fetch user profile data on component mount
   useEffect(() => {
     const fetchUserProfile = async () => {
-      try {
-        setIsLoading(true);
-        setSuccessMessage(''); // Clear any previous messages
-        setError(''); // Clear any previous errors
+    try {
+      setIsLoading(true);
+      setSuccessMessage(''); // Clear any previous messages
+      setError(''); // Clear any previous errors
         
         // Get auth token using the centralized helper function
         const token = getAuthToken();
@@ -213,6 +215,11 @@ export default function ProfilePage() {
           college: profile.college || '',
           course: profile.course || '',
           
+          // Document URLs
+          psaDocumentUrl: profile.birth_certificate || '',
+          voterDocumentUrl: profile.voters_certification || '',
+          nationalIdDocumentUrl: profile.national_id || '',
+          
           scholarId: profile.scholar_id || '',
           createdAt: profile.created_at || '',
           updatedAt: profile.updated_at || '',
@@ -249,6 +256,28 @@ export default function ProfilePage() {
         // Education fields
         setCollege(userData.college || '');
         setCourse(userData.course || '');
+        setYearLevel(userData.yearLevel || '');
+        setGpa(userData.gpa || '');
+        
+        // Document URLs
+        if (userData.psaDocumentUrl) {
+          setPsaUrl(userData.psaDocumentUrl);
+          // Extract filename from URL
+          const psaFilename = userData.psaDocumentUrl.split('/').pop() || "psabirthcert.pdf";
+          setPsaFileName(psaFilename);
+        }
+        
+        if (userData.voterDocumentUrl) {
+          setVoterUrl(userData.voterDocumentUrl);
+          const voterFilename = userData.voterDocumentUrl.split('/').pop() || "votercert.pdf";
+          setVoterFileName(voterFilename);
+        }
+        
+        if (userData.nationalIdDocumentUrl) {
+          setNationalIdUrl(userData.nationalIdDocumentUrl);
+          const nationalIdFilename = userData.nationalIdDocumentUrl.split('/').pop() || "nationalid.pdf";
+          setNationalIdFileName(nationalIdFilename);
+        }
         
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -267,6 +296,16 @@ export default function ProfilePage() {
       setIsLoading(true);
       setError('');
       setSuccessMessage('');
+      
+      // Validate mobile number
+      if (mobile) {
+        const mobileValidation = userValidation.validateMobile(mobile);
+        if (!mobileValidation.isValid) {
+          setError(mobileValidation.error || 'Invalid mobile number');
+          setIsLoading(false);
+          return;
+        }
+      }
       
       // Validate ZIP code
       if (zipCode && !userValidation.validateZipCode(zipCode)) {
@@ -287,103 +326,142 @@ export default function ProfilePage() {
         return;
       }
       
-      // Format the data for database update
-      const userUpdateData = {
-        // Personal info
-        first_name: firstName,
-        last_name: lastName,
-        middle_name: middleName || null,
-        gender: gender || null,
-        birthdate: userValidation.parseDisplayDate(birthdate) || null,
-        mobile_number: mobile,
-        
-        // Address info
-        address_line1: addressLine1 || null,
-        address_line2: addressLine2 || null,
-        barangay: barangay || null,
-        city: city || null,
-        province: province || null,
-        zip_code: zipCode || null,
-        region: region || null,
-        
-        // Education info
-        college: college || null,
-        course: course || null,
-        
-        // Timestamp
-        updated_at: new Date().toISOString(),
-      };
-
-      // Update user_metadata in auth.users
-      const { error: updateAuthError } = await supabase.auth.updateUser({
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          middle_name: middleName,
-          gender: gender,
-          birthdate: userValidation.parseDisplayDate(birthdate),
-          mobile_number: mobile,
-        }
-      });
-
-      if (updateAuthError) {
-        console.error('Error updating auth user metadata:', updateAuthError);
-        throw new Error('Failed to update user metadata');
-      }
-
-      // Update in users table
-      const { error: updateError } = await supabase
-        .from('users')
-        .update(userUpdateData)
-        .eq('user_id', user.id);
-
-      if (updateError) {
-        console.error('Error updating user profile:', updateError);
-        throw new Error(updateError.message || 'Failed to update profile');
-      }
-
-      // Get the updated user profile
-      const { data: updatedProfile, error: fetchError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (fetchError) {
-        console.error('Error fetching updated profile:', fetchError);
-        // Still consider the update successful even if we can't fetch the updated profile
-        setSuccessMessage('Profile updated successfully');
-        setIsEdit(false);
+      // Get token for API call
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      if (!token) {
+        setError('Session expired. Please sign in again.');
+        setTimeout(redirectToSignIn, 2000);
+        setIsLoading(false);
         return;
       }
-
-      // Format the data to match our UserProfile interface and update state
-      setUserProfile({
-        userId: updatedProfile.user_id,
-        firstName: updatedProfile.first_name,
-        lastName: updatedProfile.last_name,
-        middleName: updatedProfile.middle_name || '',
-        gender: updatedProfile.gender || '',
-        birthdate: updatedProfile.birthdate || '',
-        email: updatedProfile.email_address,
-        mobile: updatedProfile.mobile_number || '',
+      
+      // Format the user data for API request
+      const userData: UserProfile = {
+        firstName,
+        lastName,
+        middleName,
+        gender,
+        birthdate: userValidation.parseDisplayDate(birthdate),
+        email,
+        mobile,
         
-        addressLine1: updatedProfile.address_line1 || '',
-        addressLine2: updatedProfile.address_line2 || '',
-        barangay: updatedProfile.barangay || '',
-        city: updatedProfile.city || '',
-        province: updatedProfile.province || '',
-        zipCode: updatedProfile.zip_code || '',
-        region: updatedProfile.region || '',
+        addressLine1,
+        addressLine2,
+        barangay,
+        city, 
+        province,
+        zipCode,
+        region,
         
-        college: updatedProfile.college || '',
-        course: updatedProfile.course || '',
-        
-        scholarId: updatedProfile.scholar_id || '',
-        createdAt: updatedProfile.created_at || '',
-        updatedAt: updatedProfile.updated_at || '',
-        status: updatedProfile.status || '',
+        college,
+        course
+      };
+      
+      // Use the API endpoint to update profile
+      const response = await fetch('/api/profile/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(userData)
       });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        // If there's an error but the message is specifically about metadata,
+        // we'll consider the update successful and manually refresh the profile
+        if (result.error?.includes('metadata') || result.error === 'Failed to update user metadata') {
+          console.warn('User metadata update failed but profile data may have been updated');
+          
+          // Manually fetch the updated profile via Supabase
+          try {
+            const { data: { user: refreshedUser } } = await supabase.auth.getUser();
+            if (refreshedUser) {
+              const { data: refreshedProfile } = await supabase
+                .from('users')
+                .select('*')
+                .eq('user_id', refreshedUser.id)
+                .single();
+                
+              if (refreshedProfile) {
+                // Update the UI with the refreshed data
+                setUserName(`${refreshedProfile.first_name} ${refreshedProfile.last_name}`);
+              }
+            }
+          } catch (refreshError) {
+            console.error('Error refreshing profile:', refreshError);
+          }
+          
+          setSuccessMessage('Profile updated successfully (some metadata may not have been updated)');
+          setIsEdit(false);
+          return;
+        } else {
+          throw new Error(result.error || 'Failed to update profile');
+        }
+      }
+      
+      console.log('API response:', result);
+      
+      if (result.profile) {
+        // Update the local state with the updated profile data
+        setUserProfile(result.profile);
+        
+        // Update basic profile information for header display
+        setUserName(`${result.profile.firstName} ${result.profile.lastName}`);
+      } else {
+        // If we don't have a profile in the response, we need to fetch it
+        console.warn('Profile data missing in response, fetching latest data');
+        try {
+          // Fetch the latest profile data directly
+          const { data: latestProfile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+            
+          if (latestProfile) {
+            // Create a formatted profile from the fetched data
+            const formattedProfile: UserProfile = {
+              userId: latestProfile.user_id,
+              firstName: latestProfile.first_name,
+              lastName: latestProfile.last_name,
+              middleName: latestProfile.middle_name || '',
+              email: latestProfile.email_address,
+              mobile: latestProfile.mobile_number || '',
+              gender: latestProfile.gender || '',
+              birthdate: latestProfile.birthdate || '',
+              
+              // Update basic display info
+              addressLine1: latestProfile.address_line1 || '',
+              addressLine2: latestProfile.address_line2 || '',
+              barangay: latestProfile.barangay || '',
+              city: latestProfile.city || '',
+              province: latestProfile.province || '',
+              zipCode: latestProfile.zip_code || '',
+              region: latestProfile.region || '',
+              
+              // Education fields
+              college: latestProfile.college || '',
+              course: latestProfile.course || '',
+              
+              // Other fields we might need
+              status: latestProfile.status || '',
+            };
+            
+            // Update the profile state
+            setUserProfile(formattedProfile);
+            
+            // Update the name display
+            setUserName(`${formattedProfile.firstName} ${formattedProfile.lastName}`);
+          }
+        } catch (fetchError) {
+          console.error('Error fetching latest profile:', fetchError);
+        }
+      }
       
       // Update was successful
       setSuccessMessage('Profile updated successfully');
@@ -398,12 +476,90 @@ export default function ProfilePage() {
   };
 
   // Add state for each document file
-  const [, setPsaFile] = useState<File | null>(null);
+  const [psaFile, setPsaFile] = useState<File | null>(null);
   const [psaFileName, setPsaFileName] = useState("psabirthcert.pdf");
-  const [, setVoterFile] = useState<File | null>(null);
+  const [psaUploading, setPsaUploading] = useState(false);
+  const [psaUrl, setPsaUrl] = useState("");
+  
+  const [voterFile, setVoterFile] = useState<File | null>(null);
   const [voterFileName, setVoterFileName] = useState("votercert.pdf");
-  const [, setNationalIdFile] = useState<File | null>(null);
+  const [voterUploading, setVoterUploading] = useState(false);
+  const [voterUrl, setVoterUrl] = useState("");
+  
+  const [nationalIdFile, setNationalIdFile] = useState<File | null>(null);
   const [nationalIdFileName, setNationalIdFileName] = useState("nationalid.pdf");
+  const [nationalIdUploading, setNationalIdUploading] = useState(false);
+  const [nationalIdUrl, setNationalIdUrl] = useState("");
+
+  // Function to handle document uploads
+  const handleDocumentUpload = async (file: File, documentType: string, setUploading: React.Dispatch<React.SetStateAction<boolean>>) => {
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      setError('');
+      
+      // Get the current user session
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      if (!token) {
+        setError('Session expired. Please sign in again.');
+        return;
+      }
+      
+      // Create form data for upload
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('documentType', documentType);
+      
+      // Call the upload API
+      const response = await fetch('/api/profile/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to upload document');
+      }
+      
+      // Update document URL in state based on type
+      if (documentType === 'psa') {
+        setPsaUrl(result.url);
+      } else if (documentType === 'voter') {
+        setVoterUrl(result.url);
+      } else if (documentType === 'nationalId') {
+        setNationalIdUrl(result.url);
+      }
+      
+      // Show success message
+      setSuccessMessage(`${file.name} uploaded successfully`);
+      
+      // Update user profile with document URL
+      if (userProfile) {
+        const updatedProfile = {...userProfile};
+        if (documentType === 'psa') {
+          updatedProfile.psaDocumentUrl = result.url;
+        } else if (documentType === 'voter') {
+          updatedProfile.voterDocumentUrl = result.url;
+        } else if (documentType === 'nationalId') {
+          updatedProfile.nationalIdDocumentUrl = result.url;
+        }
+        setUserProfile(updatedProfile);
+      }
+      
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      setError(error instanceof Error ? error.message : 'Failed to upload document');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const notifRef = useRef<HTMLDivElement>(null);
 
@@ -726,12 +882,18 @@ export default function ProfilePage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Gender</label>
-                <input
+                <select
                   className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
                   value={gender}
-                  readOnly={!isEdit}
+                  disabled={!isEdit}
                   onChange={e => setGender(e.target.value)}
-                />
+                >
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                  <option value="Prefer not to say">Prefer not to say</option>
+                </select>
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Birthdate</label>
@@ -740,6 +902,7 @@ export default function ProfilePage() {
                   value={birthdate}
                   readOnly={!isEdit}
                   onChange={e => setBirthdate(e.target.value)}
+                  placeholder="MM/DD/YYYY"
                 />
               </div>
             </div>
@@ -768,7 +931,13 @@ export default function ProfilePage() {
                   value={mobile}
                   readOnly={!isEdit}
                   onChange={e => setMobile(e.target.value)}
+                  placeholder="e.g., 09123456789"
                 />
+                {isEdit && mobile && !userValidation.validateMobile(mobile).isValid && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {userValidation.validateMobile(mobile).error || 'Invalid mobile number'}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -825,6 +994,7 @@ export default function ProfilePage() {
                     setRegion(region);
                   }}
                 >
+                  <option value="">Select city/municipality</option>
                   {getCitiesByProvince(province).map(cityOption => (
                     <option key={cityOption} value={cityOption}>{cityOption}</option>
                   ))}
@@ -846,6 +1016,7 @@ export default function ProfilePage() {
                     setRegion(region);
                   }}
                 >
+                  <option value="">Select province</option>
                   {Object.keys(provincesData).map(provinceOption => (
                     <option key={provinceOption} value={provinceOption}>{provinceOption}</option>
                   ))}
@@ -887,7 +1058,7 @@ export default function ProfilePage() {
               <span className="font-semibold text-gray-700 text-lg">Program</span>
             </div>
             <hr className="border-gray-200 mb-4" />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 mb-3">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">College/University</label>
                 <input
@@ -904,6 +1075,35 @@ export default function ProfilePage() {
                   value={course || "Bachelor of Science in Computer Science"}
                   readOnly={!isEdit}
                   onChange={e => setCourse(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Year Level</label>
+                <select
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value={yearLevel}
+                  disabled={!isEdit}
+                  onChange={e => setYearLevel(e.target.value)}
+                >
+                  <option value="">Select year level</option>
+                  <option value="1st Year">1st Year</option>
+                  <option value="2nd Year">2nd Year</option>
+                  <option value="3rd Year">3rd Year</option>
+                  <option value="4th Year">4th Year</option>
+                  <option value="5th Year">5th Year</option>
+                  <option value="Graduate">Graduate</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">GPA/General Weighted Average</label>
+                <input
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value={gpa}
+                  readOnly={!isEdit}
+                  onChange={e => setGpa(e.target.value)}
+                  placeholder="e.g., 3.5 or 1.25"
                 />
               </div>
             </div>
@@ -924,75 +1124,123 @@ export default function ProfilePage() {
               </div>
             </div>
             <div className="grid grid-cols-1 gap-5">
-              {/* Certificate of Registration */}
+              {/* PSA Birth Certificate */}
               <div>
                 <label className="block text-xs text-gray-600 mb-1 font-medium">PSA Birth Certificate</label>
-                <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
-                  {isEdit ? (
-                    <>
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        className="cursor-pointer block w-full text-sm text-gray-700 bg-transparent file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#e3f2fd] file:text-[#1976d2] file:font-medium"
-                        onChange={e => {
-                          if (e.target.files && e.target.files[0]) {
-                            setPsaFile(e.target.files[0]);
-                            setPsaFileName(e.target.files[0].name);
-                          }
-                        }}
-                      />
-                      <span className="text-xs text-gray-500 truncate">{psaFileName}</span>
-                    </>
-                  ) : (
-                    <span className="text-xs text-gray-700 truncate">{psaFileName}</span>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
+                    {isEdit ? (
+                      <>
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          className="cursor-pointer block w-full text-sm text-gray-700 bg-transparent file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#e3f2fd] file:text-[#1976d2] file:font-medium"
+                          onChange={e => {
+                            if (e.target.files && e.target.files[0]) {
+                              setPsaFile(e.target.files[0]);
+                              setPsaFileName(e.target.files[0].name);
+                            }
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <span className="text-xs text-gray-700 truncate">{psaFileName}</span>
+                    )}
+                  </div>
+                  {psaUrl && (
+                    <div className="mt-1 text-xs text-green-600">
+                      Document uploaded successfully! 
+                      <a href={psaUrl} target="_blank" rel="noopener noreferrer" className="ml-1 underline">View</a>
+                    </div>
+                  )}
+                  {isEdit && psaFile && (
+                    <button
+                      className="mt-2 text-xs text-white bg-blue-500 hover:bg-blue-600 py-1 px-3 rounded self-start transition"
+                      onClick={() => handleDocumentUpload(psaFile, 'psa', setPsaUploading)}
+                      disabled={psaUploading}
+                    >
+                      {psaUploading ? 'Uploading...' : 'Upload Document'}
+                    </button>
                   )}
                 </div>
               </div>
-              {/* Certificate of Grades */}
+              {/* Voter's Certification */}
               <div>
                 <label className="block text-xs text-gray-600 mb-1 font-medium">Voter&apos;s Certification</label>
-                <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
-                  {isEdit ? (
-                    <>
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        className="cursor-pointer block w-full text-sm text-gray-700 bg-transparent file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#e3f2fd] file:text-[#1976d2] file:font-medium"
-                        onChange={e => {
-                          if (e.target.files && e.target.files[0]) {
-                            setVoterFile(e.target.files[0]);
-                            setVoterFileName(e.target.files[0].name);
-                          }
-                        }}
-                      />
-                      <span className="text-xs text-gray-500 truncate">{voterFileName}</span>
-                    </>
-                  ) : (
-                    <span className="text-xs text-gray-700 truncate">{voterFileName}</span>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
+                    {isEdit ? (
+                      <>
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          className="cursor-pointer block w-full text-sm text-gray-700 bg-transparent file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#e3f2fd] file:text-[#1976d2] file:font-medium"
+                          onChange={e => {
+                            if (e.target.files && e.target.files[0]) {
+                              setVoterFile(e.target.files[0]);
+                              setVoterFileName(e.target.files[0].name);
+                            }
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <span className="text-xs text-gray-700 truncate">{voterFileName}</span>
+                    )}
+                  </div>
+                  {voterUrl && (
+                    <div className="mt-1 text-xs text-green-600">
+                      Document uploaded successfully!
+                      <a href={voterUrl} target="_blank" rel="noopener noreferrer" className="ml-1 underline">View</a>
+                    </div>
+                  )}
+                  {isEdit && voterFile && (
+                    <button
+                      className="mt-2 text-xs text-white bg-blue-500 hover:bg-blue-600 py-1 px-3 rounded self-start transition"
+                      onClick={() => handleDocumentUpload(voterFile, 'voter', setVoterUploading)}
+                      disabled={voterUploading}
+                    >
+                      {voterUploading ? 'Uploading...' : 'Upload Document'}
+                    </button>
                   )}
                 </div>
               </div>
-              {/* School ID */}
+              {/* National ID */}
               <div>
                 <label className="block text-xs text-gray-600 mb-1 font-medium">National ID</label>
-                <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
-                  {isEdit ? (
-                    <>
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        className="cursor-pointer block w-full text-sm text-gray-700 bg-transparent file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#e3f2fd] file:text-[#1976d2] file:font-medium"
-                        onChange={e => {
-                          if (e.target.files && e.target.files[0]) {
-                            setNationalIdFile(e.target.files[0]);
-                            setNationalIdFileName(e.target.files[0].name);
-                          }
-                        }}
-                      />
-                      <span className="text-xs text-gray-500 truncate">{nationalIdFileName}</span>
-                    </>
-                  ) : (
-                    <span className="text-xs text-gray-700 truncate">{nationalIdFileName}</span>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
+                    {isEdit ? (
+                      <>
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          className="cursor-pointer block w-full text-sm text-gray-700 bg-transparent file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#e3f2fd] file:text-[#1976d2] file:font-medium"
+                          onChange={e => {
+                            if (e.target.files && e.target.files[0]) {
+                              setNationalIdFile(e.target.files[0]);
+                              setNationalIdFileName(e.target.files[0].name);
+                            }
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <span className="text-xs text-gray-700 truncate">{nationalIdFileName}</span>
+                    )}
+                  </div>
+                  {nationalIdUrl && (
+                    <div className="mt-1 text-xs text-green-600">
+                      Document uploaded successfully!
+                      <a href={nationalIdUrl} target="_blank" rel="noopener noreferrer" className="ml-1 underline">View</a>
+                    </div>
+                  )}
+                  {isEdit && nationalIdFile && (
+                    <button
+                      className="mt-2 text-xs text-white bg-blue-500 hover:bg-blue-600 py-1 px-3 rounded self-start transition"
+                      onClick={() => handleDocumentUpload(nationalIdFile, 'nationalId', setNationalIdUploading)}
+                      disabled={nationalIdUploading}
+                    >
+                      {nationalIdUploading ? 'Uploading...' : 'Upload Document'}
+                    </button>
                   )}
                 </div>
               </div>

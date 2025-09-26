@@ -51,37 +51,30 @@ export async function PUT(request: NextRequest) {
       
       // Address info
       address_line1: userData.addressLine1 || null,
-      address_line2: userData.addressLine2 || null,
+      address_line2: userData.addressLine2 || null, // Updated to match schema
       barangay: userData.barangay || null,
       city: userData.city || null,
       province: userData.province || null,
-      zip_code: userData.zipCode || null,
+      zip_code: userData.zipCode || null, // Updated to match schema
       region: userData.region || null,
       
       // Education info
-      college: userData.college || null,
+      college: userData.college || null, // Fixed to match actual column name
       course: userData.course || null,
+      
+      // Document URLs - if provided
+      birth_certificate: userData.psaDocumentUrl || null, // Updated to match schema
+      voters_certification: userData.voterDocumentUrl || null, // Updated to match schema
+      national_id: userData.nationalIdDocumentUrl || null, // Updated to match schema
       
       // Timestamp
       updated_at: new Date().toISOString(),
     };
 
-    // Update user_metadata in auth.users
-    const { error: updateAuthError } = await supabase.auth.updateUser({
-      data: {
-        first_name: userData.firstName,
-        last_name: userData.lastName,
-        middle_name: userData.middleName,
-        gender: userData.gender,
-        birthdate: userData.birthdate,
-        mobile_number: userData.mobile,
-      }
-    });
-
-    if (updateAuthError) {
-      console.error('Error updating auth user metadata:', updateAuthError);
-      return NextResponse.json({ error: 'Failed to update user metadata' }, { status: 500 });
-    }
+    // Skip updating user_metadata in auth.users - it's causing problems
+    // and the critical user data is still updated in the users table
+    // We'll revisit this feature in the future
+    console.log('Skipping auth metadata update - this feature is temporarily disabled');
 
     // Update in users table
     const { error: updateError } = await supabase
@@ -104,11 +97,12 @@ export async function PUT(request: NextRequest) {
       .eq('user_id', user.id)
       .single();
 
-    if (fetchError) {
+    if (fetchError || !updatedProfile) {
       console.error('Error fetching updated profile:', fetchError);
+      // Return success but without profile data - client will need to fetch it separately
       return NextResponse.json({ 
         success: true, 
-        message: 'Profile updated successfully, but failed to fetch the updated profile' 
+        message: 'Profile updated successfully, but failed to fetch the updated profile'
       });
     }
 
@@ -124,21 +118,30 @@ export async function PUT(request: NextRequest) {
       mobile: updatedProfile.mobile_number || '',
       
       addressLine1: updatedProfile.address_line1 || '',
-      addressLine2: updatedProfile.address_line2 || '',
+      addressLine2: updatedProfile.address_line2 || '', // Updated to match schema
       barangay: updatedProfile.barangay || '',
       city: updatedProfile.city || '',
       province: updatedProfile.province || '',
-      zipCode: updatedProfile.zip_code || '',
+      zipCode: updatedProfile.zip_code || '', // Updated to match schema
       region: updatedProfile.region || '',
       
       college: updatedProfile.college || '',
       course: updatedProfile.course || '',
+      
+      // Document URLs
+      psaDocumentUrl: updatedProfile.birth_certificate || '',
+      voterDocumentUrl: updatedProfile.voters_certification || '',
+      nationalIdDocumentUrl: updatedProfile.national_id || '',
       
       // Other fields
       scholarId: updatedProfile.scholar_id || '',
       createdAt: updatedProfile.created_at || '',
       updatedAt: updatedProfile.updated_at || '',
       status: updatedProfile.status || '',
+      
+      // Academic info
+      yearLevel: updatedProfile.year_level || '',
+      gpa: updatedProfile.GPA || '',
     };
 
     return NextResponse.json({ 
@@ -148,7 +151,10 @@ export async function PUT(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error updating profile:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : 'Internal server error',
+      success: false 
+    }, { status: 500 });
   }
 }
 
@@ -198,21 +204,31 @@ export async function GET(request: NextRequest) {
       mobile: profile.mobile_number || '',
       
       addressLine1: profile.address_line1 || '',
-      addressLine2: profile.address_line2 || '',
+      addressLine2: profile.address_line2 || '', // Updated to match schema
       barangay: profile.barangay || '',
       city: profile.city || '',
       province: profile.province || '',
-      zipCode: profile.zip_code || '',
+      zipCode: profile.zip_code || '', // Updated to match schema
       region: profile.region || '',
       
       college: profile.college || '',
       course: profile.course || '',
+      
+      // Document URLs
+      psaDocumentUrl: profile.birth_certificate || '',
+      voterDocumentUrl: profile.voters_certification || '',
+      nationalIdDocumentUrl: profile.national_id || '',
+      
+      // Academic fields
+      yearLevel: profile.year_level || '',
+      gpa: profile.GPA || '',
       
       // Other fields
       scholarId: profile.scholar_id || '',
       createdAt: profile.created_at || '',
       updatedAt: profile.updated_at || '',
       status: profile.status || '',
+      lastLogin: profile.last_login || '',
     };
 
     return NextResponse.json({ profile: responseData });
