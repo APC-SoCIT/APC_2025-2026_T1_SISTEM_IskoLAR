@@ -32,6 +32,9 @@ export default function ApplicationPage() {
   const [motherJob, setMotherJob] = useState("");
   const [fatherName, setFatherName] = useState("");
   const [fatherJob, setFatherJob] = useState("");
+  const [residencyYears, setResidencyYears] = useState("");
+  const [gpa, setGpa] = useState("");
+  const [familyIncome, setFamilyIncome] = useState("");
 
   // Document Uploads
   const [, setRegFile] = useState<File | null>(null);
@@ -40,6 +43,12 @@ export default function ApplicationPage() {
   const [gradesFileName, setGradesFileName] = useState("");
   const [, setIdFile] = useState<File | null>(null);
   const [idFileName, setIdFileName] = useState("");
+  const [, setPsaFile] = useState<File | null>(null);
+  const [psaFileName, setPsaFileName] = useState("");
+  const [, setVoterFile] = useState<File | null>(null);
+  const [voterFileName, setVoterFileName] = useState("");
+  const [, setNationalIdFile] = useState<File | null>(null);
+  const [nationalIdFileName, setNationalIdFileName] = useState("");
 
   const steps = [
     { label: "Personal" },
@@ -198,6 +207,48 @@ export default function ApplicationPage() {
                   </div>
                 </div>
 
+                {/* Years of Residency, GPA, and Family Income */}
+                <div className="grid grid-cols-7 gap-4 mb-2">
+                  <div className="col-span-2">
+                    <label className="block text-xs text-gray-500 mb-1">Years of Residency <span className="text-red-500">*</span></label>
+                    <input
+                      required
+                      type="number"
+                      min="0"
+                      className={inputClassName}
+                      value={residencyYears}
+                      onChange={e => setResidencyYears(e.target.value)}
+                      placeholder="Enter years"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-xs text-gray-500 mb-1">GPA <span className="text-red-500">*</span></label>
+                    <input
+                      required
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="4"
+                      className={inputClassName}
+                      value={gpa}
+                      onChange={e => setGpa(e.target.value)}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="col-span-3">
+                    <label className="block text-xs text-gray-500 mb-1">Family Income <span className="text-red-500">*</span></label>
+                    <input
+                      required
+                      type="number"
+                      min="0"
+                      className={inputClassName}
+                      value={familyIncome}
+                      onChange={e => setFamilyIncome(e.target.value)}
+                      placeholder="Enter annual family income"
+                    />
+                  </div>
+                </div>
+
                 {/* Address */}
                 <div className="mt-6 mb-2 font-semibold text-gray-700">Address</div>
                 <div className="flex flex-col gap-4 mb-2">
@@ -285,7 +336,7 @@ export default function ApplicationPage() {
           </div>
         )}
 
-        {/* Step 2: Documents (unchanged) */}
+        {/* Step 2: Documents (with changes) */}
         {step === 1 && (
           <div className="bg-white rounded-xl shadow p-6 mb-2">
             <div className="flex items-center gap-2 mb-4">
@@ -302,6 +353,61 @@ export default function ApplicationPage() {
               </div>
             </div>
             <div className="grid grid-cols-1 gap-5">
+              {/* PSA Birth Certificate */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-1 font-medium">PSA Birth Certificate</label>
+                <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="cursor-pointer block w-full text-sm text-gray-700 bg-transparent file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#e3f2fd] file:text-[#1976d2] file:font-medium"
+                    onChange={e => {
+                      if (e.target.files && e.target.files[0]) {
+                        setPsaFile(e.target.files[0]);
+                        setPsaFileName(e.target.files[0].name);
+                      }
+                    }}
+                  />
+                  <span className="text-xs text-gray-500 truncate">{psaFileName}</span>
+                </div>
+              </div>
+              {/* Voter's Certification */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-1 font-medium">Voter&apos;s Certification</label>
+                <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="cursor-pointer block w-full text-sm text-gray-700 bg-transparent file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#e3f2fd] file:text-[#1976d2] file:font-medium"
+                    onChange={e => {
+                      if (e.target.files && e.target.files[0]) {
+                        setVoterFile(e.target.files[0]);
+                        setVoterFileName(e.target.files[0].name);
+                      }
+                    }}
+                  />
+                  <span className="text-xs text-gray-500 truncate">{voterFileName}</span>
+                </div>
+              </div>
+              {/* National ID */}
+              <div>
+                <label className="block text-xs text-gray-600 mb-1 font-medium">National ID</label>
+                <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="cursor-pointer block w-full text-sm text-gray-700 bg-transparent file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#e3f2fd] file:text-[#1976d2] file:font-medium"
+                    onChange={e => {
+                      if (e.target.files && e.target.files[0]) {
+                        setNationalIdFile(e.target.files[0]);
+                        setNationalIdFileName(e.target.files[0].name);
+                      }
+                    }}
+                  />
+                  <span className="text-xs text-gray-500 truncate">{nationalIdFileName}</span>
+                </div>
+              </div>
+              {/* Original document upload fields */}
               {/* Certificate of Registration */}
               <div>
                 <label className="block text-xs text-gray-600 mb-1 font-medium">Certificate of Registration</label>

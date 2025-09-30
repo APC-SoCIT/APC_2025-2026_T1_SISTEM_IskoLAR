@@ -16,6 +16,7 @@ export interface DocumentData {
 export default function DocumentsTab() {
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState('all');
   const [documents, setDocuments] = useState<DocumentData[]>(() => [
     // Identity Documents
     {
@@ -182,6 +183,59 @@ export default function DocumentsTab() {
 
   return (
     <div className="space-y-6">
+      {/* Header Section */}
+      <div className="border-b border-gray-200 pb-5">
+        <div className="flex flex-col space-y-3">
+          <h1 className="text-2xl font-semibold text-gray-900">Required Documents</h1>
+          <p className="text-gray-500">
+            View and manage submitted documents. Verify the authenticity and completeness of each document,
+            request re-uploads if needed, and track document submission status.
+          </p>
+        </div>
+        <div className="mt-4 flex space-x-8">
+          <button
+            onClick={() => setActiveSection('all')}
+            className={`pb-4 text-sm font-medium ${
+              activeSection === 'all'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            All Documents
+          </button>
+          <button
+            onClick={() => setActiveSection('pending')}
+            className={`pb-4 text-sm font-medium ${
+              activeSection === 'pending'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Pending Verification
+          </button>
+          <button
+            onClick={() => setActiveSection('verified')}
+            className={`pb-4 text-sm font-medium ${
+              activeSection === 'verified'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Verified
+          </button>
+          <button
+            onClick={() => setActiveSection('issues')}
+            className={`pb-4 text-sm font-medium ${
+              activeSection === 'issues'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Issues
+          </button>
+        </div>
+      </div>
+
       {/* Request Documents Button */}
       <div className="flex justify-end">
         <button 
