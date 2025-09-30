@@ -216,7 +216,6 @@
                   </div>
                 </div>
               </div>
-
               {/* Address Information */}
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Address Information</h3>

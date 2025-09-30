@@ -30,47 +30,16 @@ export default function DashboardPage() {
             <p className="mt-1 text-sm text-gray-500">Overview of scholarship program metrics and tasks</p>
           </div>
 
-          {/* Right side - Search, Notifications, Profile, and Action Buttons */}
-          <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:space-y-0 lg:space-x-4">
-            {/* Search Bar */}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search..."
-                className="w-full lg:w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-            </div>
-
-            {/* Notification Button */}
-            <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
-              <BellIcon className="h-6 w-6" />
-              <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+          {/* Action Buttons */}
+          <div className="flex space-x-3">
+            <button className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <DocumentPlusIcon className="h-5 w-5 mr-2" />
+              <span>New Report</span>
             </button>
-
-            {/* Profile Button */}
-            <button className="flex items-center space-x-3 p-2 hover:bg-gray-100 rounded-lg">
-              <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
-                <span className="text-white text-sm font-medium">AU</span>
-              </div>
-              <div className="text-left hidden lg:block">
-                <p className="text-sm font-medium text-gray-900">Admin User</p>
-                <p className="text-xs text-gray-500">Administrator</p>
-              </div>
-              <ChevronDownIcon className="h-5 w-5 text-gray-400" />
+            <button className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
+              <span>Export</span>
             </button>
-
-            {/* Action Buttons */}
-            <div className="flex space-x-3">
-              <button className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                <DocumentPlusIcon className="h-5 w-5 mr-2" />
-                <span>New Report</span>
-              </button>
-              <button className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
-                <span>Export</span>
-              </button>
-            </div>
           </div>
         </div>
       </header>

@@ -8,7 +8,7 @@ import ApplicationNavbar from './components/ApplicationNavbar';
 
 // Mock data for the application
 const applicationData: any = {
-  id: 'ISKOLAR-2025-001',
+  id: 'ISKOLAR: 2025-001',
   status: 'Pending',
   applicant: {
     name: 'Juan Dela Cruz',
