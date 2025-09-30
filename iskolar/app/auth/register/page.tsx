@@ -1,8 +1,8 @@
 "use client";
-
+ 
 import Link from "next/link";
 import { useState } from "react";
-
+ 
 export default function SignUpPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -11,14 +11,72 @@ export default function SignUpPage() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [agree, setAgree] = useState(false);
     const [showModal, setShowModal] = useState(false);
-
+ 
     // New fields
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [middleName, setMiddleName] = useState("");
     const [gender, setGender] = useState("");
     const [mobile, setMobile] = useState("");
-
+    const [birthday, setBirthday] = useState("");
+    const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+ 
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+       
+        // Form validation
+        if (!firstName || !lastName || !email || !password || !confirmPassword || !birthday || !gender || !mobile) {
+            setError("Please fill in all required fields");
+            return;
+        }
+ 
+        if (password !== confirmPassword) {
+            setError("Passwords do not match");
+            return;
+        }
+ 
+        if (!agree) {
+            setError("Please agree to the Data Privacy Act");
+            return;
+        }
+ 
+        setIsLoading(true);
+        setError("");
+ 
+        try {
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    firstName,
+                    lastName,
+                    middleName,
+                    gender,
+                    birthdate: birthday,
+                    email,
+                    password,
+                    mobile,
+                }),
+            });
+ 
+            const data = await response.json();
+ 
+            if (!response.ok) {
+                throw new Error(data.error || 'Registration failed');
+            }
+ 
+            // Registration successful
+            window.location.href = '/auth/sign-in'; // Redirect to sign in page
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Registration failed');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+ 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#e3f0ff] via-[#f5f7fa] to-[#e3f0ff] py-16">
             {/* Top Spacer */}
@@ -70,8 +128,21 @@ export default function SignUpPage() {
                             onChange={e => setMiddleName(e.target.value)}
                         />
                     </div>
-                    {/* Gender & Mobile Number in two columns */}
+                    {/* Birthday & Gender in two columns */}
                     <div className="grid grid-cols-2 gap-4">
+                        {/* Birthday */}
+                        <div>
+                            <label htmlFor="birthday" className="block text-sm font-medium text-gray-700 mb-1">
+                                Birthday <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                id="birthday"
+                                type="date"
+                                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
+                                value={birthday}
+                                onChange={e => setBirthday(e.target.value)}
+                            />
+                        </div>
                         {/* Gender */}
                         <div className="relative">
                             <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-1">
@@ -95,20 +166,20 @@ export default function SignUpPage() {
                                 </svg>
                             </span>
                         </div>
-                        {/* Mobile Number */}
-                        <div>
-                            <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 mb-1">
-                                Mobile Number <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                id="mobile"
-                                type="tel"
-                                placeholder="+639XXXXXXXXX"
-                                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
-                                value={mobile}
-                                onChange={e => setMobile(e.target.value)}
-                            />
-                        </div>
+                    </div>
+                    {/* Mobile Number */}
+                    <div>
+                        <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 mb-1">
+                            Mobile Number <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            id="mobile"
+                            type="tel"
+                            placeholder="+639XXXXXXXXX"
+                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
+                            value={mobile}
+                            onChange={e => setMobile(e.target.value)}
+                        />
                     </div>
                     {/* Email */}
                     <div>
@@ -241,12 +312,20 @@ export default function SignUpPage() {
                             </span>
                         </label>
                     </div>
+                    {/* Error Message */}
+                    {error && (
+                        <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+                            {error}
+                        </div>
+                    )}
                     {/* Register Button */}
                     <button
                         type="submit"
-                        className="cursor-pointer w-full py-2 rounded-lg bg-gradient-to-r from-[#D32F2F] to-[#B71C1C] text-white font-semibold text-lg shadow hover:opacity-90 transition"
+                        disabled={isLoading}
+                        onClick={handleSubmit}
+                        className={`cursor-pointer w-full py-2 rounded-lg bg-gradient-to-r from-[#D32F2F] to-[#B71C1C] text-white font-semibold text-lg shadow hover:opacity-90 transition ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                        Register
+                        {isLoading ? 'Registering...' : 'Register'}
                     </button>
                 </form>
                 {/* Modal for Terms and Conditions */}

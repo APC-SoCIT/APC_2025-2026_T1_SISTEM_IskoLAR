@@ -216,35 +216,6 @@
                   </div>
                 </div>
               </div>
-
-              {/* New Row: Years of Residency, GPA, Family Income */}
-              <div className="grid grid-cols-4 gap-4 mb-2">
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Years of Residency</label>
-                  <input
-                    className="w-full bg-gray-100 rounded px-3 py-2 text-sm"
-                    value="5"
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">GPA</label>
-                  <input
-                    className="w-full bg-gray-100 rounded px-3 py-2 text-sm"
-                    value="1.75"
-                    readOnly
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-xs text-gray-500 mb-1">Family Income (annually)</label>
-                  <input
-                    className="w-full bg-gray-100 rounded px-3 py-2 text-sm"
-                    value="250000.00"
-                    readOnly
-                  />
-                </div>
-              </div>
-
               {/* Address Information */}
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Address Information</h3>
