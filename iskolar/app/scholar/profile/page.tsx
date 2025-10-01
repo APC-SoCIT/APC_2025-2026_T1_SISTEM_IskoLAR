@@ -263,10 +263,16 @@ export default function ProfilePage() {
   
   // Handle profile update
   const handleUpdateProfile = async () => {
+    // Prevent duplicate submissions
+    if (isLoading) return;
+    
     try {
       setIsLoading(true);
       setError('');
       setSuccessMessage('');
+      
+      // Add a small delay to ensure loading state is visible
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Validate ZIP code
       if (zipCode && !userValidation.validateZipCode(zipCode)) {
@@ -314,76 +320,117 @@ export default function ProfilePage() {
         updated_at: new Date().toISOString(),
       };
 
-      // Update user_metadata in auth.users
-      const { error: updateAuthError } = await supabase.auth.updateUser({
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          middle_name: middleName,
-          gender: gender,
-          birthdate: userValidation.parseDisplayDate(birthdate),
-          mobile_number: mobile,
+      console.log('Starting profile update with data:', { userUpdateData, user });
+
+      try {
+        // Update user_metadata in auth.users
+        const { data: authData, error: updateAuthError } = await supabase.auth.updateUser({
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            middle_name: middleName,
+            gender: gender,
+            birthdate: userValidation.parseDisplayDate(birthdate),
+            mobile_number: mobile,
+          }
+        });
+
+        if (updateAuthError) {
+          console.error('Error updating auth user metadata:', updateAuthError);
+          setError('Failed to update user metadata: ' + updateAuthError.message);
+          return;
         }
-      });
 
-      if (updateAuthError) {
-        console.error('Error updating auth user metadata:', updateAuthError);
-        throw new Error('Failed to update user metadata');
-      }
+        console.log('Auth update successful:', authData);
 
-      // Update in users table
-      const { error: updateError } = await supabase
-        .from('users')
-        .update(userUpdateData)
-        .eq('user_id', user.id);
+        // Update in users table
+        const { data: updateData, error: updateError } = await supabase
+          .from('users')
+          .update(userUpdateData)
+          .eq('user_id', user.id)
+          .select();  // Add select() to return the updated data
 
-      if (updateError) {
-        console.error('Error updating user profile:', updateError);
-        throw new Error(updateError.message || 'Failed to update profile');
-      }
+        console.log('Supabase update response:', { updateData, updateError });
 
-      // Get the updated user profile
-      const { data: updatedProfile, error: fetchError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+        if (updateError) {
+          console.error('Error updating user profile:', updateError);
+          setError('Failed to update profile: ' + updateError.message);
+          return;
+        }
 
-      if (fetchError) {
-        console.error('Error fetching updated profile:', fetchError);
-        // Still consider the update successful even if we can't fetch the updated profile
-        setSuccessMessage('Profile updated successfully');
-        setIsEdit(false);
+        if (!updateData) {
+          console.error('No data returned from update');
+          setError('Failed to update profile: No data returned');
+          return;
+        }
+
+        console.log('Profile update successful:', updateData);
+      } catch (innerError) {
+        console.error('Exception during update operations:', innerError);
+        setError('Update failed: ' + (innerError instanceof Error ? innerError.message : 'Unknown error'));
         return;
       }
 
-      // Format the data to match our UserProfile interface and update state
-      setUserProfile({
-        userId: updatedProfile.user_id,
-        firstName: updatedProfile.first_name,
-        lastName: updatedProfile.last_name,
-        middleName: updatedProfile.middle_name || '',
-        gender: updatedProfile.gender || '',
-        birthdate: updatedProfile.birthdate || '',
-        email: updatedProfile.email_address,
-        mobile: updatedProfile.mobile_number || '',
-        
-        addressLine1: updatedProfile.address_line1 || '',
-        addressLine2: updatedProfile.address_line2 || '',
-        barangay: updatedProfile.barangay || '',
-        city: updatedProfile.city || '',
-        province: updatedProfile.province || '',
-        zipCode: updatedProfile.zip_code || '',
-        region: updatedProfile.region || '',
-        
-        college: updatedProfile.college || '',
-        course: updatedProfile.course || '',
-        
-        scholarId: updatedProfile.scholar_id || '',
-        createdAt: updatedProfile.created_at || '',
-        updatedAt: updatedProfile.updated_at || '',
-        status: updatedProfile.status || '',
-      });
+      try {
+        // Get the updated user profile
+        const { data: updatedProfile, error: fetchError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        console.log('Fetch updated profile response:', { updatedProfile, fetchError });
+
+        if (fetchError) {
+          console.error('Error fetching updated profile:', fetchError);
+          // Don't throw, just show success since update worked
+          setSuccessMessage('Profile updated successfully');
+          setIsEdit(false);
+          return;
+        }
+
+        if (!updatedProfile) {
+          console.error('No profile data returned');
+          setError('Could not retrieve updated profile');
+          return;
+        }
+
+        // Format the data to match our UserProfile interface and update state
+        const newProfile = {
+          userId: updatedProfile.user_id,
+          firstName: updatedProfile.first_name,
+          lastName: updatedProfile.last_name,
+          middleName: updatedProfile.middle_name || '',
+          gender: updatedProfile.gender || '',
+          birthdate: updatedProfile.birthdate || '',
+          email: updatedProfile.email_address,
+          mobile: updatedProfile.mobile_number || '',
+          
+          addressLine1: updatedProfile.address_line1 || '',
+          addressLine2: updatedProfile.address_line2 || '',
+          barangay: updatedProfile.barangay || '',
+          city: updatedProfile.city || '',
+          province: updatedProfile.province || '',
+          zipCode: updatedProfile.zip_code || '',
+          region: updatedProfile.region || '',
+          
+          college: updatedProfile.college || '',
+          course: updatedProfile.course || '',
+          
+          scholarId: updatedProfile.scholar_id || '',
+          createdAt: updatedProfile.created_at || '',
+          updatedAt: updatedProfile.updated_at || '',
+          status: updatedProfile.status || '',
+        };
+
+        console.log('Setting new profile:', newProfile);
+        setUserProfile(newProfile);
+        setSuccessMessage('Profile updated successfully');
+        setIsEdit(false);
+      } catch (error) {
+        console.error('Error processing updated profile:', error);
+        setError('Failed to process updated profile');
+      }
       
       // Update was successful
       setSuccessMessage('Profile updated successfully');
@@ -393,17 +440,21 @@ export default function ProfilePage() {
       console.error('Error updating profile:', error);
       setError(error instanceof Error ? error.message : 'Failed to update profile');
     } finally {
+      // Add a small delay before removing loading state to ensure UI feedback
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
       setIsLoading(false);
     }
   };
 
   // Add state for each document file
   const [, setPsaFile] = useState<File | null>(null);
-  const [psaFileName, setPsaFileName] = useState("psabirthcert.pdf");
+  const [psaFileName, setPsaFileName] = useState("");
   const [, setVoterFile] = useState<File | null>(null);
-  const [voterFileName, setVoterFileName] = useState("votercert.pdf");
+  const [voterFileName, setVoterFileName] = useState("");
   const [, setNationalIdFile] = useState<File | null>(null);
-  const [nationalIdFileName, setNationalIdFileName] = useState("nationalid.pdf");
+  const [nationalIdFileName, setNationalIdFileName] = useState("");
 
   const notifRef = useRef<HTMLDivElement>(null);
 
@@ -551,23 +602,39 @@ export default function ProfilePage() {
               </button>
             </nav>
           </div>
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+              <span className="block sm:inline">{error}</span>
+            </div>
+          )}
+          {successMessage && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+              <span className="block sm:inline">{successMessage}</span>
+            </div>
+          )}
           {isEdit ? (
             <>
               <button
-                className={`cursor-pointer mt-6 mb-2 bg-[#219174] hover:bg-[#17695a] text-white px-5 py-2 rounded-lg font-medium shadow transition ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
-                onClick={handleUpdateProfile}
+                className={`cursor-pointer mt-6 mb-2 ${isLoading ? 'bg-gray-400' : 'bg-[#219174] hover:bg-[#17695a]'} text-white px-5 py-2 rounded-lg font-medium shadow transition`}
+                onClick={isLoading ? undefined : handleUpdateProfile}
                 disabled={isLoading}
                 type="button"
               >
-                {isLoading ? 'Saving...' : 'Save Changes'}
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    Saving...
+                  </div>
+                ) : 'Save Changes'}
               </button>
               <button
-                className="cursor-pointer bg-[#f44336] text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-[#c62828] transition"
+                className={`cursor-pointer bg-[#f44336] text-white px-5 py-2 rounded-lg font-medium shadow hover:bg-[#c62828] transition ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onClick={() => {
-                  setIsEdit(false);
-                  setError('');
-                  // Reset form to current profile data
-                  if (userProfile) {
+                  if (!isLoading && userProfile) {
+                    // Reset form to current profile data
                     setFirstName(userProfile.firstName);
                     setLastName(userProfile.lastName);
                     setMiddleName(userProfile.middleName || '');
@@ -590,6 +657,9 @@ export default function ProfilePage() {
                     // Education fields
                     setCollege(userProfile.college || '');
                     setCourse(userProfile.course || '');
+                    
+                    setIsEdit(false);
+                    setError('');
                   }
                 }}
                 disabled={isLoading}
@@ -892,7 +962,7 @@ export default function ProfilePage() {
                 <label className="block text-xs text-gray-500 mb-1">College/University</label>
                 <input
                   className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
-                  value={college || "Asia Pacific College"}
+                  value={college}
                   readOnly={!isEdit}
                   onChange={e => setCollege(e.target.value)}
                 />
@@ -901,7 +971,7 @@ export default function ProfilePage() {
                 <label className="block text-xs text-gray-500 mb-1">Course</label>
                 <input
                   className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
-                  value={course || "Bachelor of Science in Computer Science"}
+                  value={course}
                   readOnly={!isEdit}
                   onChange={e => setCourse(e.target.value)}
                 />
@@ -941,10 +1011,10 @@ export default function ProfilePage() {
                           }
                         }}
                       />
-                      <span className="text-xs text-gray-500 truncate">{psaFileName}</span>
+                      <span className="text-xs text-gray-500 truncate">{psaFileName || "No document uploaded"}</span>
                     </>
                   ) : (
-                    <span className="text-xs text-gray-700 truncate">{psaFileName}</span>
+                    <span className="text-xs text-gray-700 truncate">{psaFileName || "No document uploaded"}</span>
                   )}
                 </div>
               </div>
@@ -965,10 +1035,10 @@ export default function ProfilePage() {
                           }
                         }}
                       />
-                      <span className="text-xs text-gray-500 truncate">{voterFileName}</span>
+                      <span className="text-xs text-gray-500 truncate">{voterFileName || "No document uploaded"}</span>
                     </>
                   ) : (
-                    <span className="text-xs text-gray-700 truncate">{voterFileName}</span>
+                    <span className="text-xs text-gray-700 truncate">{voterFileName || "No document uploaded"}</span>
                   )}
                 </div>
               </div>
@@ -989,10 +1059,10 @@ export default function ProfilePage() {
                           }
                         }}
                       />
-                      <span className="text-xs text-gray-500 truncate">{nationalIdFileName}</span>
+                      <span className="text-xs text-gray-500 truncate">{nationalIdFileName || "No document uploaded"}</span>
                     </>
                   ) : (
-                    <span className="text-xs text-gray-700 truncate">{nationalIdFileName}</span>
+                    <span className="text-xs text-gray-700 truncate">{nationalIdFileName || "No document uploaded"}</span>
                   )}
                 </div>
               </div>
