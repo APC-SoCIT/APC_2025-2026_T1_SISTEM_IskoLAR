@@ -73,11 +73,21 @@ export async function POST(request: NextRequest) {
       .from('profile-documents')
       .getPublicUrl(fileName);
 
-    // Update profile with document URL
-    const updateField = `${documentType}_url`;
+    // Update profile with document URL - mapping to the correct column names
+    if (!['psa', 'voter', 'nationalId'].includes(documentType)) {
+      return NextResponse.json({ error: 'Invalid document type' }, { status: 400 });
+    }
+    
+    // Update the users table with the document URL - match the schema column names
+    const columnMapping: Record<string, string> = {
+      'psa': 'birth_certificate',
+      'voter': 'voters_certification', 
+      'nationalId': 'national_id'
+    };
+    
     const { error: updateError } = await supabase
-      .from('user_profiles')
-      .update({ [updateField]: publicUrl })
+      .from('users')
+      .update({ [columnMapping[documentType]]: publicUrl })
       .eq('user_id', user.id);
 
     if (updateError) {

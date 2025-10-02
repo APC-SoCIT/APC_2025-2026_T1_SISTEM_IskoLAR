@@ -115,10 +115,10 @@ export default function ProfilePage() {
   // Fetch user profile data on component mount
   useEffect(() => {
     const fetchUserProfile = async () => {
-      try {
-        setIsLoading(true);
-        setSuccessMessage(''); // Clear any previous messages
-        setError(''); // Clear any previous errors
+    try {
+      setIsLoading(true);
+      setSuccessMessage(''); // Clear any previous messages
+      setError(''); // Clear any previous errors
         
         // Get auth token using the centralized helper function
         const token = getAuthToken();
@@ -215,6 +215,11 @@ export default function ProfilePage() {
           college: profile.college || '',
           course: profile.course || '',
           
+          // Document URLs
+          psaDocumentUrl: profile.birth_certificate || '',
+          voterDocumentUrl: profile.voters_certification || '',
+          nationalIdDocumentUrl: profile.national_id || '',
+          
           scholarId: profile.scholar_id || '',
           createdAt: profile.created_at || '',
           updatedAt: profile.updated_at || '',
@@ -253,7 +258,6 @@ export default function ProfilePage() {
         setCourse(userData.course || '');
         setYearLevel(userData.yearLevel || '');
         setGpa(userData.gpa || '');
-        
       } catch (error) {
         console.error('Error fetching profile:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch profile');
@@ -717,12 +721,18 @@ export default function ProfilePage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Gender</label>
-                <input
+                <select
                   className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
                   value={gender}
-                  readOnly={!isEdit}
+                  disabled={!isEdit}
                   onChange={e => setGender(e.target.value)}
-                />
+                >
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                  <option value="Prefer not to say">Prefer not to say</option>
+                </select>
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Birthdate</label>
@@ -731,6 +741,7 @@ export default function ProfilePage() {
                   value={birthdate}
                   readOnly={!isEdit}
                   onChange={e => setBirthdate(e.target.value)}
+                  placeholder="MM/DD/YYYY"
                 />
               </div>
             </div>
@@ -761,6 +772,11 @@ export default function ProfilePage() {
                   onChange={e => setMobile(e.target.value)}
                   placeholder={isEdit ? "e.g., 09171234567 or +639171234567" : ""}
                 />
+                {isEdit && mobile && !userValidation.validateMobile(mobile).isValid && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {userValidation.validateMobile(mobile).error || 'Invalid mobile number'}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -817,6 +833,7 @@ export default function ProfilePage() {
                     setRegion(region);
                   }}
                 >
+                  <option value="">Select city/municipality</option>
                   {getCitiesByProvince(province).map(cityOption => (
                     <option key={cityOption} value={cityOption}>{cityOption}</option>
                   ))}
@@ -838,6 +855,7 @@ export default function ProfilePage() {
                     setRegion(region);
                   }}
                 >
+                  <option value="">Select province</option>
                   {Object.keys(provincesData).map(provinceOption => (
                     <option key={provinceOption} value={provinceOption}>{provinceOption}</option>
                   ))}
@@ -947,7 +965,7 @@ export default function ProfilePage() {
               </div>
             </div>
             <div className="grid grid-cols-1 gap-5">
-              {/* Certificate of Registration */}
+              {/* PSA Birth Certificate */}
               <div>
                 <label className="block text-xs text-gray-600 mb-1 font-medium">PSA Birth Certificate</label>
                 <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
@@ -971,7 +989,7 @@ export default function ProfilePage() {
                   )}
                 </div>
               </div>
-              {/* Certificate of Grades */}
+              {/* Voter's Certification */}
               <div>
                 <label className="block text-xs text-gray-600 mb-1 font-medium">Voter&apos;s Certification</label>
                 <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
@@ -995,7 +1013,7 @@ export default function ProfilePage() {
                   )}
                 </div>
               </div>
-              {/* School ID */}
+              {/* National ID */}
               <div>
                 <label className="block text-xs text-gray-600 mb-1 font-medium">National ID</label>
                 <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
