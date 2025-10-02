@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: authError?.message || 'User creation failed' }, { status: 400 })
     }
  
-    // Prepare data for users table insertion
+    // Prepare data for users table insertion - do not include password as it's only stored in auth
     const userInsertData = {
       user_id: authData.user.id,
       last_name: lastName,
@@ -78,8 +78,18 @@ export async function POST(request: NextRequest) {
       region: region || null,
       college: college || null,
       course: course || null,
+      year_level: 1, // Default to 1st year for new registrations
+      GPA: 0, // Default GPA for new registrations
+      birth_certificate: '', // Empty string for document URL, to be updated later
+      voters_certification: '', // Empty string for document URL, to be updated later
+      national_id: '', // Empty string for document URL, to be updated later
       created_at: new Date().toISOString(),
-      status: 'pending',
+      profile_update_history: [{
+        timestamp: new Date().toISOString(),
+        action: 'created',
+        changes: 'Initial registration'
+      }],
+      status: 'pending'
     }
     
     // Insert into users table
@@ -98,6 +108,15 @@ export async function POST(request: NextRequest) {
         hint: insertError.hint,
         code: insertError.code
       })
+
+      // Check if error is due to duplicate mobile number
+      if (insertError.code === '23505' && insertError.message.includes('users_mobile_number_key')) {
+        return NextResponse.json({
+          error: 'This mobile number is already registered. Please use a different number.',
+          code: 'DUPLICATE_MOBILE'
+        }, { status: 400 })
+      }
+
       return NextResponse.json({
         error: insertError.message,
         details: insertError.details,
