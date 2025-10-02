@@ -6,15 +6,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'dpzjgeyadwuhedfzgsec.supabase.co',
+        hostname: 'dpzjgeyadwuhedfzgsec.supabase.co', // <-- Comma was missing here
         port: '',
         pathname: '/storage/v1/object/public/attachments/**',
       },
     ],
-  },
-  eslint: {
-    // This allows production builds to complete even with ESLint errors
-    ignoreDuringBuilds: true,
   },
 };
 
