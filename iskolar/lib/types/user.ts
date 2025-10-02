@@ -25,6 +25,8 @@ export interface UserBase {
   // Education Information (optional during registration, required in profile)
   college?: string;
   course?: string;
+  yearLevel?: string;
+  gpa?: string;
 }
 
 /**
@@ -58,16 +60,61 @@ export interface UserProfile extends UserBase {
  */
 export const userValidation = {
   /**
+   * Validates email format
+   * @param email Email address to validate
+   * @returns Whether the email is valid
+   */
+  validateEmail: (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  },
+
+  /**
    * Validates mobile number format
    * @param mobile Mobile number to validate
    * @returns Cleaned mobile number or error message
    */
   validateMobile: (mobile: string): { isValid: boolean; value?: string; error?: string } => {
-    const cleaned = mobile.replace(/\D/g, '');
-    if (cleaned.length < 7 || cleaned.length > 15) {
-      return { isValid: false, error: 'Phone number must be between 7 and 15 digits' };
+    if (!mobile || mobile.trim() === '') {
+      return { isValid: true, value: '' }; // Allow empty mobile numbers
     }
-    return { isValid: true, value: cleaned };
+    
+    const cleaned = mobile.replace(/\D/g, '');
+    
+    // Handle different Philippine mobile number formats
+    if (cleaned.length === 10) {
+      // 10 digits: 9171234567 -> add leading 0
+      return { isValid: true, value: '0' + cleaned };
+    } else if (cleaned.length === 11) {
+      // 11 digits: 09171234567 -> standard format
+      return { isValid: true, value: cleaned };
+    } else if (cleaned.length === 13 && cleaned.startsWith('63')) {
+      // 13 digits with country code: 639171234567 -> convert to 09171234567
+      return { isValid: true, value: '0' + cleaned.substring(2) };
+    } else if (cleaned.length >= 7 && cleaned.length <= 15) {
+      // International numbers or other valid formats
+      return { isValid: true, value: cleaned };
+    }
+    
+    return { isValid: false, error: 'Please enter a valid mobile number (e.g., 09171234567)' };
+  },
+
+  /**
+   * Validates required fields
+   * @param fields Object with field names and values to validate
+   * @returns Array of missing required fields
+   */
+  validateRequiredFields: (fields: Record<string, any>): string[] => {
+    const requiredFields = ['firstName', 'lastName', 'email', 'gender', 'birthdate'];
+    const missing: string[] = [];
+    
+    requiredFields.forEach(field => {
+      if (!fields[field] || fields[field].toString().trim() === '') {
+        missing.push(field);
+      }
+    });
+    
+    return missing;
   },
   
   /**

@@ -59,6 +59,8 @@ export default function ProfilePage() {
   // Education states
   const [college, setCollege] = useState("");
   const [course, setCourse] = useState("");
+  const [yearLevel, setYearLevel] = useState("");
+  const [gpa, setGpa] = useState("");
 
   // Dropdown data for address fields
   const provincesData = {
@@ -249,6 +251,8 @@ export default function ProfilePage() {
         // Education fields
         setCollege(userData.college || '');
         setCourse(userData.course || '');
+        setYearLevel(userData.yearLevel || '');
+        setGpa(userData.gpa || '');
         
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -268,125 +272,87 @@ export default function ProfilePage() {
       setError('');
       setSuccessMessage('');
       
-      // Validate ZIP code
-      if (zipCode && !userValidation.validateZipCode(zipCode)) {
-        setError('ZIP code must be exactly 4 digits');
-        setIsLoading(false);
+      // Get auth token using the centralized helper function
+      const token = getAuthToken();
+      
+      // If no token is found, redirect to sign-in
+      if (!token) {
+        console.log('No authentication token found. Redirecting to sign-in page.');
+        redirectToSignIn();
         return;
       }
       
-      // Get the current user session directly from Supabase
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      // If no user or auth error, we can't make a real update
-      if (authError || !user) {
-        console.warn('Auth error during profile update:', authError?.message);
-        setError('Authentication required to update profile. Please sign in.');
-        setTimeout(redirectToSignIn, 2000);
-        setIsLoading(false);
-        return;
-      }
-      
-      // Format the data for database update
-      const userUpdateData = {
-        // Personal info
-        first_name: firstName,
-        last_name: lastName,
-        middle_name: middleName || null,
-        gender: gender || null,
-        birthdate: userValidation.parseDisplayDate(birthdate) || null,
-        mobile_number: mobile,
-        
-        // Address info
-        address_line1: addressLine1 || null,
-        address_line2: addressLine2 || null,
-        barangay: barangay || null,
-        city: city || null,
-        province: province || null,
-        zip_code: zipCode || null,
-        region: region || null,
-        
-        // Education info
-        college: college || null,
-        course: course || null,
-        
-        // Timestamp
-        updated_at: new Date().toISOString(),
+      // Prepare the profile data for API call
+      const profileData: UserProfile = {
+        firstName,
+        lastName,
+        middleName,
+        gender,
+        birthdate: userValidation.parseDisplayDate(birthdate),
+        email,
+        mobile,
+        addressLine1,
+        addressLine2,
+        barangay,
+        city,
+        province,
+        zipCode,
+        region,
+        college,
+        course,
+        yearLevel,
+        gpa,
       };
 
-      // Update user_metadata in auth.users
-      const { error: updateAuthError } = await supabase.auth.updateUser({
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          middle_name: middleName,
-          gender: gender,
-          birthdate: userValidation.parseDisplayDate(birthdate),
-          mobile_number: mobile,
-        }
+      // Call the profile update API
+      const response = await fetch('/api/profile/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(profileData),
       });
 
-      if (updateAuthError) {
-        console.error('Error updating auth user metadata:', updateAuthError);
-        throw new Error('Failed to update user metadata');
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update profile');
       }
 
-      // Update in users table
-      const { error: updateError } = await supabase
-        .from('users')
-        .update(userUpdateData)
-        .eq('user_id', user.id);
-
-      if (updateError) {
-        console.error('Error updating user profile:', updateError);
-        throw new Error(updateError.message || 'Failed to update profile');
+      // Update the user profile state with the response data
+      if (result.profile) {
+        setUserProfile(result.profile);
+        
+        // Update form fields with the updated data
+        setFirstName(result.profile.firstName);
+        setLastName(result.profile.lastName);
+        setMiddleName(result.profile.middleName || '');
+        setGender(result.profile.gender || '');
+        setEmail(result.profile.email || '');
+        setMobile(result.profile.mobile || '');
+        setBirthdate(result.profile.birthdate 
+          ? userValidation.formatDateForDisplay(result.profile.birthdate) 
+          : '');
+        
+        // Address fields
+        setAddressLine1(result.profile.addressLine1 || '');
+        setAddressLine2(result.profile.addressLine2 || '');
+        setBarangay(result.profile.barangay || '');
+        setCity(result.profile.city || '');
+        setProvince(result.profile.province || '');
+        setZipCode(result.profile.zipCode || '');
+        setRegion(result.profile.region || '');
+        
+        // Education fields
+        setCollege(result.profile.college || '');
+        setCourse(result.profile.course || '');
+        setYearLevel(result.profile.yearLevel || '');
+        setGpa(result.profile.gpa || '');
       }
-
-      // Get the updated user profile
-      const { data: updatedProfile, error: fetchError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (fetchError) {
-        console.error('Error fetching updated profile:', fetchError);
-        // Still consider the update successful even if we can't fetch the updated profile
-        setSuccessMessage('Profile updated successfully');
-        setIsEdit(false);
-        return;
-      }
-
-      // Format the data to match our UserProfile interface and update state
-      setUserProfile({
-        userId: updatedProfile.user_id,
-        firstName: updatedProfile.first_name,
-        lastName: updatedProfile.last_name,
-        middleName: updatedProfile.middle_name || '',
-        gender: updatedProfile.gender || '',
-        birthdate: updatedProfile.birthdate || '',
-        email: updatedProfile.email_address,
-        mobile: updatedProfile.mobile_number || '',
-        
-        addressLine1: updatedProfile.address_line1 || '',
-        addressLine2: updatedProfile.address_line2 || '',
-        barangay: updatedProfile.barangay || '',
-        city: updatedProfile.city || '',
-        province: updatedProfile.province || '',
-        zipCode: updatedProfile.zip_code || '',
-        region: updatedProfile.region || '',
-        
-        college: updatedProfile.college || '',
-        course: updatedProfile.course || '',
-        
-        scholarId: updatedProfile.scholar_id || '',
-        createdAt: updatedProfile.created_at || '',
-        updatedAt: updatedProfile.updated_at || '',
-        status: updatedProfile.status || '',
-      });
       
       // Update was successful
-      setSuccessMessage('Profile updated successfully');
+      setSuccessMessage(result.message || 'Profile updated successfully');
       setIsEdit(false);
       
     } catch (error) {
@@ -590,6 +556,8 @@ export default function ProfilePage() {
                     // Education fields
                     setCollege(userProfile.college || '');
                     setCourse(userProfile.course || '');
+                    setYearLevel(userProfile.yearLevel || '');
+                    setGpa(userProfile.gpa || '');
                   }
                 }}
                 disabled={isLoading}
@@ -768,6 +736,7 @@ export default function ProfilePage() {
                   value={mobile}
                   readOnly={!isEdit}
                   onChange={e => setMobile(e.target.value)}
+                  placeholder={isEdit ? "e.g., 09171234567 or +639171234567" : ""}
                 />
               </div>
             </div>
@@ -887,7 +856,7 @@ export default function ProfilePage() {
               <span className="font-semibold text-gray-700 text-lg">Program</span>
             </div>
             <hr className="border-gray-200 mb-4" />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">College/University</label>
                 <input
@@ -907,6 +876,37 @@ export default function ProfilePage() {
                 />
               </div>
             </div>
+            {/* Temporarily commented out until database migration is run */}
+            {/* 
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Year Level</label>
+                <select
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value={yearLevel}
+                  disabled={!isEdit}
+                  onChange={e => setYearLevel(e.target.value)}
+                >
+                  <option value="">Select Year Level</option>
+                  <option value="1st Year">1st Year</option>
+                  <option value="2nd Year">2nd Year</option>
+                  <option value="3rd Year">3rd Year</option>
+                  <option value="4th Year">4th Year</option>
+                  <option value="5th Year">5th Year</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">GPA</label>
+                <input
+                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  value={gpa}
+                  readOnly={!isEdit}
+                  onChange={e => setGpa(e.target.value)}
+                  placeholder="e.g., 3.50"
+                />
+              </div>
+            </div>
+            */}
           </div>
           {/* Documents Section */}
           <div ref={documentsRef} className="bg-white rounded-xl shadow p-6 mb-2">
