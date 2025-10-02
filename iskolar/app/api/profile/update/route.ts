@@ -139,17 +139,16 @@ export async function PUT(request: NextRequest) {
       region: userData.region || null,
       
       // Education info
-      college: userData.college || null, // Fixed to match actual column name
+      college: userData.college || null,
       course: userData.course || null,
       // Note: year_level and gpa columns need to be added to database first
       // Uncomment these lines after running the migration:
       // year_level: userData.yearLevel || null,
       // gpa: userData.gpa || null,
       
-      // Document URLs - if provided
-      birth_certificate: userData.psaDocumentUrl || null, // Updated to match schema
-      voters_certification: userData.voterDocumentUrl || null, // Updated to match schema
-      national_id: userData.nationalIdDocumentUrl || null, // Updated to match schema
+      // Note: Document fields (birth_certificate, voters_certification, national_id) 
+      // are not updated through this profile update endpoint to avoid NOT NULL constraint issues.
+      // These should be handled separately through document upload endpoints.
       
       // Timestamp
       updated_at: new Date().toISOString(),
@@ -237,7 +236,7 @@ export async function PUT(request: NextRequest) {
       yearLevel: '', // updatedProfile.year_level || '', // Uncomment after migration
       gpa: '', // updatedProfile.gpa || '', // Uncomment after migration
       
-      // Document URLs
+      // Document URLs - read from existing profile, not updated through this endpoint
       psaDocumentUrl: updatedProfile.birth_certificate || '',
       voterDocumentUrl: updatedProfile.voters_certification || '',
       nationalIdDocumentUrl: updatedProfile.national_id || '',
@@ -247,10 +246,6 @@ export async function PUT(request: NextRequest) {
       createdAt: updatedProfile.created_at || '',
       updatedAt: updatedProfile.updated_at || '',
       status: updatedProfile.status || '',
-      
-      // Academic info
-      yearLevel: updatedProfile.year_level || '',
-      gpa: updatedProfile.GPA || '',
     };
 
     return NextResponse.json({ 
@@ -342,16 +337,11 @@ export async function GET(request: NextRequest) {
       voterDocumentUrl: profile.voters_certification || '',
       nationalIdDocumentUrl: profile.national_id || '',
       
-      // Academic fields
-      yearLevel: profile.year_level || '',
-      gpa: profile.GPA || '',
-      
       // Other fields
       scholarId: profile.scholar_id || '',
       createdAt: profile.created_at || '',
       updatedAt: profile.updated_at || '',
       status: profile.status || '',
-      lastLogin: profile.last_login || '',
     };
 
     return NextResponse.json({ profile: responseData });
