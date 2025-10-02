@@ -323,26 +323,6 @@ export default function ProfilePage() {
       console.log('Starting profile update with data:', { userUpdateData, user });
 
       try {
-        // Update user_metadata in auth.users
-        const { data: authData, error: updateAuthError } = await supabase.auth.updateUser({
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-            middle_name: middleName,
-            gender: gender,
-            birthdate: userValidation.parseDisplayDate(birthdate),
-            mobile_number: mobile,
-          }
-        });
-
-        if (updateAuthError) {
-          console.error('Error updating auth user metadata:', updateAuthError);
-          setError('Failed to update user metadata: ' + updateAuthError.message);
-          return;
-        }
-
-        console.log('Auth update successful:', authData);
-
         // Update in users table
         const { data: updateData, error: updateError } = await supabase
           .from('users')

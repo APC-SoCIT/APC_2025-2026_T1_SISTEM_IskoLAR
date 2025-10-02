@@ -66,23 +66,6 @@ export async function PUT(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    // Update user_metadata in auth.users
-    const { error: updateAuthError } = await supabase.auth.updateUser({
-      data: {
-        first_name: userData.firstName,
-        last_name: userData.lastName,
-        middle_name: userData.middleName,
-        gender: userData.gender,
-        birthdate: userData.birthdate,
-        mobile_number: userData.mobile,
-      }
-    });
-
-    if (updateAuthError) {
-      console.error('Error updating auth user metadata:', updateAuthError);
-      return NextResponse.json({ error: 'Failed to update user metadata' }, { status: 500 });
-    }
-
     // Update in users table
     const { error: updateError } = await supabase
       .from('users')

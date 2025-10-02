@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'ZIP code must be exactly 4 digits' }, { status: 400 })
     }
  
-    // Create user in Supabase Auth
+    // Create auth user first
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: authError?.message || 'User creation failed' }, { status: 400 })
     }
  
-    // Prepare data for users table insertion - include all fields
+    // Prepare data for users table insertion
     const userInsertData = {
       user_id: authData.user.id,
       last_name: lastName,
@@ -69,7 +69,6 @@ export async function POST(request: NextRequest) {
       birthdate: birthdate || null,
       email_address: email,
       mobile_number: cleanedMobile,
-      // Address fields (optional during registration)
       address_line1: addressLine1 || null,
       address_line2: addressLine2 || null,
       barangay: barangay || null,
@@ -77,25 +76,22 @@ export async function POST(request: NextRequest) {
       province: province || null,
       zip_code: zipCode || null,
       region: region || null,
-      // Education fields (optional during registration)
       college: college || null,
       course: course || null,
-      // Created timestamp
       created_at: new Date().toISOString(),
-      // Status (default to 'pending')
       status: 'pending',
-      // ⚠️ CAUTION: Storing plain passwords is insecure
-      // If required, hash it before inserting.
-      password,
     }
     
-    // Insert into your custom users table
+    // Insert into users table
     const { data: insertData, error: insertError } = await supabaseAdmin
       .from('users')
       .insert(userInsertData)
       .select()
  
     if (insertError) {
+      // If users table insert fails, clean up by deleting the auth user
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+      
       console.error('Insert error details:', {
         message: insertError.message,
         details: insertError.details,
