@@ -12,70 +12,66 @@ export interface Note {
 }
 
 export default function NotesTab() {
-  // This is a placeholder that we'll enhance later
-  const mockNotes: Note[] = [
+  const mockNotes = [
     {
       id: '1',
-      author: 'Admin User',
-      content: 'Requested additional documentation for proof of residency.',
-      timestamp: '2025-08-17 14:30',
-      type: 'internal',
-      status: 'pending'
+      author: 'Admin L. Cruz',
+      timestamp: 'Aug 15, 2025 – 09:30 AM',
+      category: 'Documents',
+      status: 'Pending',
+      content: 'Still missing Good Moral doc. Waiting for re-upload. Applicant has been notified via email to submit the missing document within 3 days.',
+      attachment: null
     },
     {
       id: '2',
-      author: 'System',
-      content: 'Academic records verified automatically.',
-      timestamp: '2025-08-16 09:15',
-      type: 'internal',
-      status: 'resolved'
+      author: 'Admin A. Reyes',
+      timestamp: 'Aug 13, 2025 – 02:15 PM',
+      category: 'Eligibility',
+      status: 'Resolved',
+      content: 'Voter status verified via barangay clearance. Document shows registration in Barangay Upper Bicutan, Taguig City which meets the residency requirement for the scholarship program.',
+      attachment: null
     },
     {
       id: '3',
-      author: 'Juan Dela Cruz',
-      content: 'Submitted updated grade report as requested.',
-      timestamp: '2025-08-15 16:45',
-      type: 'external',
-      status: 'resolved'
+      author: 'Admin J. Santos',
+      timestamp: 'Aug 12, 2025 – 10:45 AM',
+      category: 'Academic',
+      status: 'Urgent',
+      content: 'Confirmed GPA discrepancy; asked for updated transcript. The submitted transcript shows a GPA of 1.75 but the application form states 1.25. Need to verify if this is a clerical error or misrepresentation.',
+      attachment: 'transcript_comparison.pdf'
     }
   ];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="border-b pb-4">
-        <h2 className="text-xl font-semibold text-gray-900">Application Notes</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          View and manage notes and communications related to this application
-        </p>
-      </div>
-
-      {/* Add New Note */}
+      {/* Add New Note Section */}
       <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Add Note</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Note</h3>
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Note Type
-            </label>
-            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-              <option value="internal">Internal Note</option>
-              <option value="external">External Communication</option>
-            </select>
+          <textarea
+            rows={4}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Enter your note here..."
+            maxLength={500}
+          />
+          <div className="flex justify-between text-sm text-gray-500">
+            <span>0/500 characters</span>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Content
+          <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+            <option>Select a category...</option>
+            <option>Documents</option>
+            <option>Eligibility</option>
+            <option>Academic</option>
+          </select>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2">
+              <input type="radio" name="status" value="Pending" className="form-radio" /> Pending
             </label>
-            <textarea
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Enter your note here..."
-            />
+            <label className="flex items-center gap-2">
+              <input type="radio" name="status" value="Resolved" className="form-radio" /> Resolved
+            </label>
           </div>
-          <button className="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-            Add Note
-          </button>
+          <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">+ Add Note</button>
         </div>
       </div>
 
@@ -84,75 +80,41 @@ export default function NotesTab() {
         {mockNotes.map((note) => (
           <div key={note.id} className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
             <div className="flex items-start justify-between mb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-gray-900">{note.author}</span>
-                  <span className="text-sm text-gray-500">{note.timestamp}</span>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium text-gray-700">
+                  {note.author.split(' ').map((n) => n[0]).join('')}
                 </div>
-                <span className={`inline-block px-2 py-1 text-xs rounded-full mt-1
-                  ${note.type === 'internal' 
-                    ? 'bg-gray-100 text-gray-700' 
-                    : 'bg-blue-100 text-blue-700'}`}>
-                  {note.type.charAt(0).toUpperCase() + note.type.slice(1)}
-                </span>
+                <div>
+                  <p className="font-medium text-gray-900">{note.author}</p>
+                  <p className="text-sm text-gray-500">{note.timestamp}</p>
+                </div>
               </div>
-              {note.status && (
-                <span className={`px-3 py-1 rounded-full text-sm font-medium
-                  ${note.status === 'pending'
-                    ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-                    : 'bg-green-50 text-green-700 border border-green-200'}`}>
-                  {note.status.charAt(0).toUpperCase() + note.status.slice(1)}
-                </span>
-              )}
+              <span className={`px-3 py-1 rounded-full text-sm font-medium
+                ${note.status === 'Pending' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : ''}
+                ${note.status === 'Resolved' ? 'bg-green-50 text-green-700 border border-green-200' : ''}
+                ${note.status === 'Urgent' ? 'bg-red-50 text-red-700 border border-red-200' : ''}`}>
+                {note.status}
+              </span>
             </div>
-            <p className="text-gray-700">{note.content}</p>
-            {note.status === 'pending' && (
-              <div className="mt-4 flex gap-2">
-                <button className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700">
-                  Mark as Resolved
-                </button>
-                <button className="px-3 py-1 text-sm border border-gray-300 text-gray-700 rounded hover:bg-gray-50">
-                  Edit
-                </button>
+            <p className="text-gray-700 mb-4">{note.content}</p>
+            {note.attachment && (
+              <div className="flex items-center gap-2 text-sm text-blue-600">
+                <span className="material-icons">attachment</span>
+                <a href="#" className="hover:underline">{note.attachment}</a>
               </div>
             )}
           </div>
         ))}
       </div>
 
-      {/* Filter Options */}
-      <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-        <div className="flex flex-wrap gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Filter by Type
-            </label>
-            <select className="px-3 py-1 border border-gray-300 rounded-md text-sm">
-              <option value="all">All Notes</option>
-              <option value="internal">Internal Only</option>
-              <option value="external">External Only</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Filter by Status
-            </label>
-            <select className="px-3 py-1 border border-gray-300 rounded-md text-sm">
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="resolved">Resolved</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sort by
-            </label>
-            <select className="px-3 py-1 border border-gray-300 rounded-md text-sm">
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-            </select>
-          </div>
-        </div>
+      {/* Filter and Search Options */}
+      <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg border border-gray-200">
+        <input
+          type="text"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Search notes..."
+        />
+        <button className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Filter</button>
       </div>
     </div>
   );
