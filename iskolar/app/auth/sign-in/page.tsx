@@ -1,9 +1,59 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function SignInPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    try {
+      const { data, error: signInError } = await (await import('@/lib/supabaseClient')).supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (signInError) {
+        setError(signInError.message || "Sign in failed");
+      } else if (data.session) {
+        // Save auth token in localStorage or sessionStorage depending on "remember me" setting
+        const token = data.session.access_token;
+        
+        if (remember) {
+          // For persistent login across browser sessions
+          localStorage.setItem('authToken', token);
+          
+          // Also set a cookie with a 30-day expiration
+          const expirationDate = new Date();
+          expirationDate.setDate(expirationDate.getDate() + 30);
+          document.cookie = `authToken=${token}; path=/; expires=${expirationDate.toUTCString()}; SameSite=Strict`;
+        } else {
+          // For current browser session only
+          sessionStorage.setItem('authToken', token);
+          
+          // Also set a session cookie (expires when browser closes)
+          document.cookie = `authToken=${token}; path=/; SameSite=Strict`;
+        }
+        
+        setSuccess("Sign in successful!");
+        // Redirect to scholar announcements page
+        router.push("/scholar/announcements");
+      } else {
+        setError("No session returned");
+      }
+    } catch (err: any) {
+      setError("Network error");
+    } finally {
+      setLoading(false);
+    }
+  }
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
@@ -15,7 +65,9 @@ export default function SignInPage() {
   <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center">
         <h2 className="text-2xl font-bold mb-1 text-gray-900">Welcome Back</h2>
         <p className="text-gray-500 mb-6">Sign in to your account</p>
-        <form className="w-full flex flex-col gap-4">
+  <form className="w-full flex flex-col gap-4" onSubmit={handleSubmit}>
+          {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
+          {success && <div className="text-green-600 text-sm mb-2">{success}</div>}
           {/* Email */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -97,7 +149,7 @@ export default function SignInPage() {
               </span>
               <span className="ml-1">Remember me</span>
             </label>
-            <Link href="#" className="text-sm text-[#FFC107] font-medium hover:underline">
+            <Link href="/auth/reset-password" className="text-sm text-[#FFC107] font-medium hover:underline">
               Forgot Password?
             </Link>
           </div>

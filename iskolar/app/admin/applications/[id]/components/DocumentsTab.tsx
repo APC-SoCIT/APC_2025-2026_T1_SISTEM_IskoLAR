@@ -12,120 +12,154 @@ export interface DocumentData {
 }
 
 export default function DocumentsTab() {
-  // This is a placeholder that we'll enhance later
-  const mockDocuments: DocumentData[] = [
-    {
-      name: 'Birth Certificate',
-      type: 'Identification',
-      status: 'verified',
-      uploadDate: '2025-08-15',
-      lastChecked: '2025-08-16'
-    },
-    {
-      name: 'Grade Report',
-      type: 'Academic',
-      status: 'reupload',
-      uploadDate: '2025-08-15',
-      lastChecked: '2025-08-16',
-      comments: 'Please provide official copy with school seal'
-    },
-    {
-      name: 'Barangay Certificate',
-      type: 'Residency',
-      status: 'pending',
-      uploadDate: '2025-08-15'
-    }
-  ];
+  const mockDocuments = {
+    identity: [
+      {
+        name: 'Birth Certificate.pdf',
+        uploadDate: 'Aug 15, 2023',
+        status: 'verified',
+        comments: null
+      },
+      {
+        name: 'ID Picture.jpg',
+        uploadDate: 'Aug 16, 2023',
+        status: 'verified',
+        comments: null
+      },
+      {
+        name: 'Barangay ID.jpg',
+        uploadDate: 'Aug 10, 2023',
+        status: 'reupload',
+        comments: 'Image is blurry'
+      }
+    ],
+    academic: [
+      {
+        name: 'Transcript of Records.pdf',
+        uploadDate: 'Aug 15, 2023',
+        status: 'verified',
+        comments: null
+      },
+      {
+        name: 'Diploma.pdf',
+        uploadDate: 'Aug 10, 2023',
+        status: 'reupload',
+        comments: 'Image is blurry'
+      },
+      {
+        name: 'Good Moral.pdf',
+        uploadDate: 'Aug 16, 2023',
+        status: 'verified',
+        comments: null
+      },
+      {
+        name: 'Certificate of Registration.pdf',
+        uploadDate: 'Aug 15, 2023',
+        status: 'verified',
+        comments: null
+      }
+    ],
+    other: [
+      {
+        name: 'Certificate of Residency.pdf',
+        uploadDate: 'Aug 15, 2023',
+        status: 'verified',
+        comments: null
+      },
+      {
+        name: 'Voter Certification (Self).pdf',
+        uploadDate: 'Aug 16, 2023',
+        status: 'verified',
+        comments: null
+      },
+      {
+        name: 'Voter Certification (Mother).pdf',
+        uploadDate: 'Aug 16, 2023',
+        status: 'missing',
+        comments: null
+      },
+      {
+        name: 'Voter Certification (Father).pdf',
+        uploadDate: 'Aug 16, 2023',
+        status: 'missing',
+        comments: null
+      },
+      {
+        name: 'Voter Certification (Guardian).pdf',
+        uploadDate: 'Aug 16, 2023',
+        status: 'missing',
+        comments: null
+      }
+    ]
+  };
 
-  const getStatusBadgeStyle = (status: DocumentData['status']) => {
+  const getStatusBadge = (status: 'verified' | 'reupload' | 'missing') => {
     const styles = {
-      pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
       verified: 'bg-green-50 text-green-700 border-green-200',
-      rejected: 'bg-red-50 text-red-700 border-red-200',
-      reupload: 'bg-orange-50 text-orange-700 border-orange-200'
+      reupload: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+      missing: 'bg-red-50 text-red-700 border-red-200'
     };
     return styles[status];
   };
 
+  const verifiedCount = Object.values(mockDocuments).flat().filter(doc => doc.status === 'verified').length;
+  const reuploadCount = Object.values(mockDocuments).flat().filter(doc => doc.status === 'reupload').length;
+  const missingCount = Object.values(mockDocuments).flat().filter(doc => doc.status === 'missing').length;
+
+  mockDocuments.identity.forEach(doc => {
+    if (!['verified', 'reupload', 'missing'].includes(doc.status)) {
+      throw new Error(`Unexpected status: ${doc.status}`);
+    }
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="border-b pb-4">
-        <h2 className="text-xl font-semibold text-gray-900">Required Documents</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Review and verify submitted documents
-        </p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">Application Details</h2>
+          <p className="text-sm text-gray-600">All applicants must submit the required documents for verification.</p>
+        </div>
+        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Request Documents</button>
       </div>
 
-      {/* Document List */}
-      <div className="space-y-4">
-        {mockDocuments.map((doc, index) => (
-          <div key={index} className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">{doc.name}</h3>
-                <p className="text-sm text-gray-500">{doc.type}</p>
-              </div>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusBadgeStyle(doc.status)}`}>
-                {doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
-              </span>
-            </div>
-            
-            <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-500">Upload Date:</span>
-                <span className="ml-2 text-gray-900">{doc.uploadDate}</span>
-              </div>
-              {doc.lastChecked && (
-                <div>
-                  <span className="text-gray-500">Last Checked:</span>
-                  <span className="ml-2 text-gray-900">{doc.lastChecked}</span>
-                </div>
-              )}
-            </div>
-
-            {doc.comments && (
-              <div className="mt-4 p-3 bg-gray-50 rounded-md text-sm text-gray-700">
-                <p className="font-medium text-gray-900 mb-1">Comments:</p>
-                {doc.comments}
-              </div>
-            )}
-
-            <div className="mt-4 flex gap-3">
-              <button className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                View Document
-              </button>
-              <button className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                Request Re-upload
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Upload New Document Section */}
-      <div className="mt-6 p-6 bg-gray-50 border border-gray-200 rounded-lg">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Upload New Document</h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Document Type
-            </label>
-            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-              <option>Select document type...</option>
-              <option>Birth Certificate</option>
-              <option>Grade Report</option>
-              <option>Barangay Certificate</option>
-            </select>
-          </div>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-            <p className="text-gray-600">Drag and drop your files here, or click to select files</p>
-            <button className="mt-2 px-4 py-2 text-sm text-blue-600 hover:text-blue-700">
-              Select Files
-            </button>
-          </div>
+      {/* Document Upload Status */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-50 text-green-700 border border-green-200">Verified</span>
+          <span>{verifiedCount}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">Needs Re-upload</span>
+          <span>{reuploadCount}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-50 text-red-700 border border-red-200">Missing/Denied</span>
+          <span>{missingCount}</span>
         </div>
       </div>
+
+      {/* Document Categories */}
+      {Object.entries(mockDocuments).map(([category, documents]) => (
+        <div key={category} className="space-y-4">
+          <h3 className="text-lg font-medium text-gray-800 capitalize">{category} Documents</h3>
+          {documents.map((doc, index) => (
+            <div key={index} className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200">
+              <div>
+                <h4 className="text-sm font-medium text-gray-900">{doc.name}</h4>
+                <p className="text-sm text-gray-600">Uploaded on {doc.uploadDate}</p>
+                {doc.comments && <p className="text-xs text-yellow-700">{doc.comments}</p>}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusBadge(doc.status as 'verified' | 'reupload' | 'missing')}`}>{doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}</span>
+                <button className="text-blue-600 hover:underline">View</button>
+                <button className="text-gray-600 hover:underline">Download</button>
+                <button className="text-red-600 hover:underline">Delete</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }

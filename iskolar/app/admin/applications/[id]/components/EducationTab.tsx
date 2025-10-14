@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 
 export interface EducationData {
   currentEducation: {
@@ -8,73 +8,82 @@ export interface EducationData {
     program: string;
     yearLevel: string;
     gpa: string;
-    academicAwards: string[];
+    semestersCompleted: number;
+    scholarshipHistory: string;
   };
+  academicPerformance: {
+    semester: string;
+    gpa: string;
+  }[];
   previousEducation: {
+    level: string;
+    years: string;
     school: string;
-    yearGraduated: string;
-    honors?: string[];
-  };
-  extracurricular: {
-    activity: string;
-    role: string;
-    duration: string;
+    strand?: string;
+    track?: string;
+    grade: string;
+    awards: string;
   }[];
 }
 
 export default function EducationTab() {
-  // This is a placeholder that we'll enhance later
-  const mockData: EducationData = {
+  const mockData = {
     currentEducation: {
-      school: 'De La Salle University',
-      program: 'Bachelor of Science in Computer Science',
+      school: 'Technological Institute of the Philippines (TIP Manila)',
+      program: 'BS Computer Science',
       yearLevel: '3rd Year',
-      gpa: '3.8',
-      academicAwards: [
-        "Dean's Lister (2024-2025)",
-        'Academic Excellence Award',
-        'Programming Competition Winner'
-      ]
+      gpa: '1.80',
+      semestersCompleted: 5,
+      scholarshipHistory: 'New Applicant'
     },
-    previousEducation: {
-      school: 'Manila Science High School',
-      yearGraduated: '2023',
-      honors: ['Valedictorian', 'Excellence in Mathematics']
-    },
-    extracurricular: [
+    academicPerformance: [
+      { semester: '1st Year - 1st Semester (2021-2022)', gpa: '1.50' },
+      { semester: '1st Year - 2nd Semester (2021-2022)', gpa: '1.75' },
+      { semester: '2nd Year - 1st Semester (2022-2023)', gpa: '1.75' },
+      { semester: '2nd Year - 2nd Semester (2022-2023)', gpa: '2.00' },
+      { semester: '3rd Year - 1st Semester (2023-2024)', gpa: '2.00' }
+    ],
+    previousEducation: [
       {
-        activity: 'Computer Society',
-        role: 'Vice President',
-        duration: '2024-2025'
+        level: 'Senior High School',
+        years: '2019 - 2021',
+        school: 'Taguig Science High School',
+        strand: 'STEM (Science, Technology, Engineering, Mathematics)',
+        grade: '92.5%',
+        awards: 'With Honors'
       },
       {
-        activity: 'Volunteer Teaching Program',
-        role: 'Student Mentor',
-        duration: '2024-Present'
+        level: 'Junior High School',
+        years: '2015 - 2019',
+        school: 'Taguig National High School',
+        track: 'Regular',
+        grade: '90.2%',
+        awards: 'With Honors'
       }
     ]
   };
 
+  const [isDropdownOpen, setDropdownOpen] = useState(false);
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="border-b pb-4">
-        <h2 className="text-xl font-semibold text-gray-900">Educational Background</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Review applicant&apos;s academic history and achievements
-        </p>
-      </div>
-
       {/* Current Education */}
       <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Current Education</h3>
+        <div className="mb-4">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
+            GPA Below Threshold
+          </span>
+          <p className="text-sm text-yellow-700 mt-2">
+            The minimum required GPA for this scholarship is 1.75. Applicant&apos;s current GPA is 1.80.
+          </p>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <p className="text-sm text-gray-500">School</p>
+            <p className="text-sm text-gray-500">Current School</p>
             <p className="font-medium text-gray-900">{mockData.currentEducation.school}</p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Program</p>
+            <p className="text-sm text-gray-500">Degree Program</p>
             <p className="font-medium text-gray-900">{mockData.currentEducation.program}</p>
           </div>
           <div>
@@ -85,84 +94,58 @@ export default function EducationTab() {
             <p className="text-sm text-gray-500">GPA</p>
             <p className="font-medium text-gray-900">{mockData.currentEducation.gpa}</p>
           </div>
+          <div>
+            <p className="text-sm text-gray-500">Semesters Completed</p>
+            <p className="font-medium text-gray-900">{mockData.currentEducation.semestersCompleted}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Scholarship History</p>
+            <p className="font-medium text-gray-900">{mockData.currentEducation.scholarshipHistory}</p>
+          </div>
         </div>
-        <div className="mt-4">
-          <p className="text-sm text-gray-500 mb-2">Academic Awards</p>
-          <ul className="list-disc list-inside space-y-1">
-            {mockData.currentEducation.academicAwards.map((award, index) => (
-              <li key={index} className="text-gray-700">{award}</li>
+      </div>
+
+      {/* Academic Performance */}
+      <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Academic Performance</h3>
+        <button
+          className="text-blue-600 hover:underline mb-4"
+          onClick={() => setDropdownOpen(!isDropdownOpen)}
+        >
+          {isDropdownOpen ? 'Hide Details' : 'Show Details'}
+        </button>
+        {isDropdownOpen && (
+          <div className="space-y-4">
+            {mockData.academicPerformance.map((performance, index) => (
+              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-sm text-gray-900">{performance.semester}</p>
+                <p className="text-sm text-gray-900">GPA: {performance.gpa}</p>
+              </div>
             ))}
-          </ul>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Previous Education */}
       <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Previous Education</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-gray-500">School</p>
-            <p className="font-medium text-gray-900">{mockData.previousEducation.school}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Year Graduated</p>
-            <p className="font-medium text-gray-900">{mockData.previousEducation.yearGraduated}</p>
-          </div>
-        </div>
-        {mockData.previousEducation.honors && (
-          <div className="mt-4">
-            <p className="text-sm text-gray-500 mb-2">Honors & Awards</p>
-            <ul className="list-disc list-inside space-y-1">
-              {mockData.previousEducation.honors.map((honor, index) => (
-                <li key={index} className="text-gray-700">{honor}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-
-      {/* Extracurricular Activities */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Extracurricular Activities</h3>
-        <div className="divide-y divide-gray-200">
-          {mockData.extracurricular.map((activity, index) => (
-            <div key={index} className="py-4 first:pt-0 last:pb-0">
-              <h4 className="font-medium text-gray-900">{activity.activity}</h4>
-              <div className="mt-1 grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500">Role:</span>
-                  <span className="ml-2 text-gray-900">{activity.role}</span>
-                </div>
-                <div>
-                  <span className="text-gray-500">Duration:</span>
-                  <span className="ml-2 text-gray-900">{activity.duration}</span>
-                </div>
+        <div className="space-y-4">
+          {mockData.previousEducation.map((education, index) => (
+            <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-gray-500">{education.level}</p>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-50 text-green-700 border border-green-200">
+                  Verified
+                </span>
               </div>
+              <p className="font-medium text-gray-900">{education.school}</p>
+              <p className="text-sm text-gray-500">{education.years}</p>
+              {education.strand && <p className="text-sm text-gray-500">Strand: {education.strand}</p>}
+              {education.track && <p className="text-sm text-gray-500">Track: {education.track}</p>}
+              <p className="text-sm text-gray-500">Grade: {education.grade}</p>
+              <p className="text-sm text-gray-500">Awards: {education.awards}</p>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Verification Actions */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Academic Verification</h3>
-        <div className="space-y-4">
-          <button className="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-            Verify Academic Records
-          </button>
-          <button className="w-full inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-            Request Additional Documents
-          </button>
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Verification Notes
-            </label>
-            <textarea
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Add notes about academic verification..."
-            />
-          </div>
         </div>
       </div>
     </div>

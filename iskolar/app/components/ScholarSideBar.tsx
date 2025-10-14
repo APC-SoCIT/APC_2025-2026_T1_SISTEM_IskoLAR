@@ -1,17 +1,29 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
 import React from 'react';
+import { useAuth } from '@/lib/useAuth';
 
 const ScholarSidebar = () => {
   const pathname = usePathname();
+  const router = useRouter();
+  const { signOut } = useAuth();
   const [isProgramOpen, setIsProgramOpen] = useState(false);
   const [isSchoolYearOpen, setIsSchoolYearOpen] = useState(false);
   const [isFirstSemOpen, setIsFirstSemOpen] = useState(false);
   const [isSecondSemOpen, setIsSecondSemOpen] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      router.push('/auth/sign-in');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
 
   const navItems = [
     {
@@ -372,7 +384,7 @@ const ScholarSidebar = () => {
       <div className="mt-auto mb-6">
         <button
           className="flex items-center gap-3 py-3 pl-7 w-full rounded transition-all cursor-pointer text-black hover:bg-gray-100"
-          // Add your logout logic to onClick if needed
+          onClick={handleLogout}
           type="button"
         >
           <Image
