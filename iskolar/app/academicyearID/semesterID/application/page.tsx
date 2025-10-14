@@ -39,6 +39,7 @@ export default function ApplicationPage() {
   const [contactNumber, setContactNumber] = useState("");
   const [gender, setGender] = useState("");
   const [birthdate, setBirthdate] = useState("");
+  const [yearsOfResidency, setYearsOfResidency] = useState("");
   // Address states
   const [addressLine1, setAddressLine1] = useState("");
   const [addressLine2, setAddressLine2] = useState("");
@@ -86,12 +87,24 @@ export default function ApplicationPage() {
 
   const [juniorHighName, setJuniorHighName] = useState("");
   const [juniorHighAddress, setJuniorHighAddress] = useState("");
+  const [juniorHighYearStarted, setJuniorHighYearStarted] = useState("");
+  const [juniorHighYearGraduated, setJuniorHighYearGraduated] = useState("");
+  const [juniorHighHonors, setJuniorHighHonors] = useState("Without Honors");
+  
   const [seniorHighName, setSeniorHighName] = useState("");
   const [seniorHighAddress, setSeniorHighAddress] = useState("");
+  const [seniorHighYearStarted, setSeniorHighYearStarted] = useState("");
+  const [seniorHighYearGraduated, setSeniorHighYearGraduated] = useState("");
+  const [seniorHighStrand, setSeniorHighStrand] = useState("");
+  const [seniorHighHonors, setSeniorHighHonors] = useState("Without Honors");
+  
   const [collegeName, setCollegeName] = useState("");
   const [collegeAddress, setCollegeAddress] = useState("");
   const [yearLevel, setYearLevel] = useState("");
   const [course, setCourse] = useState("");
+  const [collegeYearStarted, setCollegeYearStarted] = useState("");
+  const [collegeExpectedGraduation, setCollegeExpectedGraduation] = useState("");
+  const [collegeGPA, setCollegeGPA] = useState("");
   const [motherMaidenName, setMotherMaidenName] = useState("");
   const [motherJob, setMotherJob] = useState("");
   const [fatherName, setFatherName] = useState("");
@@ -327,6 +340,30 @@ export default function ApplicationPage() {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Years of Residency <span className="text-red-500">*</span></label>
+                    <input 
+                      required 
+                      type="number"
+                      min="0"
+                      max="100"
+                      className={inputClassName} 
+                      value={yearsOfResidency} 
+                      onChange={e => {
+                        const value = e.target.value;
+                        if (value === '' || (Number(value) >= 0 && Number(value) <= 100)) {
+                          setYearsOfResidency(value);
+                        }
+                      }}
+                      placeholder="Enter number of years"
+                    />
+                    {yearsOfResidency && (Number(yearsOfResidency) < 0 || Number(yearsOfResidency) > 100) && (
+                      <p className="text-xs text-red-500 mt-1">Years must be between 0 and 100</p>
+                    )}
+                  </div>
+                </div>
+
                 {/* Education */}
                 <div className="mt-6 mb-2 font-semibold text-gray-700">Educational Background</div>
                 <div className="flex flex-col gap-4 mb-2">
@@ -338,6 +375,58 @@ export default function ApplicationPage() {
                     <label className="block text-xs text-gray-500 mb-1">Junior High School Address <span className="text-red-500">*</span></label>
                     <input required className={inputClassName} value={juniorHighAddress} onChange={e => setJuniorHighAddress(e.target.value)} />
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Year Started <span className="text-red-500">*</span></label>
+                      <input 
+                        required 
+                        type="number"
+                        min="2000"
+                        max="2030"
+                        className={inputClassName} 
+                        value={juniorHighYearStarted} 
+                        onChange={e => {
+                          const value = e.target.value;
+                          if (value === '' || (Number(value) >= 2000 && Number(value) <= 2030)) {
+                            setJuniorHighYearStarted(value);
+                          }
+                        }}
+                        placeholder="YYYY"
+                      />
+                      {juniorHighYearStarted && (Number(juniorHighYearStarted) < 2000 || Number(juniorHighYearStarted) > 2030) && (
+                        <p className="text-xs text-red-500 mt-1">Year must be between 2000 and 2030</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Year Graduated <span className="text-red-500">*</span></label>
+                      <input 
+                        required 
+                        type="number"
+                        min="2000"
+                        max="2030"
+                        className={inputClassName} 
+                        value={juniorHighYearGraduated} 
+                        onChange={e => {
+                          const value = e.target.value;
+                          if (value === '' || (Number(value) >= 2000 && Number(value) <= 2030)) {
+                            setJuniorHighYearGraduated(value);
+                          }
+                        }}
+                        placeholder="YYYY"
+                      />
+                      {juniorHighYearGraduated && (Number(juniorHighYearGraduated) < 2000 || Number(juniorHighYearGraduated) > 2030) && (
+                        <p className="text-xs text-red-500 mt-1">Year must be between 2000 and 2030</p>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">With Honors <span className="text-red-500">*</span></label>
+                    <select required className={inputClassName} value={juniorHighHonors} onChange={e => setJuniorHighHonors(e.target.value)}>
+                      <option value="">Select</option>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">Senior High School Name <span className="text-red-500">*</span></label>
                     <input required className={inputClassName} value={seniorHighName} onChange={e => setSeniorHighName(e.target.value)} />
@@ -346,13 +435,114 @@ export default function ApplicationPage() {
                     <label className="block text-xs text-gray-500 mb-1">Senior High School Address <span className="text-red-500">*</span></label>
                     <input required className={inputClassName} value={seniorHighAddress} onChange={e => setSeniorHighAddress(e.target.value)} />
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Year Started <span className="text-red-500">*</span></label>
+                      <input 
+                        required 
+                        type="number"
+                        min="2000"
+                        max="2030"
+                        className={inputClassName} 
+                        value={seniorHighYearStarted} 
+                        onChange={e => {
+                          const value = e.target.value;
+                          if (value === '' || (Number(value) >= 2000 && Number(value) <= 2030)) {
+                            setSeniorHighYearStarted(value);
+                          }
+                        }}
+                        placeholder="YYYY"
+                      />
+                      {seniorHighYearStarted && (Number(seniorHighYearStarted) < 2000 || Number(seniorHighYearStarted) > 2030) && (
+                        <p className="text-xs text-red-500 mt-1">Year must be between 2000 and 2030</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Year Graduated <span className="text-red-500">*</span></label>
+                      <input 
+                        required 
+                        type="number"
+                        min="2000"
+                        max="2030"
+                        className={inputClassName} 
+                        value={seniorHighYearGraduated} 
+                        onChange={e => {
+                          const value = e.target.value;
+                          if (value === '' || (Number(value) >= 2000 && Number(value) <= 2030)) {
+                            setSeniorHighYearGraduated(value);
+                          }
+                        }}
+                        placeholder="YYYY"
+                      />
+                      {seniorHighYearGraduated && (Number(seniorHighYearGraduated) < 2000 || Number(seniorHighYearGraduated) > 2030) && (
+                        <p className="text-xs text-red-500 mt-1">Year must be between 2000 and 2030</p>
+                      )}
+                    </div>
+                  </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">College School Name <span className="text-red-500">*</span></label>
+                    <label className="block text-xs text-gray-500 mb-1">Strand <span className="text-red-500">*</span></label>
+                    <select required className={inputClassName} value={seniorHighStrand} onChange={e => setSeniorHighStrand(e.target.value)}>
+                      <option value="">Select Strand</option>
+                      <option value="STEM">STEM (Science, Technology, Engineering, and Mathematics)</option>
+                      <option value="ABM">ABM (Accountancy, Business and Management)</option>
+                      <option value="HUMSS">HUMSS (Humanities and Social Sciences)</option>
+                      <option value="GAS">GAS (General Academic Strand)</option>
+                      <option value="TVL">TVL (Technical-Vocational-Livelihood)</option>
+                      <option value="Arts and Design">Arts and Design</option>
+                      <option value="Sports">Sports</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">With Honors <span className="text-red-500">*</span></label>
+                    <select required className={inputClassName} value={seniorHighHonors} onChange={e => setSeniorHighHonors(e.target.value)}>
+                      <option value="">Select</option>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">College or University Name <span className="text-red-500">*</span></label>
                     <input required className={inputClassName} value={collegeName} onChange={e => setCollegeName(e.target.value)} />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">College School Address <span className="text-red-500">*</span></label>
+                    <label className="block text-xs text-gray-500 mb-1">College or University Address <span className="text-red-500">*</span></label>
                     <input required className={inputClassName} value={collegeAddress} onChange={e => setCollegeAddress(e.target.value)} />
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Year Started <span className="text-red-500">*</span></label>
+                      <input 
+                        required 
+                        type="number"
+                        className={inputClassName} 
+                        value={collegeYearStarted} 
+                        onChange={e => setCollegeYearStarted(e.target.value)}
+                        placeholder="YYYY"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Expected Year of Graduation <span className="text-red-500">*</span></label>
+                      <input 
+                        required 
+                        type="number"
+                        className={inputClassName} 
+                        value={collegeExpectedGraduation} 
+                        onChange={e => setCollegeExpectedGraduation(e.target.value)}
+                        placeholder="YYYY"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Cumulative GPA <span className="text-red-500">*</span></label>
+                      <input 
+                        required 
+                        type="number"
+                        step="0.01"
+                        className={inputClassName} 
+                        value={collegeGPA} 
+                        onChange={e => setCollegeGPA(e.target.value)}
+                        placeholder="0.00"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">Year Level <span className="text-red-500">*</span></label>
