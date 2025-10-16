@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import AdminNavbar from '@/app/components/admin/AdminNavbar';
+import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
+import FilterModal from './components/FilterModal';
 
 type Status = 'Pending' | 'Approved' | 'Rejected';
 
@@ -114,6 +116,55 @@ const StatusPill = ({ status }: { status: Status }) => {
 };
 
 export default function ApplicationsPage() {
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [filters, setFilters] = useState<any>(null);
+  const [applications, setApplications] = useState(applicantsData);
+
+  // Calculate counts for filter modal
+  const counts = {
+    pending: applications.filter(a => a.status === 'Pending').length,
+    approved: applications.filter(a => a.status === 'Approved').length,
+    rejected: applications.filter(a => a.status === 'Rejected').length,
+  };
+
+  const handleApplyFilters = (newFilters: any) => {
+    setFilters(newFilters);
+    // Apply filters to the data
+    let filtered = [...applicantsData];
+    
+    if (newFilters.searchQuery) {
+      filtered = filtered.filter(a => 
+        a.name.toLowerCase().includes(newFilters.searchQuery.toLowerCase()) ||
+        a.id.toLowerCase().includes(newFilters.searchQuery.toLowerCase())
+      );
+    }
+
+    if (newFilters.selectedStatuses.length > 0) {
+      filtered = filtered.filter(a => newFilters.selectedStatuses.includes(a.status));
+    }
+
+    if (newFilters.selectedBarangay) {
+      filtered = filtered.filter(a => a.barangay === newFilters.selectedBarangay);
+    }
+
+    if (newFilters.dateRange.from && newFilters.dateRange.to) {
+      const from = new Date(newFilters.dateRange.from);
+      const to = new Date(newFilters.dateRange.to);
+      filtered = filtered.filter(a => {
+        const date = new Date(a.date);
+        return date >= from && date <= to;
+      });
+    }
+
+    setApplications(filtered);
+    setIsFilterModalOpen(false);
+  };
+
+  const handleResetFilters = () => {
+    setFilters(null);
+    setApplications(applicantsData);
+  };
+
   return (
     <div className="p-6 max-w-[1600px] mx-auto space-y-8">
       {/* Top Navigation Bar */}
@@ -130,30 +181,22 @@ export default function ApplicationsPage() {
 
         {/* Right side - Search, Notifications, and Profile */}
         <div className="flex items-center gap-6">
-          {/* Search Bar */}
-          <div className="relative w-72">
-            <input
-              type="text"
-              placeholder="Search applicants..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 bg-gray-50 
-                       text-sm transition-all duration-200
-                       focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 
-                       focus:bg-white"
-            />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg 
-                className="h-5 w-5 text-gray-400 transition-colors duration-200" 
-                viewBox="0 0 20 20" 
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-          </div>
+          {/* Filter Button */}
+          <button
+            onClick={() => setIsFilterModalOpen(true)}
+            className="relative inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50"
+          >
+            <AdjustmentsHorizontalIcon className="h-5 w-5 text-gray-500" />
+            Filter
+            {filters && Object.keys(filters).length > 0 && (
+              <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                {Object.keys(filters).filter(key => 
+                  filters[key] && 
+                  (Array.isArray(filters[key]) ? filters[key].length > 0 : true)
+                ).length}
+              </span>
+            )}
+          </button>
 
           {/* Notifications */}
           <button className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors duration-200">
@@ -237,6 +280,15 @@ export default function ApplicationsPage() {
         </div>
       </div>
 
+      {/* Filter Modal */}
+      <FilterModal 
+        isOpen={isFilterModalOpen} 
+        onClose={() => setIsFilterModalOpen(false)} 
+        onApply={handleApplyFilters} 
+        onReset={handleResetFilters} 
+        counts={counts}
+      />
+
       {/* Applications Card */}
       <div className="bg-white rounded-xl shadow-md border border-gray-100 transition-all duration-200 hover:shadow-lg">
         <div className="px-6 py-4 border-b border-gray-200">
@@ -246,7 +298,7 @@ export default function ApplicationsPage() {
                 Recent Scholarship Applications
               </h2>
               <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-600">
-                {applicantsData.length} total
+                {applications.length} total
               </span>
             </div>
             <Link
@@ -298,7 +350,7 @@ export default function ApplicationsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {applicantsData.map((applicant) => (
+              {applications.map((applicant) => (
                 <tr 
                   key={applicant.id} 
                   className="group transition-colors duration-150 hover:bg-blue-50/50"

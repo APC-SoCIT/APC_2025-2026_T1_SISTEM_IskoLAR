@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import FilterModal from '../components/FilterModal';
+import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
 
 type Status = 'Pending' | 'Approved' | 'Rejected';
 
@@ -176,14 +177,18 @@ export default function AllApplicationsPage() {
         {/* Filter Button */}
         <button
           onClick={() => setIsFilterModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg
-                   hover:bg-blue-700 transition-colors duration-150"
+          className="relative inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 bg-white text-sm font-medium hover:bg-gray-50"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-          </svg>
+          <AdjustmentsHorizontalIcon className="h-5 w-5 text-gray-500" />
           Filter
+          {filters && Object.keys(filters).length > 0 && (
+            <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+              {Object.keys(filters).filter(key => 
+                filters[key] && 
+                (Array.isArray(filters[key]) ? filters[key].length > 0 : true)
+              ).length}
+            </span>
+          )}
         </button>
       </div>
 

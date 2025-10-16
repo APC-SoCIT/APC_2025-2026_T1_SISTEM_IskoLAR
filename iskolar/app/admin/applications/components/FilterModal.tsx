@@ -5,7 +5,6 @@ import React from 'react';
 interface Filters {
   searchQuery: string;
   selectedStatuses: string[];
-  selectedSchoolType: string;
   selectedBarangay: string;
   dateRange: {
     from: string;
@@ -28,7 +27,6 @@ interface FilterModalProps {
 export default function FilterModal({ isOpen, onClose, onApply, onReset, counts }: FilterModalProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedStatuses, setSelectedStatuses] = React.useState<string[]>([]);
-  const [selectedSchoolType, setSelectedSchoolType] = React.useState<string>('');
   const [selectedBarangay, setSelectedBarangay] = React.useState<string>('');
   const [dateRange, setDateRange] = React.useState({ from: '', to: '' });
 
@@ -67,7 +65,6 @@ export default function FilterModal({ isOpen, onClose, onApply, onReset, counts 
     onApply({
       searchQuery,
       selectedStatuses,
-      selectedSchoolType,
       selectedBarangay,
       dateRange
     });
@@ -155,23 +152,6 @@ export default function FilterModal({ isOpen, onClose, onApply, onReset, counts 
                 </label>
               ))}
             </div>
-          </div>
-
-          {/* School Type */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              School Type
-            </label>
-            <select
-              value={selectedSchoolType}
-              onChange={(e) => setSelectedSchoolType(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 
-                       focus:ring-blue-500 focus:border-blue-500 text-sm"
-            >
-              <option value="">All Types</option>
-              <option value="Public">Public</option>
-              <option value="Private">Private</option>
-            </select>
           </div>
 
           {/* Barangay */}
