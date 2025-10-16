@@ -4,17 +4,10 @@ import Link from "next/link";
 import { useState } from "react";
  
 export default function SignUpPage() {
+    // Form state
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [agree, setAgree] = useState(false);
-    const [showModal, setShowModal] = useState(false);
-    const [showAddressFields, setShowAddressFields] = useState(false);
-    const [showEducationFields, setShowEducationFields] = useState(false);
- 
-    // Personal Information fields
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [middleName, setMiddleName] = useState("");
@@ -22,7 +15,19 @@ export default function SignUpPage() {
     const [mobile, setMobile] = useState("");
     const [birthday, setBirthday] = useState("");
     
-    // Address fields (optional)
+    // UI state
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [agree, setAgree] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [showAddressFields, setShowAddressFields] = useState(false);
+    const [showEducationFields, setShowEducationFields] = useState(false);
+    const [touchedFields, setTouchedFields] = useState<{ [key: string]: boolean }>({});
+    const [submitted, setSubmitted] = useState(false);
+    const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    
+    // Address fields
     const [addressLine1, setAddressLine1] = useState("");
     const [addressLine2, setAddressLine2] = useState("");
     const [barangay, setBarangay] = useState("");
@@ -31,13 +36,9 @@ export default function SignUpPage() {
     const [zipCode, setZipCode] = useState("");
     const [region, setRegion] = useState("");
     
-    // Education fields (optional)
+    // Education fields
     const [college, setCollege] = useState("");
     const [course, setCourse] = useState("");
-    
-    // UI state
-    const [error, setError] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
     
     // Dropdown data for address fields - same as profile page
     const provincesData = {
@@ -69,6 +70,16 @@ export default function SignUpPage() {
         return regionsData[province as keyof typeof regionsData] || "";
     };
 
+    // Function to mark field as touched
+    const handleFieldTouch = (fieldName: string) => {
+        setTouchedFields(prev => ({ ...prev, [fieldName]: true }));
+    };
+
+    // Function to check if a field is empty and has been touched or form was submitted
+    const showFieldError = (fieldName: string, value: string) => {
+        return (touchedFields[fieldName] || submitted) && !value;
+    };
+
     // Validation function for ZIP code
     const validateZipCode = (zipCode: string) => {
         return /^\d{4}$/.test(zipCode);
@@ -76,6 +87,7 @@ export default function SignUpPage() {
  
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setSubmitted(true);
        
         // Form validation for required fields
         if (!firstName || !lastName || !email || !password || !confirmPassword || !birthday || !gender || !mobile) {
@@ -106,29 +118,29 @@ export default function SignUpPage() {
             // Prepare request payload with all available fields
             const payload = {
                 // Required personal fields
-                firstName,
-                lastName,
-                middleName,
+                first_name: firstName,
+                last_name: lastName,
+                middle_name: middleName,
                 gender,
                 birthdate: birthday, // Send in ISO format
                 email,
                 password,
-                mobile,
+                contact_number: mobile,
                 
                 // Optional address fields (if provided)
                 ...(showAddressFields && {
-                    addressLine1,
-                    addressLine2,
+                    address_line1: addressLine1,
+                    address_line2: addressLine2,
                     barangay,
                     city,
                     province,
-                    zipCode,
+                    zip_code: zipCode,
                     region,
                 }),
                 
                 // Optional education fields (if provided)
                 ...(showEducationFields && {
-                    college,
+                    college_name: college,
                     course,
                 }),
             };
@@ -174,10 +186,18 @@ export default function SignUpPage() {
                             id="firstName"
                             type="text"
                             placeholder="First Name"
-                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
+                            className={`w-full px-3 py-2 rounded-lg border ${
+                                showFieldError('firstName', firstName)
+                                    ? 'border-red-500 bg-red-50'
+                                    : 'border-gray-300 bg-gray-50'
+                            } focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] text-gray-900 placeholder-gray-400`}
                             value={firstName}
                             onChange={e => setFirstName(e.target.value)}
+                            onBlur={() => handleFieldTouch('firstName')}
                         />
+                        {showFieldError('firstName', firstName) && (
+                            <p className="text-red-500 text-xs mt-1">First name is required</p>
+                        )}
                     </div>
                     {/* Last Name */}
                     <div>
@@ -188,10 +208,18 @@ export default function SignUpPage() {
                             id="lastName"
                             type="text"
                             placeholder="Last Name"
-                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
+                            className={`w-full px-3 py-2 rounded-lg border ${
+                                showFieldError('lastName', lastName)
+                                    ? 'border-red-500 bg-red-50'
+                                    : 'border-gray-300 bg-gray-50'
+                            } focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] text-gray-900 placeholder-gray-400`}
                             value={lastName}
                             onChange={e => setLastName(e.target.value)}
+                            onBlur={() => handleFieldTouch('lastName')}
                         />
+                        {showFieldError('lastName', lastName) && (
+                            <p className="text-red-500 text-xs mt-1">Last name is required</p>
+                        )}
                     </div>
                     {/* Middle Name */}
                     <div>
@@ -217,10 +245,18 @@ export default function SignUpPage() {
                             <input
                                 id="birthday"
                                 type="date"
-                                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
+                                className={`w-full px-3 py-2 rounded-lg border ${
+                                    showFieldError('birthday', birthday)
+                                        ? 'border-red-500 bg-red-50'
+                                        : 'border-gray-300 bg-gray-50'
+                                } focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] text-gray-900 placeholder-gray-400`}
                                 value={birthday}
                                 onChange={e => setBirthday(e.target.value)}
+                                onBlur={() => handleFieldTouch('birthday')}
                             />
+                            {showFieldError('birthday', birthday) && (
+                                <p className="text-red-500 text-xs mt-1">Birthday is required</p>
+                            )}
                         </div>
                         {/* Gender */}
                         <div className="relative">
@@ -229,15 +265,23 @@ export default function SignUpPage() {
                             </label>
                             <select
                                 id="gender"
-                                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 appearance-none"
+                                className={`w-full px-3 py-2 rounded-lg border ${
+                                    showFieldError('gender', gender)
+                                        ? 'border-red-500 bg-red-50'
+                                        : 'border-gray-300 bg-gray-50'
+                                } focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] text-gray-900 appearance-none`}
                                 value={gender}
                                 onChange={e => setGender(e.target.value)}
+                                onBlur={() => handleFieldTouch('gender')}
                             >
                                 <option value="">Select Gender</option>
                                 <option value="Female">Female</option>
                                 <option value="Male">Male</option>
                                 <option value="Other">Other</option>
                             </select>
+                            {showFieldError('gender', gender) && (
+                                <p className="text-red-500 text-xs mt-1">Gender is required</p>
+                            )}
                             {/* Custom down arrow icon */}
                             <span className="pointer-events-none absolute right-2 top-[55%] text-gray-400">
                                 <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
@@ -255,10 +299,18 @@ export default function SignUpPage() {
                             id="mobile"
                             type="tel"
                             placeholder="+639XXXXXXXXX"
-                            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
+                            className={`w-full px-3 py-2 rounded-lg border ${
+                                showFieldError('mobile', mobile)
+                                    ? 'border-red-500 bg-red-50'
+                                    : 'border-gray-300 bg-gray-50'
+                            } focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] text-gray-900 placeholder-gray-400`}
                             value={mobile}
                             onChange={e => setMobile(e.target.value)}
+                            onBlur={() => handleFieldTouch('mobile')}
                         />
+                        {showFieldError('mobile', mobile) && (
+                            <p className="text-red-500 text-xs mt-1">Mobile number is required</p>
+                        )}
                     </div>
                     {/* Email */}
                     <div>
@@ -274,10 +326,18 @@ export default function SignUpPage() {
                                 type="email"
                                 autoComplete="email"
                                 placeholder="example@gmail.com"
-                                className="w-full pl-10 pr-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
+                                className={`w-full pl-10 pr-3 py-2 rounded-lg border ${
+                                    showFieldError('email', email)
+                                        ? 'border-red-500 bg-red-50'
+                                        : 'border-gray-300 bg-gray-50'
+                                } focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] text-gray-900 placeholder-gray-400`}
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
+                                onBlur={() => handleFieldTouch('email')}
                             />
+                            {showFieldError('email', email) && (
+                                <p className="text-red-500 text-xs mt-1">Email is required</p>
+                            )}
                         </div>
                     </div>
                     
@@ -481,10 +541,18 @@ export default function SignUpPage() {
                                 type={showPassword ? "text" : "password"}
                                 autoComplete="new-password"
                                 placeholder="••••••••"
-                                className="w-full pl-10 pr-10 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] bg-gray-50 text-gray-900 placeholder-gray-400"
+                                className={`w-full pl-10 pr-10 py-2 rounded-lg border ${
+                                    showFieldError('password', password)
+                                        ? 'border-red-500 bg-red-50'
+                                        : 'border-gray-300 bg-gray-50'
+                                } focus:outline-none focus:ring-2 focus:ring-[#2196F3] focus:border-[#2196F3] text-gray-900 placeholder-gray-400`}
                                 value={password}
                                 onChange={e => setPassword(e.target.value)}
+                                onBlur={() => handleFieldTouch('password')}
                             />
+                            {showFieldError('password', password) && (
+                                <p className="text-red-500 text-xs mt-1">Password is required</p>
+                            )}
                             <button
                                 type="button"
                                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 focus:outline-none"

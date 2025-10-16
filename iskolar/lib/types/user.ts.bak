@@ -1,27 +1,27 @@
-﻿// Type definitions matching the database schema
+// Type definitions matching the database schema
 
 // Enum Types
-export type AppSemester = "First Semester" | "Second Semester" | "Summer Term";
-export type AppStatus = "pending" | "submitted" | "under_review" | "approved" | "rejected" | "withdrawn";
-export type UserRole = "scholar" | "reviewer" | "finance" | "super_admin";
-export type DocumentType =
-  | "registration_cert"
-  | "birth_cert"
-  | "barangay_id"
-  | "shs_diploma"
-  | "good_moral_cert"
-  | "grades_cert"
-  | "residency_cert"
-  | "voter_cert_scholar"
-  | "voter_cert_guardian"
-  | "valid_id";
-export type EducationLevel = "Junior High School" | "Senior High School" | "College";
+export type AppSemester = 'First Semester' | 'Second Semester' | 'Summer Term';
+export type AppStatus = 'pending' | 'submitted' | 'under_review' | 'approved' | 'rejected' | 'withdrawn';
+export type UserRole = 'scholar' | 'reviewer' | 'finance' | 'super_admin';
+export type DocumentType = 
+  | 'registration_cert'
+  | 'birth_cert'
+  | 'barangay_id'
+  | 'shs_diploma'
+  | 'good_moral_cert'
+  | 'grades_cert'
+  | 'residency_cert'
+  | 'voter_cert_scholar'
+  | 'voter_cert_guardian'
+  | 'valid_id';
+export type EducationLevel = 'Junior High School' | 'Senior High School' | 'College';
 
 /**
  * Base User Profile - matches the users table
  */
 export interface UserBase {
-  id?: string;
+  id: string;
   email: string;
   first_name: string;
   last_name: string;
@@ -121,10 +121,8 @@ export interface Document {
 /**
  * Registration interface for new users
  */
-export interface UserRegistration extends Omit<UserBase, "id" | "created_at" | "updated_at" | "last_login" | "profile_update_history"> {
+export interface UserRegistration extends Omit<UserBase, 'id' | 'created_at' | 'updated_at' | 'last_login' | 'profile_update_history'> {
   password: string;
-  college_name?: string;
-  course?: string;
   confirmPassword?: string; // Only used in UI, not stored
 }
 
@@ -132,83 +130,132 @@ export interface UserRegistration extends Omit<UserBase, "id" | "created_at" | "
  * Validation utilities for user data
  */
 export const userValidation = {
+  /**
+   * Validates email format
+   */
   validateEmail: (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   },
 
+  /**
+   * Validates contact number format for Philippine numbers
+   */
   validateContactNumber: (number: string): { isValid: boolean; value?: string; error?: string } => {
-    if (!number || number.trim() === "") {
-      return { isValid: false, error: "Contact number is required" };
+    if (!number || number.trim() === '') {
+      return { isValid: false, error: 'Contact number is required' };
     }
     
-    const cleaned = number.replace(/\D/g, "");
+    const cleaned = number.replace(/\D/g, '');
     
-    if (cleaned.length === 10 && cleaned.startsWith("9")) {
-      return { isValid: true, value: "0" + cleaned };
-    }
-    
-    if (cleaned.length === 11 && cleaned.startsWith("09")) {
+    // Handle different Philippine mobile number formats
+    if (cleaned.length === 10 && cleaned.startsWith('9')) {
+      // 10 digits: 9171234567 -> add leading 0
+      return { isValid: true, value: '0' + cleaned };
+    } else if (cleaned.length === 11 && cleaned.startsWith('09')) {
+      // 11 digits: 09171234567 -> standard format
       return { isValid: true, value: cleaned };
+    } else if (cleaned.length === 12 && cleaned.startsWith('639')) {
+      // 12 digits with country code: 639171234567 -> convert to 09171234567
+      return { isValid: true, value: '0' + cleaned.substring(2) };
     }
     
-    if (cleaned.length === 12 && cleaned.startsWith("639")) {
-      return { isValid: true, value: "0" + cleaned.substring(2) };
-    }
-    
-    return { isValid: false, error: "Invalid contact number format" };
+    return { isValid: false, error: 'Invalid contact number format' };
   },
 
+  /**
+   * Validates zip code format (4 digits)
+   */
   validateZipCode: (zipCode: string): boolean => {
     return /^\d{4}$/.test(zipCode);
   },
 
+  /**
+   * Validates GPA format (between 1.00 and 4.00)
+   */
   validateGPA: (gpa: number): boolean => {
     return gpa >= 1.00 && gpa <= 4.00;
   },
 
+  /**
+   * Validates year (between 2000 and 2030)
+   */
   validateYear: (year: number): boolean => {
     return year >= 2000 && year <= 2030;
   },
 
+  /**
+   * Validates file size (max 10MB)
+   */
   validateFileSize: (size: number): boolean => {
     const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
     return size <= MAX_FILE_SIZE;
+  }
+}
+      return { isValid: true, value: cleaned };
+    }
+    
+    return { isValid: false, error: 'Please enter a valid mobile number (e.g., 09171234567)' };
   },
 
+  /**
+   * Validates required fields
+   * @param fields Object with field names and values to validate
+   * @returns Array of missing required fields
+   */
   validateRequiredFields: (fields: Record<string, any>): string[] => {
-    const requiredFields = ["firstName", "lastName", "email", "gender", "birthdate"];
+    const requiredFields = ['firstName', 'lastName', 'email', 'gender', 'birthdate'];
     const missing: string[] = [];
     
     requiredFields.forEach(field => {
-      if (!fields[field] || fields[field].toString().trim() === "") {
+      if (!fields[field] || fields[field].toString().trim() === '') {
         missing.push(field);
       }
     });
     
     return missing;
   },
-
+  
+  /**
+   * Validates ZIP code format
+   * @param zipCode ZIP code to validate
+   * @returns Whether the ZIP code is valid
+   */
+  validateZipCode: (zipCode: string): boolean => {
+    return /^\d{4}$/.test(zipCode);
+  },
+  
+  /**
+   * Formats date from ISO to MM/DD/YYYY display format
+   * @param isoDate Date in ISO format
+   * @returns Date in MM/DD/YYYY format
+   */
   formatDateForDisplay: (isoDate: string): string => {
-    if (!isoDate) return "";
+    if (!isoDate) return '';
     const date = new Date(isoDate);
-    if (isNaN(date.getTime())) return "";
+    if (isNaN(date.getTime())) return '';
     
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
     const year = date.getFullYear();
     
     return `${month}/${day}/${year}`;
   },
-
+  
+  /**
+   * Parses display date (MM/DD/YYYY) back to ISO format
+   * @param displayDate Date in MM/DD/YYYY format
+   * @returns Date in ISO format
+   */
   parseDisplayDate: (displayDate: string): string => {
-    if (!displayDate) return "";
+    if (!displayDate) return '';
     
+    // Handle different formats: MM/DD/YYYY or MM-DD-YYYY
     const parts = displayDate.split(/[/\-]/);
-    if (parts.length !== 3) return "";
+    if (parts.length !== 3) return '';
     
-    const month = parts[0].padStart(2, "0");
-    const day = parts[1].padStart(2, "0");
+    const month = parts[0].padStart(2, '0');
+    const day = parts[1].padStart(2, '0');
     const year = parts[2];
     
     return `${year}-${month}-${day}`;
