@@ -33,7 +33,7 @@ export async function createResetToken(data: TokenData): Promise<string> {
   // Prepare the data based on user type
   const insertData = data.userType === 'admin' 
     ? {
-        admin_id: parseInt(data.userId.toString()), // Convert to integer for admin
+        admin_id: data.userId, // Keep as UUID for admin
         user_id: null,
         token,
         user_type: dbUserType,
@@ -49,7 +49,22 @@ export async function createResetToken(data: TokenData): Promise<string> {
         created_at: new Date().toISOString()
       };
 
-  // Store token in database
+  // First, invalidate any existing tokens for this user
+  if (data.userType === 'admin') {
+    await supabase
+      .from('password_reset_tokens')
+      .update({ used_at: new Date().toISOString() })
+      .eq('admin_id', insertData.admin_id)
+      .is('used_at', null);
+  } else {
+    await supabase
+      .from('password_reset_tokens')
+      .update({ used_at: new Date().toISOString() })
+      .eq('user_id', insertData.user_id)
+      .is('used_at', null);
+  }
+
+  // Now store the new token in database
   const { error } = await supabase
     .from('password_reset_tokens')
     .insert(insertData);
