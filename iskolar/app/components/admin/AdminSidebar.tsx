@@ -132,10 +132,10 @@ const AdminSidebar = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 mt-4 space-y-2">
+      <nav className="flex-1 px-3 pt-4 space-y-1">
         {/* Main Section */}
-        <div className="flex items-center gap-3 py-2 px-4">
-          <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Main</span>
+        <div className="py-2 px-3">
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Main</span>
         </div>
 
         {mainNavItems.map((item) => {
@@ -144,27 +144,29 @@ const AdminSidebar = () => {
           return (
             <Link href={item.href} key={item.label}>
               <div
-                className={`flex items-center gap-3 py-3 px-4 transition-all cursor-pointer relative ${
+                className={`group flex items-center gap-3 py-2.5 px-4 rounded-xl transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? 'bg-[#E3F2FD] text-[#2196F3]'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-600 hover:bg-gray-50/80'
                 }`}
               >
-                {isActive && (
-                  <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
-                )}
-                <span className={`${isActive ? 'text-[#2196F3]' : 'text-gray-600'}`}>
+                <span className={`transition-colors duration-200 ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`}>
                   {item.icon}
                 </span>
-                <span className="text-base font-medium">{item.label}</span>
+                <span className={`text-sm font-medium transition-colors duration-200 ${
+                  isActive ? 'text-blue-600' : 'text-gray-700 group-hover:text-gray-900'
+                }`}>{item.label}</span>
+                {isActive && (
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600" />
+                )}
               </div>
             </Link>
           );
         })}
 
         {/* Administration Section */}
-        <div className="flex items-center gap-3 py-2 px-4 mt-8">
-          <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Administration</span>
+        <div className="py-2 px-3 mt-6">
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Administration</span>
         </div>
 
         {adminNavItems.map((item) => {
@@ -173,19 +175,21 @@ const AdminSidebar = () => {
           return (
             <Link href={item.href} key={item.label}>
               <div
-                className={`flex items-center gap-3 py-3 px-4 transition-all cursor-pointer relative ${
+                className={`group flex items-center gap-3 py-2.5 px-4 rounded-xl transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? 'bg-[#E3F2FD] text-[#2196F3]'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-600 hover:bg-gray-50/80'
                 }`}
               >
-                {isActive && (
-                  <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
-                )}
-                <span className={`${isActive ? 'text-[#2196F3]' : 'text-gray-600'}`}>
+                <span className={`transition-colors duration-200 ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`}>
                   {item.icon}
                 </span>
-                <span className="text-base font-medium">{item.label}</span>
+                <span className={`text-sm font-medium transition-colors duration-200 ${
+                  isActive ? 'text-blue-600' : 'text-gray-700 group-hover:text-gray-900'
+                }`}>{item.label}</span>
+                {isActive && (
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600" />
+                )}
               </div>
             </Link>
           );
@@ -194,30 +198,28 @@ const AdminSidebar = () => {
 
       {/* Administrator Profile and Sign Out */}
       <div className="mt-auto border-t border-gray-200">
-        <div className="p-6">
-          <div className="flex flex-col bg-white rounded-lg py-4 px-5 transition-all duration-200 hover:bg-gray-50 space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-blue-50">
-                <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-base font-medium text-gray-900">Administrator</span>
-                <span className="text-sm text-gray-500">System Management</span>
-              </div>
-            </div>
-            
-            <button
-              onClick={handleSignOut}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-red-600 transition-all duration-200 rounded-md hover:bg-red-50 border border-gray-200 hover:border-red-100"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        <div className="p-4">
+          <div className="flex items-center mb-4">
+            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+              <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              <span>Sign out</span>
-            </button>
+            </div>
+            <div>
+              <div className="font-medium text-gray-900">Administrator</div>
+              <div className="text-sm text-gray-500">System Management</div>
+            </div>
           </div>
+          
+          <button
+            onClick={handleSignOut}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-red-600 bg-white hover:bg-red-50 rounded-lg border border-gray-200 hover:border-red-100 transition-all duration-200 cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Sign out
+          </button>
         </div>
       </div>
     </aside>

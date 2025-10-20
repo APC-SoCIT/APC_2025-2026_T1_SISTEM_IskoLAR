@@ -34,11 +34,11 @@ export default function ApplicationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F8FAFC]">
       <AdminNavbar />
       
-      <main className="p-6 max-w-7xl mx-auto">
-        <div className="space-y-6">
+      <main className="p-8 max-w-7xl mx-auto">
+        <div className="space-y-8">
           {/* School Year Section */}
           <SchoolYearSection 
             schoolYears={schoolYears}

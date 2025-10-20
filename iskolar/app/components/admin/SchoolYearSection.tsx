@@ -12,14 +12,20 @@ export default function SchoolYearSection({ schoolYears, onAddYear }: SchoolYear
   const previousYears = schoolYears.filter(y => !y.isCurrent);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm">
-      <div className="px-6 py-5 border-b border-gray-200">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+      <div className="px-8 py-6 border-b border-gray-100">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">School Year Management</h2>
+          <div className="space-y-1">
+            <h2 className="text-2xl font-semibold text-gray-900">School Year Management</h2>
+            <p className="text-sm text-gray-500">Manage academic years and their semesters</p>
+          </div>
           <button
             onClick={onAddYear}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer select-none shadow-sm hover:shadow group"
           >
+            <svg className="w-4 h-4 transform group-hover:rotate-180 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
             Add School Year
           </button>
         </div>
@@ -32,21 +38,31 @@ export default function SchoolYearSection({ schoolYears, onAddYear }: SchoolYear
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium text-gray-900">Current Academic Year</h3>
             </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-blue-50 to-blue-50/50 border border-blue-200 rounded-xl p-6 transition-all duration-200 hover:shadow-md hover:border-blue-300 group">
               <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-sm font-medium text-blue-800">
-                    A.Y. {currentYear.academic_year} - {currentYear.academic_year + 1}
-                  </span>
-                  <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    Current Year
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span className="text-base font-medium text-gray-900">
+                      A.Y. {currentYear.academic_year} - {currentYear.academic_year + 1}
+                    </span>
+                    <span className="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                      Current Year
+                    </span>
+                  </div>
                 </div>
                 <button 
-                  className="text-sm text-blue-600 hover:text-blue-800"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 active:bg-blue-300 transition-all duration-200 group/btn cursor-pointer"
                   onClick={() => window.location.href = `/admin/applications/school-year/${currentYear.id}`}
                 >
-                  Manage →
+                  Manage 
+                  <svg className="w-4 h-4 transform group-hover:translate-x-1 group-hover/btn:translate-x-0.5 transition-all duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </button>
               </div>
             </div>
@@ -59,8 +75,11 @@ export default function SchoolYearSection({ schoolYears, onAddYear }: SchoolYear
             <h3 className="text-lg font-medium text-gray-900">Previous Years</h3>
             <button
               onClick={() => setShowPreviousYears(!showPreviousYears)}
-              className="text-sm text-gray-600 hover:text-gray-900"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
             >
+              <svg className={`w-4 h-4 transform transition-transform duration-200 ${showPreviousYears ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
               {showPreviousYears ? 'Hide' : 'Show'} Previous Years
             </button>
           </div>
@@ -70,18 +89,26 @@ export default function SchoolYearSection({ schoolYears, onAddYear }: SchoolYear
               {previousYears.map((year) => (
                 <div 
                   key={year.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50"
+                  className="group border border-gray-200 rounded-xl p-5 hover:bg-white hover:border-blue-200 hover:shadow-sm transition-all duration-200 cursor-pointer"
+                  onClick={() => window.location.href = `/admin/applications/school-year/${year.id}`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-900">
-                      A.Y. {year.academic_year} - {year.academic_year + 1}
-                    </span>
-                    <button 
-                      className="text-sm text-gray-600 hover:text-gray-900"
-                      onClick={() => window.location.href = `/admin/applications/school-year/${year.id}`}
-                    >
-                      View Details →
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                        <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <span className="text-sm font-medium text-gray-900">
+                        A.Y. {year.academic_year} - {year.academic_year + 1}
+                      </span>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 group-hover:text-blue-600 transition-colors duration-200">
+                      View Details
+                      <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-all duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
               ))}

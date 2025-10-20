@@ -91,13 +91,13 @@ const ScholarSidebar = () => {
   }, [pathname]);
 
   return (
-    <aside className="fixed top-0 left-0 z-50 h-screen w-64 font-geist flex flex-col border-r bg-white border-gray-300 text-sm shadow-[4px_0_6px_-2px_rgba(0,0,0,0.1)]">
-      <div className="p-4 pl-7 border-b flex items-center gap-2 border-gray-300">
+    <aside className="fixed top-0 left-0 z-50 h-screen w-64 font-geist flex flex-col bg-white border-r border-gray-100 text-sm shadow-[4px_0_20px_-4px_rgba(0,0,0,0.05)]">
+      <div className="px-6 h-16 border-b flex items-center gap-3 border-gray-100">
         <Image
           src="/IskoLAR.png"
           alt="IskoLAR logo"
-          width={28}
-          height={28}
+          width={32}
+          height={32}
           className="transition-all duration-300"
         />
         <span className="text-base font-semibold">IskoLAR</span>

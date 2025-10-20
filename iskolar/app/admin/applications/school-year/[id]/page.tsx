@@ -135,31 +135,39 @@ export default function SchoolYearDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="p-6 max-w-7xl mx-auto">
-        <div className="space-y-6">
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <main className="p-8 max-w-7xl mx-auto">
+        <div className="space-y-8">
           {/* Header */}
-          <div className="bg-white rounded-xl shadow-sm px-6 py-5">
+          <div className="bg-white rounded-2xl shadow-sm px-8 py-6 border border-gray-100">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-semibold text-gray-900">
-                  Academic Year {schoolYear.academic_year} - {schoolYear.academic_year + 1}
-                </h1>
-                <p className="text-sm text-gray-500 mt-1">
-                  Manage semesters and applications
+              <div className="space-y-1">
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-semibold text-gray-900">
+                    Academic Year {schoolYear.academic_year} - {schoolYear.academic_year + 1}
+                  </h1>
+                  <span className="px-3 py-1 text-sm font-medium text-blue-700 bg-blue-50 rounded-full">
+                    Active
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500">
+                  Manage semester schedules and application periods
                 </p>
               </div>
               <button
                 onClick={() => setShowAddSemesterModal(true)}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transform hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer select-none shadow-sm hover:shadow group"
               >
+                <svg className="w-4 h-4 transform group-hover:rotate-180 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
                 Add Semester
               </button>
             </div>
           </div>
 
-          {/* Semesters List */}
-          <div className="bg-white rounded-xl shadow-sm divide-y divide-gray-200">
+          {/* Semesters Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {schoolYear.semesters?.map((semester) => {
               const startDate = new Date(semester.start_date);
               const endDate = new Date(semester.end_date);
@@ -177,57 +185,83 @@ export default function SchoolYearDetailPage() {
               }
 
               return (
-                <div key={semester.id} className="px-6 py-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900">
-                        {semester.name}
-                      </h3>
-                      <div className="mt-1 flex flex-col gap-1">
-                        <span className="text-sm text-gray-500">
+                <div key={semester.id} className="group bg-white rounded-xl shadow-sm border border-gray-100 hover:border-blue-200 hover:shadow-md transform hover:-translate-y-0.5 transition-all duration-200">
+                  <div className="p-6 space-y-6">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-medium text-gray-900">
+                          {semester.name}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            hasEnded 
+                              ? 'bg-gray-100 text-gray-700'
+                              : semester.applications_open 
+                                ? 'bg-green-100 text-green-700' 
+                                : 'bg-red-100 text-red-700'
+                          }`}>
+                            {hasEnded 
+                              ? 'Ended' 
+                              : semester.applications_open 
+                                ? 'Open' 
+                                : 'Closed'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z" />
+                        </svg>
+                        <span>
                           {dateFormatter.format(startDate)} - {dateFormatter.format(endDate)}
-                        </span>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          hasEnded 
-                            ? 'bg-gray-100 text-gray-800'
-                            : semester.applications_open 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                        }`}>
-                          {hasEnded 
-                            ? 'Semester Ended' 
-                            : semester.applications_open 
-                              ? 'Open for Applications' 
-                              : 'Closed for Applications'}
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+
+                    <div className="grid grid-cols-2 gap-3">
                       <button
                         onClick={() => router.push('/admin/applications/all')}
-                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-all duration-200 cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                       >
-                        View All Applications
+                        <svg className="w-4 h-4 transform group-hover:scale-110 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002-2h2a2 2 0 012 2M9 5a2 2 0 002 2h2a2 2 0 002-2" />
+                        </svg>
+                        View Applications
                       </button>
                       <button
                         onClick={() => handleToggleApplications(semester.id, semester.applications_open)}
-                        className={`px-4 py-2 text-sm font-medium rounded-lg ${
-                          semester.applications_open
-                            ? 'text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100'
-                            : 'text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100'
-                        }`}
                         disabled={hasEnded}
+                        className={`flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                          hasEnded
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : semester.applications_open
+                              ? 'text-red-700 bg-red-50 hover:bg-red-100'
+                              : 'text-green-700 bg-green-50 hover:bg-green-100'
+                        }`}
                       >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          {semester.applications_open ? (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          ) : (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          )}
+                        </svg>
                         {semester.applications_open ? 'Close' : 'Open'} Applications
                       </button>
+                    </div>
+                    
+                    <div className="border-t border-gray-100 pt-4">
                       <button
                         onClick={() => {
                           setSelectedSemesterId(semester.id);
                           setShowDeleteModal(true);
                         }}
-                        className="text-sm text-red-600 hover:text-red-700"
+                        className="flex items-center gap-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg transition-all duration-200 -ml-3 group/delete"
                       >
-                        Delete
+                        <svg className="w-4 h-4 transform group-hover/delete:scale-110 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete Semester
                       </button>
                     </div>
                   </div>
@@ -245,40 +279,47 @@ export default function SchoolYearDetailPage() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Delete Semester
-            </h3>
-            <p className="text-sm text-gray-500 mb-4">
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-8 shadow-xl">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="p-3 rounded-full bg-red-100">
+                <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">
+                Delete Semester
+              </h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-6">
               Warning: This will delete all applications associated with this semester. This action cannot be undone.
             </p>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="space-y-4 mb-8">
+              <label className="block text-sm font-medium text-gray-700">
                 Admin Password
               </label>
               <input
                 type="password"
                 value={adminPassword}
                 onChange={(e) => setAdminPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2.5 text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 placeholder="Enter admin password to confirm"
               />
             </div>
-            <div className="flex justify-end gap-3">
+            <div className="flex items-center justify-end gap-3">
               <button
                 onClick={() => {
                   setShowDeleteModal(false);
                   setAdminPassword('');
                   setSelectedSemesterId(null);
                 }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 hover:border-gray-300 transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteSemester}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
+                className="px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
               >
                 Delete Semester
               </button>
