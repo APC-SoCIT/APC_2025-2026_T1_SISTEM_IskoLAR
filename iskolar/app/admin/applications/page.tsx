@@ -3,21 +3,12 @@
 import { useState, useEffect } from 'react';
 import AdminNavbar from '@/app/components/admin/AdminNavbar';
 import SchoolYearSection from '@/app/components/admin/SchoolYearSection';
-import RecentApplications from '@/app/components/admin/RecentApplications';
 import { SchoolYear } from '@/lib/types/school-year';
-import { Application } from '@/lib/types/user';
 import AddYearModal from './AddYearModal';
-
-interface ExtendedApplication extends Application {
-  name: string;
-  barangay: string;
-}
 
 export default function ApplicationsPage() {
   const [schoolYears, setSchoolYears] = useState<SchoolYear[]>([]);
-  const [applications, setApplications] = useState<ExtendedApplication[]>([]);
   const [isLoadingYears, setIsLoadingYears] = useState(true);
-  const [isLoadingApps, setIsLoadingApps] = useState(true);
   const [showAddYearModal, setShowAddYearModal] = useState(false);
 
   // Fetch school years
@@ -38,24 +29,6 @@ export default function ApplicationsPage() {
     fetchSchoolYears();
   }, []);
 
-  // Fetch recent applications
-  useEffect(() => {
-    async function fetchRecentApplications() {
-      try {
-        const response = await fetch('/api/admin/applications/recent');
-        if (!response.ok) throw new Error('Failed to fetch applications');
-        const data = await response.json();
-        setApplications(data);
-      } catch (error) {
-        console.error('Error fetching applications:', error);
-      } finally {
-        setIsLoadingApps(false);
-      }
-    }
-
-    fetchRecentApplications();
-  }, []);
-
   const handleAddYear = () => {
     setShowAddYearModal(true);
   };
@@ -71,12 +44,6 @@ export default function ApplicationsPage() {
             schoolYears={schoolYears}
             onAddYear={handleAddYear}
           />
-
-          {/* Recent Applications Section */}
-          <RecentApplications 
-            applications={applications}
-            isLoading={isLoadingApps}
-          />
         </div>
       </main>
 
@@ -85,7 +52,14 @@ export default function ApplicationsPage() {
         <AddYearModal
           onClose={() => setShowAddYearModal(false)}
           onAdd={(newYear) => {
-            setSchoolYears((prev) => [...prev, newYear]);
+            // Convert the new year format to match SchoolYear type
+            const schoolYear: SchoolYear = {
+              id: newYear.id,
+              academic_year: newYear.year,
+              created_at: new Date().toISOString(),
+              semesters: []
+            };
+            setSchoolYears((prev) => [...prev, schoolYear]);
             setShowAddYearModal(false);
           }}
         />

@@ -6,12 +6,14 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+type Params = { id: string };
+
 export async function GET(
   request: NextRequest, 
-  { params }: { params: { id: string }}
+  context: { params: Params }
 ) {
   try {
-    const { id } = params;
+    const id = context.params.id;
 
     const { data: schoolYear, error } = await supabaseAdmin
       .from('school_years')

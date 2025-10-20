@@ -152,10 +152,10 @@ export default function SchoolYearDetailPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => router.push(`/admin/applications/school-year/${schoolYear.id}/semester/${semester.id}`)}
-                      className="text-sm text-gray-700 hover:text-gray-900"
+                      onClick={() => router.push('/admin/applications/all')}
+                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                     >
-                      View Applications
+                      View All Applications
                     </button>
                     <button
                       onClick={() => handleToggleApplications(semester.id, semester.applications_open)}
