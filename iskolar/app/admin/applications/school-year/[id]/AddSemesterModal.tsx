@@ -15,9 +15,19 @@ export default function AddSemesterModal({ onClose, onAdd }: AddSemesterModalPro
   const [endDate, setEndDate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [error, setError] = useState('');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError('');
+
+    // Validate inputs
+    if (!name || !startDate || !endDate) {
+      setError('All fields are required');
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const response = await fetch(`/api/admin/school-years/${params.id}/semesters`, {
@@ -32,12 +42,19 @@ export default function AddSemesterModal({ onClose, onAdd }: AddSemesterModalPro
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to create semester');
+      const data = await response.json();
+      console.log('Server response:', { status: response.status, data });
+
+      if (!response.ok) {
+        console.error('Server error details:', data);
+        throw new Error(data.error || 'Failed to create semester');
+      }
 
       onAdd();
       onClose();
     } catch (error) {
       console.error('Error creating semester:', error);
+      setError(error instanceof Error ? error.message : 'Failed to create semester');
     } finally {
       setIsSubmitting(false);
     }
@@ -49,6 +66,11 @@ export default function AddSemesterModal({ onClose, onAdd }: AddSemesterModalPro
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
           Add New Semester
         </h3>
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
