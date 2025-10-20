@@ -17,19 +17,30 @@ export default function AdminSignInPage() {
     setError("");
     setSuccess("");
     try {
+      // Call our admin signin API which handles both auth user creation and verification
       const res = await fetch('/api/admin-auth/signin', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ email_address: email, password }),
       });
+
       const result = await res.json();
+      
       if (!res.ok) {
         setError(result.error || 'Invalid admin credentials');
         setLoading(false);
         return;
       }
+
+      // Set the session in Supabase client
+      if (result.session) {
+        await supabase.auth.setSession(result.session);
+      }
+
       setSuccess('Sign in successful!');
-  router.push('/admin/dashboard');
+      router.push('/admin/dashboard');
     } catch (err) {
       setError('Network error');
     } finally {

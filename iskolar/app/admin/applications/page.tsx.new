@@ -6,7 +6,6 @@ import SchoolYearSection from '@/app/components/admin/SchoolYearSection';
 import RecentApplications from '@/app/components/admin/RecentApplications';
 import { SchoolYear } from '@/lib/types/school-year';
 import { Application } from '@/lib/types/user';
-import AddYearModal from './AddYearModal';
 
 interface ExtendedApplication extends Application {
   name: string;
@@ -80,15 +79,9 @@ export default function ApplicationsPage() {
         </div>
       </main>
 
-      {/* Add Year Modal */}
+      {/* TODO: Implement AddYearModal component */}
       {showAddYearModal && (
-        <AddYearModal
-          onClose={() => setShowAddYearModal(false)}
-          onAdd={(newYear) => {
-            setSchoolYears((prev) => [...prev, newYear]);
-            setShowAddYearModal(false);
-          }}
-        />
+        <div>Modal Placeholder</div>
       )}
     </div>
   );
