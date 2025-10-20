@@ -12,19 +12,8 @@ const AdminSidebar = () => {
 
   const handleSignOut = async () => {
     try {
-      const response = await fetch('/api/admin-auth/signout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        await signOut();
-        router.push('/admin-auth/signin');
-      } else {
-        throw new Error('Sign out failed');
-      }
+      await signOut();
+      // The redirection will be handled by useAuth hook
     } catch (error) {
       console.error('Error during sign out:', error);
     }

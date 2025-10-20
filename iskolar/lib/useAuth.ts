@@ -110,7 +110,9 @@ export const useAuth = (redirectTo?: string): UseAuthReturn => {
             if (event === 'SIGNED_OUT' || !session?.user) {
             setUser(null);
             setIsAuthenticated(false);
-            if (redirectTo) {
+            if (window.location.pathname.startsWith('/admin')) {
+                router.push('/admin-auth/signin');
+            } else if (redirectTo) {
                 router.push(`/auth/sign-in?redirectTo=${redirectTo}`);
             }
             } else if (session?.user) {
@@ -155,10 +157,29 @@ export const useAuth = (redirectTo?: string): UseAuthReturn => {
         }
         
         // Sign out from Supabase
+        // Call the API endpoint first
+        const response = await fetch('/api/admin-auth/signout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to sign out');
+        }
+
+        // Then sign out from Supabase
         await supabase.auth.signOut();
         setUser(null);
         setIsAuthenticated(false);
-        router.push('/');
+        
+        // Redirect based on the current path
+        if (window.location.pathname.startsWith('/admin')) {
+          router.push('/admin-auth/signin');
+        } else {
+          router.push('/auth/sign-in');
+        }
         } catch (error) {
         console.error('Error signing out:', error);
         }
