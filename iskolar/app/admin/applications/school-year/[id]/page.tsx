@@ -15,6 +15,31 @@ export default function SchoolYearDetailPage() {
   const [selectedSemesterId, setSelectedSemesterId] = useState<string | null>(null);
   const [adminPassword, setAdminPassword] = useState('');
 
+  const checkAndUpdateSemesterStatus = async (semester: Semester) => {
+    const endDate = new Date(semester.end_date);
+    const now = new Date();
+    
+    // If semester has ended and applications are still open, close them
+    if (now > endDate && semester.applications_open) {
+      try {
+        const response = await fetch(`/api/admin/semesters/${semester.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ applications_open: false }),
+        });
+
+        if (!response.ok) throw new Error('Failed to update semester status');
+        
+        return { ...semester, applications_open: false };
+      } catch (error) {
+        console.error('Error updating semester status:', error);
+      }
+    }
+    return semester;
+  };
+
   const fetchSchoolYear = async () => {
     setIsLoading(true);
     try {
@@ -118,7 +143,7 @@ export default function SchoolYearDetailPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-semibold text-gray-900">
-                  Academic Year {schoolYear.year} - {schoolYear.year + 1}
+                  Academic Year {schoolYear.academic_year} - {schoolYear.academic_year + 1}
                 </h1>
                 <p className="text-sm text-gray-500 mt-1">
                   Manage semesters and applications
@@ -135,52 +160,80 @@ export default function SchoolYearDetailPage() {
 
           {/* Semesters List */}
           <div className="bg-white rounded-xl shadow-sm divide-y divide-gray-200">
-            {schoolYear.semesters?.map((semester) => (
-              <div key={semester.id} className="px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">
-                      {semester.name}
-                    </h3>
-                    <span className={`mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      semester.applications_open 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {semester.applications_open ? 'Open' : 'Closed'} for Applications
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => router.push('/admin/applications/all')}
-                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-                    >
-                      View All Applications
-                    </button>
-                    <button
-                      onClick={() => handleToggleApplications(semester.id, semester.applications_open)}
-                      className={`px-4 py-2 text-sm font-medium rounded-lg ${
-                        semester.applications_open
-                          ? 'text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100'
-                          : 'text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100'
-                      }`}
-                    >
-                      {semester.applications_open ? 'Close' : 'Open'} Applications
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedSemesterId(semester.id);
-                        setShowDeleteModal(true);
-                      }}
-                      className="text-sm text-red-600 hover:text-red-700"
-                    >
-                      Delete
-                    </button>
+            {schoolYear.semesters?.map((semester) => {
+              const startDate = new Date(semester.start_date);
+              const endDate = new Date(semester.end_date);
+              const now = new Date();
+              const hasEnded = now > endDate;
+              const dateFormatter = new Intl.DateTimeFormat('en-US', { 
+                month: 'long', 
+                day: 'numeric', 
+                year: 'numeric' 
+              });
+
+              // Automatically check and update semester status
+              if (hasEnded && semester.applications_open) {
+                checkAndUpdateSemesterStatus(semester);
+              }
+
+              return (
+                <div key={semester.id} className="px-6 py-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900">
+                        {semester.name}
+                      </h3>
+                      <div className="mt-1 flex flex-col gap-1">
+                        <span className="text-sm text-gray-500">
+                          {dateFormatter.format(startDate)} - {dateFormatter.format(endDate)}
+                        </span>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          hasEnded 
+                            ? 'bg-gray-100 text-gray-800'
+                            : semester.applications_open 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                        }`}>
+                          {hasEnded 
+                            ? 'Semester Ended' 
+                            : semester.applications_open 
+                              ? 'Open for Applications' 
+                              : 'Closed for Applications'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => router.push('/admin/applications/all')}
+                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                      >
+                        View All Applications
+                      </button>
+                      <button
+                        onClick={() => handleToggleApplications(semester.id, semester.applications_open)}
+                        className={`px-4 py-2 text-sm font-medium rounded-lg ${
+                          semester.applications_open
+                            ? 'text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100'
+                            : 'text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100'
+                        }`}
+                        disabled={hasEnded}
+                      >
+                        {semester.applications_open ? 'Close' : 'Open'} Applications
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedSemesterId(semester.id);
+                          setShowDeleteModal(true);
+                        }}
+                        className="text-sm text-red-600 hover:text-red-700"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-
+              );
+            })}
             {schoolYear.semesters?.length === 0 && (
               <div className="px-6 py-8 text-center">
                 <p className="text-sm text-gray-500">No semesters found.</p>
