@@ -12,8 +12,19 @@ const AdminSidebar = () => {
 
   const handleSignOut = async () => {
     try {
-      await signOut();
-      router.push('/admin-auth/signin');
+      const response = await fetch('/api/admin-auth/signout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        await signOut();
+        router.push('/admin-auth/signin');
+      } else {
+        throw new Error('Sign out failed');
+      }
     } catch (error) {
       console.error('Error during sign out:', error);
     }
@@ -192,16 +203,25 @@ const AdminSidebar = () => {
         })}
       </nav>
 
-      {/* Sign Out Button */}
-      <button
-        onClick={handleSignOut}
-        className="flex items-center gap-3 py-3 px-4 mb-6 w-full transition-all cursor-pointer text-red-600 hover:bg-red-50"
-      >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-        </svg>
-        <span className="font-medium">Sign out</span>
-      </button>
+      {/* Administrator Profile and Sign Out */}
+      <div className="mt-auto border-t border-gray-200">
+        <div className="p-4 flex items-center gap-3">
+          <div className="p-2 rounded-full bg-gray-100">
+            <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <div>
+            <div className="text-sm font-medium text-gray-700">Administrator</div>
+            <button
+              onClick={handleSignOut}
+              className="text-sm text-red-600 hover:text-red-700 font-medium"
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      </div>
     </aside>
   );
 };
