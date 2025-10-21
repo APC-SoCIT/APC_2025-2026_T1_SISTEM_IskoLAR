@@ -13,15 +13,15 @@ export async function PATCH(
 ) {
   try {
     const { id } = params;
-    const { status } = await request.json();
 
-    const { error } = await supabaseAdmin
-      .from('users')
-      .update({ status: status })
-      .eq('user_id', id); // Use user_id
+    // Deactivate the user in auth service
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(
+      id,
+      { ban_duration: '87600h' } // Effectively ban for 10 years
+    );
 
     if (error) throw error;
-    return NextResponse.json({ message: 'User status updated successfully' });
+    return NextResponse.json({ message: 'User deactivated successfully' });
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     console.error(`ERROR IN PATCH /api/users/${params.id}:`, err);
