@@ -74,26 +74,24 @@ export default function SchoolYearDetailPage() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
         },
         body: JSON.stringify({ applications_open: !currentStatus }),
       });
 
-      if (!response.ok) throw new Error('Failed to toggle applications');
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Failed to toggle applications:', data.error);
+        alert(data.error || 'Failed to toggle applications status');
+        return;
+      }
       
-      // Update local state
-      setSchoolYear(prev => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          semesters: prev.semesters?.map(sem => 
-            sem.id === semesterId 
-              ? { ...sem, applications_open: !sem.applications_open }
-              : sem
-          ),
-        };
-      });
+      // Refetch school year data to ensure we have the latest state
+      await fetchSchoolYear();
     } catch (error) {
       console.error('Error toggling applications:', error);
+      alert('An error occurred while toggling applications status');
     }
   };
 

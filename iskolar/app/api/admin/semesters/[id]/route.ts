@@ -11,26 +11,58 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = params;
+    const semesterId = params.id;
     const body = await request.json();
     const { applications_open } = body;
 
-    const { data, error } = await supabaseAdmin
+    // First verify the semester exists
+    const { data: semesterData, error: checkError } = await supabaseAdmin
       .from('semesters')
-      .update({ applications_open })
-      .eq('id', id)
-      .select()
+      .select('*')
+      .eq('id', semesterId)
       .single();
 
-    if (error) {
-      console.error('Error updating semester:', error);
+    if (checkError) {
+      console.error('Error finding semester:', checkError);
       return NextResponse.json(
-        { error: 'Failed to update semester' },
+        { error: 'Semester not found' },
+        { status: 404 }
+      );
+    }
+
+    // Then update it using stored procedure to bypass RLS
+    const { error: updateError } = await supabaseAdmin.rpc(
+      'admin_update_semester_status',
+      { 
+        target_id: semesterId,
+        new_status: applications_open
+      }
+    );
+
+    if (updateError) {
+      console.error('Error updating semester:', updateError);
+      return NextResponse.json(
+        { error: 'Failed to update semester status' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(data);
+    // Get the updated semester data
+    const { data: updatedData, error: getError } = await supabaseAdmin
+      .from('semesters')
+      .select('*')
+      .eq('id', semesterId)
+      .single();
+
+    if (getError) {
+      console.error('Error getting updated semester:', getError);
+      return NextResponse.json(
+        { error: 'Failed to get updated semester data' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(updatedData);
   } catch (error) {
     console.error('Error in semester PATCH:', error);
     return NextResponse.json(
