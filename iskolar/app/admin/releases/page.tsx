@@ -1,14 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   CalendarIcon, 
   ClockIcon, 
   MapPinIcon, 
-  PlusIcon,
-  FunnelIcon,
-  ChevronDownIcon,
-  ExclamationCircleIcon
+  ExclamationCircleIcon,
+  XMarkIcon,
+  AdjustmentsHorizontalIcon
 } from '@heroicons/react/24/outline';
 import {
   AmountDetailsModal,
@@ -32,11 +31,20 @@ type ModalType = 'none' | 'amount' | 'nextRelease' | 'pending' | 'recipients';
 
 export default function ReleasesPage() {
   const [activeTab, setActiveTab] = useState('upcoming');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [selectedReleases, setSelectedReleases] = useState<string[]>([]);
-  const [filterType, setFilterType] = useState<string>('all');
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [activeModal, setActiveModal] = useState<ModalType>('none');
+  const [editingRelease, setEditingRelease] = useState<Release | null>(null);
+  const [releaseToCancel, setReleaseToCancel] = useState<Release | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [filters, setFilters] = useState<{
+    dateRange: { from: string; to: string; };
+    releaseType: 'all' | 'allowance' | 'book' | 'tuition';
+  }>({
+    dateRange: { from: '', to: '' },
+    releaseType: 'all'
+  });
 
   // Example data - in real app, this would come from your API
   const releases: Release[] = [
@@ -79,59 +87,35 @@ export default function ReleasesPage() {
     setShowScheduleModal(true);
   };
 
-  const handleBulkAction = (action: string) => {
-    // Handle bulk actions here
-    console.log(`Action: ${action}, Selected: ${selectedReleases.join(', ')}`);
-  };
-
   const filteredReleases = (activeTab === 'upcoming' ? releases : pastReleases)
-    .filter(release => filterType === 'all' || release.type.toLowerCase().includes(filterType.toLowerCase()));
+    .filter(release => {
+      // Filter by release type
+      const matchesType = filters.releaseType === 'all' || 
+        release.type.toLowerCase().includes(filters.releaseType);
+
+      // Filter by date range
+      let matchesDate = true;
+      if (filters.dateRange.from && filters.dateRange.to) {
+        const releaseDate = new Date(release.date);
+        const fromDate = new Date(filters.dateRange.from);
+        const toDate = new Date(filters.dateRange.to);
+        matchesDate = releaseDate >= fromDate && releaseDate <= toDate;
+      }
+
+      return matchesType && matchesDate;
+    });
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  function handleBulkAction(_arg0: string): void {
+    throw new Error('Function not implemented.');
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header Section */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Scholarship Releases</h1>
-          <p className="text-gray-600 mt-1">Manage and schedule scholarship fund releases</p>
-        </div>
-        <button 
-          onClick={handleScheduleRelease}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <PlusIcon className="w-5 h-5 mr-2" />
-          Schedule Release
-        </button>
-      </div>
-
-      {/* Filter and Bulk Actions */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0 mb-6">
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="appearance-none bg-white border border-gray-300 rounded-lg py-2 pl-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="all">All Types</option>
-              <option value="allowance">Allowance</option>
-              <option value="book">Book Allowance</option>
-              <option value="tuition">Tuition Subsidy</option>
-            </select>
-            <FunnelIcon className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2" />
-          </div>
-        </div>
-        {selectedReleases.length > 0 && (
-          <div className="flex items-center space-x-3">
-            <span className="text-sm text-gray-600">{selectedReleases.length} selected</span>
-            <button
-              onClick={() => handleBulkAction('cancel')}
-              className="text-sm text-red-600 hover:text-red-800"
-            >
-              Cancel Selected
-            </button>
-          </div>
-        )}
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900">Scholarship Releases</h1>
+        <p className="text-gray-600 mt-1">Manage and schedule scholarship fund releases</p>
       </div>
 
       {/* Stats Overview */}
@@ -244,45 +228,69 @@ export default function ReleasesPage() {
         </button>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('upcoming')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'upcoming'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Upcoming Releases
-          </button>
-          <button
-            onClick={() => setActiveTab('past')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'past'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Past Releases
-          </button>
-        </nav>
-      </div>
-
       {/* Releases List */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl shadow-md">
+        <div className="px-6 pt-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-semibold text-gray-900">Releases</h2>
+              <span className="px-2.5 py-0.5 text-sm bg-blue-100 text-blue-600 rounded-full">
+                {filteredReleases.length} total
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setIsFilterModalOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                <AdjustmentsHorizontalIcon className="h-5 w-5 text-gray-500" />
+                Filter
+                {(filters.releaseType !== 'all' || filters.dateRange.from || filters.dateRange.to) && (
+                  <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
+                )}
+              </button>
+              <button 
+                onClick={handleScheduleRelease}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Schedule Release
+              </button>
+            </div>
+          </div>
+          <nav className="flex space-x-8 border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab('upcoming')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'upcoming'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Upcoming Releases
+            </button>
+            <button
+              onClick={() => setActiveTab('past')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'past'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Past Releases
+            </button>
+          </nav>
+        </div>
         <div className="overflow-x-auto">
           {isLoading ? (
-            <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading releases...</p>
-            </div>
+            <div className="px-6 py-4 text-center text-gray-500">Loading...</div>
           ) : filteredReleases.length === 0 ? (
-            <div className="p-8 text-center">
+            <div className="text-center py-12">
               <ExclamationCircleIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-4 text-lg font-medium text-gray-900">No releases found</h3>
-              <p className="mt-2 text-gray-600">
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No Releases Found</h3>
+              <p className="mt-1 text-sm text-gray-500">
                 {activeTab === 'upcoming' 
                   ? 'No upcoming releases scheduled. Click "Schedule Release" to create one.'
                   : 'No past releases found in the selected time period.'}
@@ -292,20 +300,6 @@ export default function ReleasesPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      onChange={(e) => {
-                        setSelectedReleases(
-                          e.target.checked 
-                            ? filteredReleases.map(r => r.id)
-                            : []
-                        );
-                      }}
-                      checked={selectedReleases.length === filteredReleases.length && filteredReleases.length > 0}
-                    />
-                  </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Release Type
                   </th>
@@ -324,7 +318,7 @@ export default function ReleasesPage() {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -332,41 +326,27 @@ export default function ReleasesPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredReleases.map((release) => (
                   <tr key={release.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        checked={selectedReleases.includes(release.id)}
-                        onChange={(e) => {
-                          setSelectedReleases(
-                            e.target.checked
-                              ? [...selectedReleases, release.id]
-                              : selectedReleases.filter(id => id !== release.id)
-                          );
-                        }}
-                      />
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-gray-900">{release.type}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium text-gray-900">{release.type}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">{release.date}</div>
                       <div className="text-sm text-gray-500">{release.time}</div>
                     </td>
-                    <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
+                    <td className="hidden sm:table-cell px-6 py-4">
                       <div className="flex items-center">
                         <MapPinIcon className="w-4 h-4 text-gray-400 mr-1" />
                         <span className="text-sm text-gray-900">{release.location}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">₱{release.amount.toLocaleString()}</div>
                       <div className="text-sm text-gray-500">per student</div>
                     </td>
-                    <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="hidden md:table-cell px-6 py-4 text-sm text-gray-900">
                       {release.recipients} students
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                         ${release.status === 'scheduled' ? 'bg-green-100 text-green-800' : 
                           release.status === 'completed' ? 'bg-blue-100 text-blue-800' : 
@@ -374,17 +354,23 @@ export default function ReleasesPage() {
                         {release.status.charAt(0).toUpperCase() + release.status.slice(1)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       <button 
-                        className="text-blue-600 hover:text-blue-900 mr-3"
-                        onClick={() => console.log('Edit release:', release.id)}
+                        className="cursor-pointer text-blue-600 hover:text-blue-900 bg-blue-100 hover:bg-blue-200 px-3 py-1 rounded-md"
+                        onClick={() => {
+                          setEditingRelease(release);
+                          setShowScheduleModal(true);
+                        }}
                       >
                         Edit
                       </button>
                       {release.status === 'scheduled' && (
                         <button 
-                          className="text-red-600 hover:text-red-900"
-                          onClick={() => handleBulkAction('cancel')}
+                          className="cursor-pointer text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 px-3 py-1 rounded-md"
+                          onClick={() => {
+                            setReleaseToCancel(release);
+                            setIsConfirmOpen(true);
+                          }}
                         >
                           Cancel
                         </button>
@@ -400,158 +386,31 @@ export default function ReleasesPage() {
 
       {/* Schedule Release Modal */}
       {showScheduleModal && (
-        <div className="fixed inset-0 z-50">
-          {/* Blurred background overlay */}
-          <div 
-            className="fixed inset-0 backdrop-blur-sm bg-gray-500/30"
-            onClick={() => setShowScheduleModal(false)}
-          />
-          
-          {/* Modal content */}
-          <div className="relative z-50 min-h-screen flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 md:p-8">
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900">Schedule New Release</h3>
-                  <p className="mt-1 text-sm text-gray-500">Fill in the details to schedule a new scholarship release</p>
-                </div>
-                <button
-                  onClick={() => setShowScheduleModal(false)}
-                  className="text-gray-400 hover:text-gray-500"
-                >
-                  <span className="sr-only">Close</span>
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+        <ScheduleReleaseModal 
+          onClose={() => {
+            setShowScheduleModal(false);
+            setEditingRelease(null);
+          }} 
+          release={editingRelease}
+        />
+      )}
 
-              <form className="space-y-6">
-                {/* Release Type */}
-                <div>
-                  <label htmlFor="releaseType" className="block text-sm font-medium text-gray-700">
-                    Release Type
-                  </label>
-                  <select
-                    id="releaseType"
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
-                  >
-                    <option value="allowance">Allowance Release</option>
-                    <option value="book">Book Allowance</option>
-                    <option value="tuition">Tuition Subsidy</option>
-                  </select>
-                </div>
-
-                {/* Date and Time */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="releaseDate" className="block text-sm font-medium text-gray-700">
-                      Release Date
-                    </label>
-                    <input
-                      type="date"
-                      id="releaseDate"
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="releaseTime" className="block text-sm font-medium text-gray-700">
-                      Release Time
-                    </label>
-                    <input
-                      type="time"
-                      id="releaseTime"
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Location */}
-                <div>
-                  <label htmlFor="location" className="block text-sm font-medium text-gray-700">
-                    Location
-                  </label>
-                  <div className="mt-1 relative rounded-md shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <MapPinIcon className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      id="location"
-                      className="pl-10 block w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter location"
-                    />
-                  </div>
-                </div>
-
-                {/* Amount */}
-                <div>
-                  <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
-                    Amount per Student
-                  </label>
-                  <div className="mt-1 relative rounded-md shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <span className="text-gray-500">₱</span>
-                    </div>
-                    <input
-                      type="number"
-                      id="amount"
-                      className="pl-7 block w-full border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
-
-                {/* Recipients */}
-                <div>
-                  <label htmlFor="recipients" className="block text-sm font-medium text-gray-700">
-                    Number of Recipients
-                  </label>
-                  <div className="mt-1">
-                    <input
-                      type="number"
-                      id="recipients"
-                      className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Enter number of recipients"
-                    />
-                  </div>
-                </div>
-
-                {/* Additional Notes */}
-                <div>
-                  <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-                    Additional Notes
-                  </label>
-                  <div className="mt-1">
-                    <textarea
-                      id="notes"
-                      rows={3}
-                      className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Add any additional information..."
-                    />
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                  <button
-                    type="button"
-                    onClick={() => setShowScheduleModal(false)}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-500 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Schedule Release
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
+      {/* Confirmation Modal */}
+      {isConfirmOpen && releaseToCancel && (
+        <CancelConfirmationModal 
+          isOpen={isConfirmOpen}
+          onClose={() => {
+            setIsConfirmOpen(false);
+            setReleaseToCancel(null);
+          }}
+          onConfirm={() => {
+            // TODO: Add API call to cancel release
+            console.log('Canceling release:', releaseToCancel.id);
+            setIsConfirmOpen(false);
+            setReleaseToCancel(null);
+          }}
+          release={releaseToCancel}
+        />
       )}
 
       {/* Modal Components */}
@@ -567,6 +426,404 @@ export default function ReleasesPage() {
       {activeModal === 'recipients' && (
         <RecipientsModal setActiveModal={setActiveModal} />
       )}
+
+      {/* Filter Modal */}
+      <ReleasesFilterModal 
+        isOpen={isFilterModalOpen} 
+        onClose={() => setIsFilterModalOpen(false)} 
+        onApply={(newFilters) => {
+          setFilters(newFilters);
+          setIsFilterModalOpen(false);
+        }}
+        onReset={() => {
+          setFilters({
+            dateRange: { from: '', to: '' },
+            releaseType: 'all'
+          });
+          setIsFilterModalOpen(false);
+        }}
+        initialFilters={filters}
+      />
+    </div>
+  );
+}
+
+// Filter Modal Component
+interface ReleasesFilterModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onApply: (filters: {
+    dateRange: { from: string; to: string };
+    releaseType: 'all' | 'allowance' | 'book' | 'tuition';
+  }) => void;
+  onReset: () => void;
+  initialFilters: {
+    dateRange: { from: string; to: string };
+    releaseType: 'all' | 'allowance' | 'book' | 'tuition';
+  };
+}
+
+function ReleasesFilterModal({ isOpen, onClose, onApply, onReset, initialFilters }: ReleasesFilterModalProps) {
+  const [dateRange, setDateRange] = useState(initialFilters.dateRange);
+  const [releaseType, setReleaseType] = useState(initialFilters.releaseType);
+
+  useEffect(() => {
+    setDateRange(initialFilters.dateRange);
+    setReleaseType(initialFilters.releaseType);
+  }, [isOpen, initialFilters]);
+
+  const handleApply = () => {
+    onApply({ dateRange, releaseType });
+  };
+
+  const handleDateShortcut = (days: number) => {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - days);
+    setDateRange({
+      from: from.toISOString().split('T')[0],
+      to: to.toISOString().split('T')[0]
+    });
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-gray-500/50 overflow-y-auto flex justify-center items-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h3 className="text-2xl font-bold text-gray-900">Filter Releases</h3>
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-full cursor-pointer">
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
+        <div className="p-6 flex-grow overflow-y-auto space-y-6">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-3">Release Date Range</label>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">From Date</label>
+                <input 
+                  type="date" 
+                  value={dateRange.from} 
+                  onChange={(e) => setDateRange({ ...dateRange, from: e.target.value })} 
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">To Date</label>
+                <input 
+                  type="date" 
+                  value={dateRange.to} 
+                  onChange={(e) => setDateRange({ ...dateRange, to: e.target.value })} 
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-3 pt-2 border-t border-gray-100">
+              <button 
+                onClick={() => handleDateShortcut(7)} 
+                className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2 py-1 rounded transition-colors cursor-pointer"
+              >
+                Last 7 days
+              </button>
+              <span className="text-gray-300 self-center">•</span>
+              <button 
+                onClick={() => handleDateShortcut(30)} 
+                className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2 py-1 rounded transition-colors cursor-pointer"
+              >
+                Last 30 days
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-3">Release Type</label>
+            <div className="space-y-3">
+              <label className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                <input 
+                  type="radio" 
+                  name="releaseType" 
+                  value="all" 
+                  checked={releaseType === 'all'} 
+                  onChange={(e) => setReleaseType(e.target.value as 'all' | 'allowance' | 'book' | 'tuition')} 
+                  className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500" 
+                />
+                <span className="ml-3 text-sm font-medium text-gray-700">All Releases</span>
+              </label>
+              <label className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                <input 
+                  type="radio" 
+                  name="releaseType" 
+                  value="allowance" 
+                  checked={releaseType === 'allowance'} 
+                  onChange={(e) => setReleaseType(e.target.value as 'all' | 'allowance' | 'book' | 'tuition')} 
+                  className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500" 
+                />
+                <span className="ml-3 text-sm font-medium text-gray-700">Allowance Releases</span>
+              </label>
+              <label className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                <input 
+                  type="radio" 
+                  name="releaseType" 
+                  value="book" 
+                  checked={releaseType === 'book'} 
+                  onChange={(e) => setReleaseType(e.target.value as 'all' | 'allowance' | 'book' | 'tuition')} 
+                  className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500" 
+                />
+                <span className="ml-3 text-sm font-medium text-gray-700">Book Allowances</span>
+              </label>
+              <label className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                <input 
+                  type="radio" 
+                  name="releaseType" 
+                  value="tuition" 
+                  checked={releaseType === 'tuition'} 
+                  onChange={(e) => setReleaseType(e.target.value as 'all' | 'allowance' | 'book' | 'tuition')} 
+                  className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-2 focus:ring-blue-500" 
+                />
+                <span className="ml-3 text-sm font-medium text-gray-700">Tuition Subsidies</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-3 p-6 bg-gray-50 border-t border-gray-200 rounded-b-xl">
+          <button 
+            onClick={onReset} 
+            className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+          >
+            Reset Filters
+          </button>
+          <button 
+            onClick={onClose} 
+            className="px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={handleApply} 
+            className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+          >
+            Apply Filters
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Schedule Release Modal Component
+interface ScheduleReleaseModalProps {
+  onClose: () => void;
+  release?: Release | null;
+}
+
+function ScheduleReleaseModal({ onClose, release }: ScheduleReleaseModalProps) {
+  const [formData, setFormData] = useState({
+    type: release?.type.toLowerCase().includes('allowance') ? 'allowance' : 
+          release?.type.toLowerCase().includes('book') ? 'book' : 
+          release?.type.toLowerCase().includes('tuition') ? 'tuition' : 'allowance',
+    date: release?.date || new Date().toISOString().split('T')[0],
+    time: release?.time || '09:00',
+    location: release?.location || '',
+    amount: release?.amount?.toString() || '',
+    recipients: release?.recipients?.toString() || '',
+    notes: ''
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Form data:', formData);
+    // TODO: Add API call to save release
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-900/50 overflow-y-auto flex justify-center items-center z-50 p-4">
+      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
+        <div className="flex justify-between items-center p-6 border-b border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-900">Schedule New Release</h2>
+          <button type="button" onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-full cursor-pointer">
+            <XMarkIcon className="h-6 w-6" />
+          </button>
+        </div>
+
+        <div className="p-6 flex-grow overflow-y-auto space-y-6">
+          <div>
+            <label htmlFor="type" className="block text-sm font-semibold text-gray-700 mb-2">Release Type</label>
+            <select 
+              id="type"
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="allowance">Allowance Release</option>
+              <option value="book">Book Allowance</option>
+              <option value="tuition">Tuition Subsidy</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="date" className="block text-sm font-semibold text-gray-700 mb-2">Release Date</label>
+              <input
+                type="date"
+                id="date"
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+                className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+              />
+            </div>
+            <div>
+              <label htmlFor="time" className="block text-sm font-semibold text-gray-700 mb-2">Release Time</label>
+              <input
+                type="time"
+                id="time"
+                name="time"
+                value={formData.time}
+                onChange={handleChange}
+                className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="location" className="block text-sm font-semibold text-gray-700 mb-2">Location</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MapPinIcon className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                id="location"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                placeholder="Enter release location"
+                className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm pl-10 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="amount" className="block text-sm font-semibold text-gray-700 mb-2">Amount per Student</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span className="text-gray-500">₱</span>
+              </div>
+              <input
+                type="number"
+                id="amount"
+                name="amount"
+                value={formData.amount}
+                onChange={handleChange}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm pl-8 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-500">Enter the amount each student will receive</p>
+          </div>
+
+          <div>
+            <label htmlFor="recipients" className="block text-sm font-semibold text-gray-700 mb-2">Number of Recipients</label>
+            <input
+              type="number"
+              id="recipients"
+              name="recipients"
+              value={formData.recipients}
+              onChange={handleChange}
+              placeholder="Enter the number of recipients"
+              min="1"
+              className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p className="mt-1 text-xs text-gray-500">Total amount: ₱{formData.amount && formData.recipients ? 
+              (parseFloat(formData.amount) * parseInt(formData.recipients)).toLocaleString() : '0.00'}</p>
+          </div>
+
+          <div>
+            <label htmlFor="notes" className="block text-sm font-semibold text-gray-700 mb-2">Additional Notes</label>
+            <textarea
+              id="notes"
+              name="notes"
+              value={formData.notes}
+              onChange={handleChange}
+              rows={4}
+              placeholder="Add any additional notes or instructions..."
+              className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end space-x-3 p-6 bg-gray-50 border-t border-gray-200 rounded-b-xl">
+          <button 
+            type="button" 
+            onClick={onClose} 
+            className="px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+          >
+            {release ? 'Save' : 'Schedule Release'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// Cancel Confirmation Modal Component
+interface CancelConfirmationModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  release: Release;
+}
+
+function CancelConfirmationModal({ isOpen, onClose, onConfirm, release }: CancelConfirmationModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-gray-900/50 overflow-y-auto flex justify-center items-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col">
+        <div className="p-6">
+          <h2 className="text-lg font-bold text-gray-900">Cancel Release</h2>
+          <p className="mt-3 text-sm text-gray-600">
+            Are you sure you want to cancel this release? This action cannot be undone.
+          </p>
+          <div className="mt-4 bg-yellow-50 border border-yellow-100 rounded-lg p-4">
+            <div className="flex items-center gap-3 text-sm text-yellow-800">
+              <div className="font-medium">{release.type}</div>
+              <span>•</span>
+              <div>{release.date}</div>
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl">
+          <button 
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors cursor-pointer"
+          >
+            Keep Release
+          </button>
+          <button 
+            onClick={onConfirm}
+            className="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
+          >
+            Cancel Release
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
