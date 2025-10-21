@@ -11,33 +11,22 @@ export async function GET() {
     const { data, error } = await supabaseAdmin
       .from('users')
       .select(`
-        *,
-        role:role_id (name)
+        user_id,
+        email_address,
+        first_name,
+        last_name,
+        middle_name,
+        mobile_number,
+        last_login,
+        created_at,
+        updated_at
       `);
 
     if (error) throw error;
-
-    // Transform the data to match what the frontend page expects
-    const transformedData = data.map(user => {
-      let role = 'User'; // Default role
-      if (user.role && user.role.name) {
-        const roleName = user.role.name.toLowerCase();
-        if (roleName === 'admin') {
-          role = 'Admin';
-        } else {
-          role = 'User'; // Map all other roles to User
-        }
-      }
-      
-      return {
-        ...user,
-        name: `${user.first_name} ${user.last_name}`, // Combine names
-        email: user.email_address,
-        role: role, // Use the mapped role
-      };
-    });
     
-    return NextResponse.json(transformedData);
+    return NextResponse.json(data);
+    
+    return NextResponse.json(data);
   } catch (err: unknown) {
     console.error('ERROR IN GET /api/users:', err);
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
