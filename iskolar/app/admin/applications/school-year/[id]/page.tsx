@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { SchoolYear, Semester } from '@/lib/types/school-year';
 import AddSemesterModal from './AddSemesterModal';
+import { useAuth } from '@/lib/useAuth';
 
 export default function SchoolYearDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const [schoolYear, setSchoolYear] = useState<SchoolYear | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddSemesterModal, setShowAddSemesterModal] = useState(false);
@@ -43,7 +45,13 @@ export default function SchoolYearDetailPage() {
   const fetchSchoolYear = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/admin/school-years/${params.id}`);
+      const response = await fetch(`/api/admin/school-years/${params.id}`, {
+        cache: 'no-store', // Prevent caching
+        headers: {
+          'Pragma': 'no-cache',
+          'Cache-Control': 'no-cache'
+        }
+      });
       if (!response.ok) throw new Error('Failed to fetch school year');
       const data = await response.json();
       setSchoolYear(data);
@@ -90,7 +98,22 @@ export default function SchoolYearDetailPage() {
   };
 
   const handleDeleteSemester = async () => {
-    if (!selectedSemesterId) return;
+    if (!selectedSemesterId || !adminPassword.trim()) {
+      alert('Please provide your admin password to delete the semester.');
+      return;
+    }
+
+    if (!user || !(user as any).email) {
+      alert('You must be logged in as an admin to delete semesters.');
+      return;
+    }
+
+    // Log the semester being deleted
+    const semesterToDelete = schoolYear?.semesters?.find(s => s.id === selectedSemesterId);
+    console.log('Attempting to delete semester:', {
+      selectedId: selectedSemesterId,
+      semesterDetails: semesterToDelete
+    });
 
     try {
       const response = await fetch(`/api/admin/semesters/${selectedSemesterId}`, {
@@ -98,25 +121,40 @@ export default function SchoolYearDetailPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ adminPassword }),
+        body: JSON.stringify({ 
+          adminPassword: adminPassword.trim(),
+          adminEmail: (user as any).email
+        }),
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
+        console.error('Delete response:', {
+          status: response.status,
+          error: data.error,
+          userEmail: (user as any).email
+        });
+
         if (response.status === 403) {
-          alert('Invalid admin password');
+          alert(data.error || 'Authentication failed. Please check your password and try again.');
           return;
         }
-        throw new Error('Failed to delete semester');
+        if (response.status === 404) {
+          alert('User account not found in the system. Please contact support.');
+          return;
+        }
+        if (response.status === 500) {
+          alert('Server error occurred. Please try again or contact support if the problem persists.');
+          return;
+        }
+        
+        alert(data.error || 'Failed to delete semester. Please try again.');
+        return;
       }
 
-      // Update local state
-      setSchoolYear(prev => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          semesters: prev.semesters?.filter(sem => sem.id !== selectedSemesterId),
-        };
-      });
+      // Force a fresh fetch of the data
+      await fetchSchoolYear();
 
       setShowDeleteModal(false);
       setAdminPassword('');
