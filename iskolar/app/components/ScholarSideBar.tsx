@@ -1,42 +1,61 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import React from 'react';
 import { useAuth } from '@/lib/useAuth';
+import { supabase } from '@/lib/supabaseClient';
 
 const ScholarSidebar = () => {
   const pathname = usePathname();
-  const router = useRouter();
   const { signOut } = useAuth();
+  const [userName, setUserName] = useState({ firstName: '', lastName: '' });
   const [isProgramOpen, setIsProgramOpen] = useState(false);
-  const [isSchoolYearOpen, setIsSchoolYearOpen] = useState(false);
+  const [, setIsSchoolYearOpen] = useState(false);
   const [isFirstSemOpen, setIsFirstSemOpen] = useState(false);
   const [isSecondSemOpen, setIsSecondSemOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
+      // The signOut function from useAuth will handle the redirection
       await signOut();
-      router.push('/auth/sign-in');
+      // No need to manually redirect - the auth state change will trigger
+      // the protection on the routes and redirect appropriately
     } catch (error) {
       console.error('Error during logout:', error);
     }
   };
 
-  const navItems = [
-    {
-      label: 'Announcements',
-      href: '/scholar/announcements',
-      iconInactive: '/icons/announcements1.svg',
-      iconActive: '/icons/announcements2.svg',
-    },
+  const mainNavItems = [
     {
       label: 'Profile',
       href: '/scholar/profile',
-      iconInactive: '/icons/profile1.svg',
-      iconActive: '/icons/profile2.svg',
+      icon: (
+        <svg width="20" height="16" fill="none" viewBox="0 0 24 24">
+          <path
+            stroke="currentColor"
+            strokeWidth="2"
+            d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+          />
+        </svg>
+      ),
+    },
+    {
+      label: 'Announcements',
+      href: '/scholar/announcements',
+      icon: (
+        <svg width="16" height="18" viewBox="0 0 16 18" fill="none">
+          <path 
+            d="M15 7.2322H13.9002M2.53555 7.2322H3.63535M8.76777 0.999969V2.09977M4.36086 2.82565L5.13805 3.60357M13.1743 2.82565L12.3964 3.60357M9.24839 4.82252C6.01533 7.64462 2.53445 11.1941 1.2979 12.4735C1.00828 12.773 0.915901 13.2096 1.08271 13.5909C1.17362 13.798 1.28104 14.0242 1.39212 14.2167C1.5032 14.4092 1.64544 14.6152 1.77961 14.7974C2.02597 15.1328 2.4505 15.2707 2.85449 15.1699C4.58082 14.7384 9.39539 13.4989 13.4559 12.1102" 
+            stroke="currentColor" 
+            strokeWidth="1.5" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          />
+        </svg>
+      ),
     },
   ];
 
@@ -44,8 +63,15 @@ const ScholarSidebar = () => {
     {
       label: 'User Manual',
       href: '/scholar/user-manual',
-      iconInactive: '/icons/user-manual1.svg',
-      iconActive: '/icons/user-manual2.svg',
+      icon: (
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+          <path
+            stroke="currentColor"
+            strokeWidth="2"
+            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+          />
+        </svg>
+      ),
     },
   ];
 
@@ -57,6 +83,34 @@ const ScholarSidebar = () => {
   // Keep dropdowns open if on a subpage
   // Add this before the return statement
   // This ensures the dropdowns stay open when on Application/Status pages
+  // Fetch user data
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('first_name, last_name')
+            .eq('email_address', user.email)
+            .single();
+          
+          if (userData) {
+            setUserName({
+              firstName: userData.first_name,
+              lastName: userData.last_name
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  // Handle navigation states
   React.useEffect(() => {
     // Always open program and school year if on any semester page
     if (
@@ -91,53 +145,47 @@ const ScholarSidebar = () => {
   }, [pathname]);
 
   return (
-    <aside className="fixed top-0 left-0 z-50 h-screen w-64 font-geist flex flex-col bg-white border-r border-gray-100 text-sm shadow-[4px_0_20px_-4px_rgba(0,0,0,0.05)]">
-      <div className="px-6 h-16 border-b flex items-center gap-3 border-gray-100">
+    <aside className="fixed top-0 left-0 z-50 h-screen w-64 font-geist flex flex-col border-r bg-white border-gray-300 text-sm shadow-[4px_0_6px_-2px_rgba(0,0,0,0.1)]">
+      {/* Logo Header */}
+      <div className="p-4 pl-7 border-b flex items-center gap-2 border-gray-300">
         <Image
           src="/IskoLAR.png"
           alt="IskoLAR logo"
-          width={32}
-          height={32}
+          width={28}
+          height={28}
           className="transition-all duration-300"
         />
         <span className="text-base font-semibold">IskoLAR</span>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 mt-4 space-y-1">
-        {/* Main Section Title */}
-        <div className="flex items-center gap-3 py-2 pl-7">
-          <span className="text-xs font-semibold text-gray-500">Main</span>
+      <nav className="flex-1 px-3 pt-4 space-y-1">
+        {/* Main Section */}
+        <div className="py-2 px-3">
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Main</span>
         </div>
 
-        {/* Normal Nav Items */}
-        {navItems.map((item) => {
-          const isActive =
-            pathname === item.href || pathname.startsWith(item.href);
+        {mainNavItems.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(item.href);
 
           return (
             <Link href={item.href} key={item.label}>
               <div
-                className={`flex items-center gap-3 py-3 pl-7 transition-all cursor-pointer relative ${
+                className={`group flex items-center gap-3 py-2.5 px-4 rounded-xl transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
-                    : 'text-black hover:bg-gray-100'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-600 hover:bg-gray-50/80'
                 }`}
               >
+                <span className={`transition-colors duration-200 ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`}>
+                  {item.icon}
+                </span>
+                <span className={`text-sm font-medium transition-colors duration-200 ${
+                  isActive ? 'text-blue-600' : 'text-gray-700 group-hover:text-gray-900'
+                }`}>{item.label}</span>
                 {isActive && (
-                  <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600" />
                 )}
-
-                <div className="w-5 flex justify-center">
-                  <Image
-                    src={isActive ? item.iconActive : item.iconInactive}
-                    alt={`${item.label} icon`}
-                    width={16}
-                    height={16}
-                  />
-                </div>
-
-                <span>{item.label}</span>
               </div>
             </Link>
           );
@@ -145,10 +193,10 @@ const ScholarSidebar = () => {
 
         {/* Scholarship Dropdown */}
         <div
-          className={`flex items-center gap-3 py-3 pl-7 transition-all cursor-pointer relative ${
-            pathname.startsWith('/scholar/scholarship')
-              ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
-              : 'text-black hover:bg-gray-100'
+          className={`group flex items-center gap-3 py-2.5 px-4 rounded-xl transition-all duration-200 cursor-pointer ${
+            isProgramOpen
+              ? 'bg-blue-50 text-blue-600'
+              : 'text-gray-600 hover:bg-gray-50/80'
           }`}
           onClick={() => {
             if (isProgramOpen) {
@@ -161,240 +209,179 @@ const ScholarSidebar = () => {
             }
           }}
         >
-          {pathname.startsWith('/scholar/scholarship') && (
-            <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
+          <span className={`transition-colors duration-200 ${isProgramOpen ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path
+                stroke="currentColor"
+                strokeWidth="2"
+                d="M12 14l9-5-9-5-9 5 9 5z"
+              />
+              <path
+                stroke="currentColor"
+                strokeWidth="2"
+                d="M12 14l-9-5v6l9 5 9-5v-6l-9 5z"
+              />
+            </svg>
+          </span>
+          <span className={`text-sm font-medium transition-colors duration-200 ${
+            isProgramOpen ? 'text-blue-600' : 'text-gray-700 group-hover:text-gray-900'
+          }`}>Scholarship</span>
+          {isProgramOpen && (
+            <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600" />
           )}
-
-          <div className="w-5 flex justify-center">
-            <Image
-              src={
-                pathname.startsWith('/scholar/scholarship')
-                  ? '/icons/program2.svg'
-                  : '/icons/program1.svg'
-              }
-              alt="Scholarship icon"
-              width={15}
-              height={15}
-            />
-          </div>
-
-          <span>Scholarship</span>
-
-          <div className="ml-auto pr-4">
-            {isProgramOpen ? (
-              <Image
-                src="/icons/chevron_down.svg"
-                alt="Collapse Scholarship"
-                width={10}
-                height={10}
-              />
-            ) : (
-              <Image
-                src="/icons/chevron_left.svg"
-                alt="Expand Scholarship"
-                width={7}
-                height={7}
-              />
-            )}
-          </div>
+          <svg 
+            className={`ml-auto w-4 h-4 text-gray-400 transition-transform duration-200 ${isProgramOpen ? 'rotate-180' : ''}`}
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
         </div>
 
         {isProgramOpen && (
-          <div>
+          <div className="ml-4 space-y-1">
             {/* School Year */}
-            <div
-              className={`flex items-center justify-between py-3 pl-12 transition-all cursor-pointer relative ${
-                pathname.includes('/scholar/scholarship/1st-semester') ||
-                pathname.includes('/scholar/scholarship/2nd-semester')
-                  ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
-                  : 'text-black hover:bg-gray-100'
-              }`}
-              onClick={() => setIsSchoolYearOpen(!isSchoolYearOpen)}
-            >
-              <span>A.Y. 2025 – 2026</span>
-
-              <span className="pr-4">
-                {isSchoolYearOpen ? (
-                  <Image
-                    src="/icons/chevron_down.svg"
-                    alt="Collapse School Year"
-                    width={10}
-                    height={10}
-                  />
-                ) : (
-                  <Image
-                    src="/icons/chevron_left.svg"
-                    alt="Expand School Year"
-                    width={7}
-                    height={7}
-                  />
-                )}
-              </span>
+            <div className="pl-4 py-2">
+              <span className="text-sm font-medium text-gray-700">A.Y. 2025 – 2026</span>
             </div>
 
-            {/* Semesters under School Year */}
-            {isSchoolYearOpen && (
-              <div>
-                {/* 1st Semester */}
+            {/* Semesters */}
+            <div className="space-y-1">
+              {/* 1st Semester */}
+              <div className="pl-8">
                 <div
-                  className="flex items-center justify-between py-3 pl-16 cursor-pointer hover:bg-gray-100"
                   onClick={() => setIsFirstSemOpen(!isFirstSemOpen)}
+                  className="flex items-center text-sm text-gray-700 hover:text-gray-900 cursor-pointer py-2"
                 >
                   <span>1st Semester</span>
-                  <span className="pr-4">
-                    {isFirstSemOpen ? (
-                      <Image
-                        src="/icons/chevron_down.svg"
-                        alt="Collapse 1st Semester"
-                        width={10}
-                        height={10}
-                      />
-                    ) : (
-                      <Image
-                        src="/icons/chevron_left.svg"
-                        alt="Expand 1st Semester"
-                        width={7}
-                        height={7}
-                      />
-                    )}
-                  </span>
+                  <svg 
+                    className={`ml-2 w-4 h-4 text-gray-400 transition-transform duration-200 ${isFirstSemOpen ? 'rotate-180' : ''}`}
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </div>
-
+                
                 {isFirstSemOpen && (
-                  <div>
-                    {semesterSubItems.map((sub) => {
-                      const isActive =
-                        pathname === sub.href || pathname.startsWith(sub.href);
-
+                  <div className="ml-4 space-y-1">
+                    {semesterSubItems.map((item) => {
+                      const isActive = pathname === item.href;
                       return (
-                        <Link href={sub.href} key={`1st-${sub.label}`} legacyBehavior>
-                          <a
-                            className={`flex items-center py-3 pl-20 transition-all cursor-pointer relative ${
-                              isActive
-                                ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
-                                : 'text-black hover:bg-gray-100'
-                            }`}
-                            // Removed onClick that would close the dropdown
-                          >
-                            {isActive && (
-                              <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
-                            )}
-                            <span>{sub.label}</span>
-                          </a>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* 2nd Semester */}
-                <div
-                  className="flex items-center justify-between py-3 pl-16 cursor-pointer hover:bg-gray-100"
-                  onClick={() => setIsSecondSemOpen(!isSecondSemOpen)}
-                >
-                  <span>2nd Semester</span>
-                  <span className="pr-4">
-                    {isSecondSemOpen ? (
-                      <Image
-                        src="/icons/chevron_down.svg"
-                        alt="Collapse 2nd Semester"
-                        width={10}
-                        height={11}
-                      />
-                    ) : (
-                      <Image
-                        src="/icons/chevron_left.svg"
-                        alt="Expand 2nd Semester"
-                        width={7}
-                        height={7}
-                      />
-                    )}
-                  </span>
-                </div>
-
-                {isSecondSemOpen && (
-                  <div>
-                    {semesterSubItems.map((sub) => {
-                      const isActive =
-                        pathname === sub.href || pathname.startsWith(sub.href);
-
-                      return (
-                        <Link href={sub.href} key={`2nd-${sub.label}`} legacyBehavior>
-                          <a
-                            className={`flex items-center py-3 pl-20 transition-all cursor-pointer relative ${
-                              isActive
-                                ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
-                                : 'text-black hover:bg-gray-100'
-                            }`}
-                            // Removed onClick that would close the dropdown
-                          >
-                            {isActive && (
-                              <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
-                            )}
-                            <span>{sub.label}</span>
-                          </a>
+                        <Link href={item.href} key={item.href}>
+                          <div className={`py-2 px-2 text-sm rounded-lg ${
+                            isActive
+                              ? 'text-blue-600 bg-blue-50'
+                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                          }`}>
+                            {item.label}
+                          </div>
                         </Link>
                       );
                     })}
                   </div>
                 )}
               </div>
-            )}
+
+              {/* 2nd Semester */}
+              <div className="pl-8">
+                <div
+                  onClick={() => setIsSecondSemOpen(!isSecondSemOpen)}
+                  className="flex items-center text-sm text-gray-700 hover:text-gray-900 cursor-pointer py-2"
+                >
+                  <span>2nd Semester</span>
+                  <svg 
+                    className={`ml-2 w-4 h-4 text-gray-400 transition-transform duration-200 ${isSecondSemOpen ? 'rotate-180' : ''}`}
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                
+                {isSecondSemOpen && (
+                  <div className="ml-4 space-y-1">
+                    {semesterSubItems.map((item) => {
+                      const isActive = pathname === item.href;
+                      return (
+                        <Link href={item.href} key={item.href}>
+                          <div className={`py-2 px-2 text-sm rounded-lg ${
+                            isActive
+                              ? 'text-blue-600 bg-blue-50'
+                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                          }`}>
+                            {item.label}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
         {/* Extras Section */}
-        <div className="mt-4 flex items-center gap-3 py-2 pl-7">
-          <span className="text-xs font-semibold text-gray-500">Extras</span>
+        <div className="py-2 px-3 mt-6">
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Extras</span>
         </div>
 
         {extraItems.map((item) => {
-          const isActive =
-            pathname === item.href || pathname.startsWith(item.href);
+          const isActive = pathname === item.href || pathname.startsWith(item.href);
 
           return (
             <Link href={item.href} key={item.label}>
               <div
-                className={`flex items-center gap-3 py-3 pl-7 transition-all cursor-pointer relative ${
+                className={`group flex items-center gap-3 py-2.5 px-4 rounded-xl transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? 'bg-[#E3F2FD] text-[#2196F3] font-medium'
-                    : 'text-black hover:bg-gray-100'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-600 hover:bg-gray-50/80'
                 }`}
               >
+                <span className={`transition-colors duration-200 ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`}>
+                  {item.icon}
+                </span>
+                <span className={`text-sm font-medium transition-colors duration-200 ${
+                  isActive ? 'text-blue-600' : 'text-gray-700 group-hover:text-gray-900'
+                }`}>{item.label}</span>
                 {isActive && (
-                  <div className="absolute left-0 top-0 h-full w-1 bg-[#2196F3]" />
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600" />
                 )}
-
-                <div className="w-5 flex justify-center">
-                  <Image
-                    src={isActive ? item.iconActive : item.iconInactive}
-                    alt={`${item.label} icon`}
-                    width={13}
-                    height={13}
-                  />
-                </div>
-
-                <span>{item.label}</span>
               </div>
             </Link>
           );
         })}
       </nav>
-      {/* Logout Button */}
-      <div className="mt-auto mb-6">
-        <button
-          className="flex items-center gap-3 py-3 pl-7 w-full rounded transition-all cursor-pointer text-black hover:bg-gray-100"
-          onClick={handleLogout}
-          type="button"
-        >
-          <Image
-            src="/icons/log-out.svg"
-            alt="Logout"
-            width={18}
-            height={18}
-          />
-          <span>Logout</span>
-        </button>
+
+      {/* Scholar Profile and Logout */}
+      <div className="mt-auto border-t border-gray-200">
+        <div className="p-4">
+          <div className="flex items-center mb-4">
+            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+              <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <div>
+              <div className="font-medium text-gray-900">{userName.firstName} {userName.lastName}</div>
+              <div className="text-sm text-gray-500">Scholar</div>
+            </div>
+          </div>
+          
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-red-600 bg-white hover:bg-red-50 rounded-lg border border-gray-200 hover:border-red-100 transition-all duration-200 cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Sign out
+          </button>
+        </div>
       </div>
     </aside>
   );
