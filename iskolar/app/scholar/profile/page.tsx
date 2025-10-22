@@ -2,18 +2,85 @@
 
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
-import { UserProfile, userValidation } from "@/lib/types/user";
+import { userValidation } from "@/lib/types/user";
 import { getAuthToken } from "@/lib/useAuth";
 import { supabase } from '@/lib/supabaseClient';
 
+// Interface for the frontend (camelCase)
+interface ExtendedUserProfile {
+  scholarId: string;
+  userId: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  email: string;
+  gender: string;
+  birthdate: string;
+  mobile: string;
+  addressLine1: string;
+  addressLine2?: string;
+  barangay: string;
+  city: string;
+  zipCode: string;
+  college: string;
+  course: string;
+  createdAt: string;
+  updatedAt?: string;
+  lastLogin?: string;
+}
+
+// Helper function to map database response to frontend model
+interface DatabaseProfile {
+  user_id: string;
+  email_address: string;
+  first_name: string;
+  last_name: string;
+  middle_name?: string;
+  gender: string;
+  birthdate: string;
+  mobile_number: string;
+  address_line1: string;
+  address_line2?: string;
+  barangay: string;
+  city: string;
+  zip_code: string;
+  created_at: string;
+  updated_at?: string;
+  college_university: string;
+  college_course: string;
+  last_login?: string;
+}
+
+function mapDatabaseToProfile(dbProfile: DatabaseProfile): ExtendedUserProfile {
+  return {
+    scholarId: "", // This is a placeholder as it's not in the DB
+    userId: dbProfile.user_id,
+    firstName: dbProfile.first_name,
+    lastName: dbProfile.last_name,
+    middleName: dbProfile.middle_name,
+    email: dbProfile.email_address,
+    gender: dbProfile.gender,
+    birthdate: dbProfile.birthdate,
+    mobile: dbProfile.mobile_number,
+    addressLine1: dbProfile.address_line1,
+    addressLine2: dbProfile.address_line2,
+    barangay: dbProfile.barangay,
+    city: dbProfile.city,
+    zipCode: dbProfile.zip_code,
+    college: dbProfile.college_university,
+    course: dbProfile.college_course,
+    createdAt: dbProfile.created_at,
+    updatedAt: dbProfile.updated_at,
+    lastLogin: dbProfile.last_login
+  };
+}
+
 export default function ProfilePage() {
-  const [open, setOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [userName, setUserName] = useState("");
+  const [userProfile, setUserProfile] = useState<ExtendedUserProfile | null>(null);
   
   // Add state for each field
   const [lastName, setLastName] = useState("");
@@ -23,24 +90,42 @@ export default function ProfilePage() {
   const [birthdate, setBirthdate] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
-  const [scholarId, setScholarId] = useState("");
 
   // Basic user data fetch (name only)
   useEffect(() => {
     const fetchUserData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('first_name, last_name')
-          .eq('email_address', user.email)
-          .single();
+      try {
+        console.log('Starting initial user data fetch...');
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
         
-        if (userData) {
-          setUserName(`${userData.first_name} ${userData.last_name}`);
-          setFirstName(userData.first_name);
-          setLastName(userData.last_name);
+        if (authError) {
+          console.error('Auth error in initial fetch:', authError);
+          return;
         }
+
+        console.log('Auth user in initial fetch:', user);
+        
+        if (user && user.email) {
+          console.log('Fetching user data with email:', user.email);
+          const { data: userData, error: dbError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email_address', user.email)
+            .single();
+          
+          console.log('Initial user data fetch result:', userData);
+          console.log('Initial user data fetch error:', dbError);
+          
+          if (userData) {
+            console.log('Setting initial user data...');
+            setFirstName(userData.first_name || '');
+            setLastName(userData.last_name || '');
+            setCollege(userData.college_university || '');
+            setCourse(userData.college_course || '');
+          }
+        }
+      } catch (error) {
+        console.error('Error in initial user data fetch:', error);
       }
     };
 
@@ -52,46 +137,13 @@ export default function ProfilePage() {
   const [addressLine2, setAddressLine2] = useState("");
   const [barangay, setBarangay] = useState("");
   const [city, setCity] = useState("");
-  const [province, setProvince] = useState("");
   const [zipCode, setZipCode] = useState("");
-  const [region, setRegion] = useState("");
   
   // Education states
   const [college, setCollege] = useState("");
   const [course, setCourse] = useState("");
-  const [yearLevel, setYearLevel] = useState("");
-  const [gpa, setGpa] = useState("");
 
-  // Dropdown data for address fields
-  const provincesData = {
-    "Metro Manila": ["Makati City", "Quezon City", "Manila", "Pasig City", "Taguig City", "Marikina City", "Mandaluyong City", "San Juan City", "Caloocan City", "Malabon City", "Navotas City", "Las Piñas City", "Parañaque City", "Muntinlupa City", "Pateros", "Valenzuela City"],
-    "Laguna": ["Calamba City", "San Pablo City", "Biñan City", "Santa Rosa City", "Los Baños", "Cabuyao", "San Pedro", "Alaminos", "Bay", "Calauan", "Cavinti", "Famy", "Kalayaan", "Liliw", "Luisiana", "Lumban", "Mabitac", "Magdalena", "Majayjay", "Nagcarlan", "Paete", "Pagsanjan", "Pakil", "Pangil", "Pila", "Rizal", "Santa Cruz", "Santa Maria", "Siniloan", "Victoria"],
-    "Cavite": ["Bacoor", "Cavite City", "Dasmariñas", "Imus", "Tagaytay City", "Trece Martires City", "Alfonso", "Amadeo", "Carmona", "General Mariano Alvarez", "General Emilio Aguinaldo", "General Trias", "Indang", "Kawit", "Magallanes", "Maragondon", "Mendez", "Naic", "Noveleta", "Rosario", "Silang", "Tanza", "Ternate"],
-    "Rizal": ["Antipolo City", "Taytay", "Cainta", "Angono", "Baras", "Binangonan", "Cardona", "Jalajala", "Morong", "Pililla", "Rodriguez", "San Mateo", "Tanay", "Teresa"],
-    "Bulacan": ["Malolos City", "Meycauayan City", "San Jose del Monte City", "Angat", "Balagtas", "Baliuag", "Bocaue", "Bulakan", "Bustos", "Calumpit", "Doña Remedios Trinidad", "Guiguinto", "Hagonoy", "Marilao", "Norzagaray", "Obando", "Pandi", "Paombong", "Plaridel", "Pulilan", "San Ildefonso", "San Miguel", "San Rafael", "Santa Maria"],
-    "Pampanga": ["Angeles City", "San Fernando City", "Apalit", "Arayat", "Bacolor", "Candaba", "Floridablanca", "Guagua", "Lubao", "Mabalacat", "Macabebe", "Magalang", "Masantol", "Mexico", "Minalin", "Porac", "San Luis", "San Simon", "Santa Ana", "Santa Rita", "Santo Tomas", "Sasmuan"],
-    "Batangas": ["Batangas City", "Lipa City", "Tanauan City", "Agoncillo", "Alitagtag", "Balayan", "Balete", "Bauan", "Calaca", "Calatagan", "Cuenca", "Ibaan", "Laurel", "Lemery", "Lian", "Lobo", "Mabini", "Malvar", "Mataasnakahoy", "Nasugbu", "Padre Garcia", "Rosario", "San Jose", "San Juan", "San Luis", "San Nicolas", "San Pascual", "Santa Teresita", "Santo Tomas", "Taal", "Talisay", "Taysan", "Tingloy", "Tuy"]
-  };
 
-  const regionsData = {
-    "Metro Manila": "NCR",
-    "Laguna": "CALABARZON",
-    "Cavite": "CALABARZON", 
-    "Rizal": "CALABARZON",
-    "Bulacan": "Central Luzon",
-    "Pampanga": "Central Luzon",
-    "Batangas": "CALABARZON"
-  };
-
-  // Helper function to get cities based on province
-  const getCitiesByProvince = (province: string) => {
-    return provincesData[province as keyof typeof provincesData] || [];
-  };
-
-  // Helper function to get region by province
-  const getRegionByProvince = (province: string) => {
-    return regionsData[province as keyof typeof regionsData] || "";
-  };
 
   // Validation functions - use shared validation from our model
   const getZipCodeValidationMessage = (zipCode: string) => {
@@ -120,8 +172,11 @@ export default function ProfilePage() {
       setSuccessMessage(''); // Clear any previous messages
       setError(''); // Clear any previous errors
         
+        console.log('Starting main profile fetch...');
+        
         // Get auth token using the centralized helper function
         const token = getAuthToken();
+        console.log('Auth token exists:', !!token);
         
         // If no token is found, redirect to sign-in
         if (!token) {
@@ -131,8 +186,12 @@ export default function ProfilePage() {
         }
         
         // Use Supabase Auth directly to get the user
-        // This is more reliable than the validate-token endpoint
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        console.log('Fetching auth user...');
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        const user = authData?.user;
+        
+        console.log('Auth User:', user);
+        console.log('Auth Error:', authError);
         
         if (authError || !user) {
           console.warn('Session validation failed:', authError?.message);
@@ -141,13 +200,32 @@ export default function ProfilePage() {
           return;
         }
         
-        // Fetch profile data from Supabase directly
-        // This avoids potential API issues and ensures we get the most up-to-date data
+        console.log('Auth successful, user email:', user.email);
+        
+        // First try to fetch by email since we know it's unique
+        console.log('Attempting to fetch profile by email:', user.email);
         let { data: profile, error: profileError } = await supabase
           .from('users')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('email_address', user.email)
           .single();
+          
+        console.log('Email fetch result:', { profile, error: profileError });
+          
+        // If that fails, try by user_id as fallback
+        if (!profile) {
+          console.log('Email fetch failed, trying user_id:', user.id);
+          ({ data: profile, error: profileError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('user_id', user.id)
+            .single());
+            
+          console.log('User ID fetch result:', { profile, error: profileError });
+        }
+          
+        console.log('Profile Data:', profile);
+        console.log('Profile Error:', profileError);
           
         if (profileError) {
           console.error('Error fetching profile from database:', profileError);
@@ -156,15 +234,23 @@ export default function ProfilePage() {
           if (profileError.code === 'PGRST116') { // PostgreSQL error for no rows
             console.log('User profile does not exist, creating a new one');
             
-            // Create a basic profile for the user
+            // Create a basic profile for the user with required fields
             const newProfile = {
               user_id: user.id,
-              email_address: user.email,
+              email_address: user.email || '',
               first_name: user.user_metadata?.first_name || '',
               last_name: user.user_metadata?.last_name || '',
+              gender: '',
+              birthdate: new Date().toISOString(),
+              mobile_number: '',
+              address_line1: '',
+              barangay: '',
+              city: '',
+              zip_code: '',
+              college_university: '',
+              college_course: '',
               created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              status: 'active'
+              updated_at: new Date().toISOString()
             };
             
             // Insert the new profile
@@ -194,37 +280,7 @@ export default function ProfilePage() {
         }
         
         // Format the profile data to match our UserProfile interface
-        const userData: UserProfile = {
-          userId: profile.user_id,
-          firstName: profile.first_name,
-          lastName: profile.last_name,
-          middleName: profile.middle_name || '',
-          gender: profile.gender || '',
-          birthdate: profile.birthdate || '',
-          email: profile.email_address,
-          mobile: profile.mobile_number || '',
-          
-          addressLine1: profile.address_line1 || '',
-          addressLine2: profile.address_line2 || '',
-          barangay: profile.barangay || '',
-          city: profile.city || '',
-          province: profile.province || '',
-          zipCode: profile.zip_code || '',
-          region: profile.region || '',
-          
-          college: profile.college || '',
-          course: profile.course || '',
-          
-          // Document URLs
-          psaDocumentUrl: profile.birth_certificate || '',
-          voterDocumentUrl: profile.voters_certification || '',
-          nationalIdDocumentUrl: profile.national_id || '',
-          
-          scholarId: profile.scholar_id || '',
-          createdAt: profile.created_at || '',
-          updatedAt: profile.updated_at || '',
-          status: profile.status || '',
-        };
+        const userData = mapDatabaseToProfile(profile);
         
         // Set the user profile data
         setUserProfile(userData);
@@ -236,7 +292,6 @@ export default function ProfilePage() {
         setGender(userData.gender || '');
         setEmail(userData.email || '');
         setMobile(userData.mobile || '');
-        setScholarId(userData.scholarId || '');
         
         // Format date from ISO to MM/DD/YYYY for display
         if (userData.birthdate) {
@@ -249,15 +304,12 @@ export default function ProfilePage() {
         setAddressLine2(userData.addressLine2 || '');
         setBarangay(userData.barangay || '');
         setCity(userData.city || '');
-        setProvince(userData.province || '');
         setZipCode(userData.zipCode || '');
-        setRegion(userData.region || '');
         
         // Education fields
         setCollege(userData.college || '');
         setCourse(userData.course || '');
-        setYearLevel(userData.yearLevel || '');
-        setGpa(userData.gpa || '');
+        // Year level and GPA fields removed as they are not in the current schema
       } catch (error) {
         console.error('Error fetching profile:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch profile');
@@ -290,42 +342,38 @@ export default function ProfilePage() {
       }
       
       // Prepare the profile data for API call
-      const profileData: UserProfile = {
-        firstName,
-        lastName,
-        middleName,
+      // Convert frontend model to database format
+      const profileData = {
+        first_name: firstName,
+        last_name: lastName,
+        middle_name: middleName,
         gender,
         birthdate: userValidation.parseDisplayDate(birthdate),
-        email,
-        mobile,
-        addressLine1,
-        addressLine2,
+        email_address: email,
+        mobile_number: mobile,
+        address_line1: addressLine1,
+        address_line2: addressLine2,
         barangay,
         city,
-        province,
-        zipCode,
-        region,
-        college,
-        course,
-        yearLevel,
-        gpa,
+        zip_code: zipCode,
+        college_university: college,
+        college_course: course,
       };
 
-      // Call the profile update API
-      const response = await fetch('/api/profile/update', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(profileData),
-      });
+      // Update profile directly in Supabase
+      const { data: updatedProfile, error: updateError } = await supabase
+        .from('users')
+        .update(profileData)
+        .eq('user_id', userProfile?.userId)
+        .select()
+        .single();
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to update profile');
+      if (updateError) {
+        console.error('Profile update error:', updateError);
+        throw new Error(updateError.message || 'Failed to update profile');
       }
+
+      const result = { profile: mapDatabaseToProfile(updatedProfile), message: 'Profile updated successfully' };
 
       // Update the user profile state with the response data
       if (result.profile) {
@@ -347,15 +395,11 @@ export default function ProfilePage() {
         setAddressLine2(result.profile.addressLine2 || '');
         setBarangay(result.profile.barangay || '');
         setCity(result.profile.city || '');
-        setProvince(result.profile.province || '');
         setZipCode(result.profile.zipCode || '');
-        setRegion(result.profile.region || '');
         
         // Education fields
         setCollege(result.profile.college || '');
         setCourse(result.profile.course || '');
-        setYearLevel(result.profile.yearLevel || '');
-        setGpa(result.profile.gpa || '');
       }
       
       // Update was successful
@@ -382,10 +426,7 @@ export default function ProfilePage() {
   const [, setNationalIdFile] = useState<File | null>(null);
   const [nationalIdFileName, setNationalIdFileName] = useState("");
 
-  const notifRef = useRef<HTMLDivElement>(null);
-
   // Refs for each card section
-  const accountRef = useRef<HTMLDivElement | null>(null);
   const personalRef = useRef<HTMLDivElement | null>(null);
   const contactRef = useRef<HTMLDivElement | null>(null);
   const addressRef = useRef<HTMLDivElement | null>(null);
@@ -399,92 +440,16 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen w-full bg-[#f5f6fa] pl-64">
-      {/* Header */}
-      <div className="fixed top-0 left-64 right-0 z-10 h-[60px] bg-white border-b border-gray-300 flex items-center gap-2 px-5">
-        <Image
-          src="/icons/menu.svg"
-          alt="Menu"
-          width={15}
-          height={15}
-          className="transition-all duration-300"
-        />
-        <span className="text-lg font-semibold pl-2">Profile</span>
-        <div className="ml-auto flex items-center gap-6">
-          {/* Notification Icon */}
-          <div
-            ref={notifRef}
-            className="relative flex items-center justify-center cursor-pointer"
-            onClick={() => setOpen((v) => !v)}
-          >
-            <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-gray-100">
-              <Image
-                src="/icons/notification.svg"
-                alt="Notifications"
-                width={15}
-                height={15}
-              />
-            </span>
-            <span className="absolute top-1 left-7">
-              <span className="block w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-[notification-pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]"></span>
-            </span>
-            {/* Modal Dropdown */}
-            {open && (
-              <div className="absolute right-0" style={{ marginTop: "14rem" }}>
-                <div className="w-[380px] bg-white rounded-lg shadow-xl border border-gray-200 z-50 p-3 flex flex-col gap-2">
-                  {[1, 2].map((n) => (
-                    <div
-                      key={n}
-                      className="flex items-center gap-3 border border-gray-200 rounded-md bg-white p-2"
-                    >
-                      <span className="flex items-center justify-center h-full ml-2">
-                        <Image
-                          src="/icons/green-check.svg"
-                          alt="Approved"
-                          width={28}
-                          height={28}
-                        />
-                      </span>
-                      <div>
-                        <div className="mt-2 font-semibold text-[#219174] text-[15px] leading-tight">
-                          Your application has been approved!
-                        </div>
-                        <div className="mb-2 text-gray-500 text-xs mt-1">
-                          For more details, please go to &quot;Status&quot; page.
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-          {/* Name and Role */}
-          <div className="flex flex-col justify-center">
-            <span className="text-sm font-semibold text-gray-900 leading-tight">
-              {firstName} {lastName}
-            </span>
-            <span className="text-xs text-gray-500 leading-tight">
-              Scholar
-            </span>
-          </div>
-        </div>
-      </div>
+
       {/* Main content area */}
-      <div className="pt-[90px] flex max-w-7xl mx-auto gap-8 px-8 items-start">
+      <div className="pt-8 flex max-w-7xl mx-auto gap-8 px-8 items-start">
         {/* Left Column */}
         <div className="w-1/5 min-w-[220px] flex flex-col items-stretch">
-          <div className="bg-white rounded-xl shadow p-6 sticky top-[80px] flex flex-col h-fit">
+          <div className="bg-white rounded-xl shadow p-6 sticky top-4 flex flex-col h-fit">
             <div className="font-semibold text-gray-700 mb-1 text-lg">Manage Profile</div>
             <div className="text-sm text-gray-400 mb-4">You can manage your profile here.</div>
             <nav className="flex flex-col gap-2">
-              <button
-                className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-100 cursor-pointer"
-                onClick={() => scrollToSection(accountRef)}
-                type="button"
-              >
-                <Image src="/icons/account.svg" alt="Account" width={17} height={17} />
-                Account
-              </button>
+
               <button
                 className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-100 cursor-pointer"
                 onClick={() => scrollToSection(personalRef)}
@@ -576,15 +541,12 @@ export default function ProfilePage() {
                     setAddressLine2(userProfile.addressLine2 || '');
                     setBarangay(userProfile.barangay || '');
                     setCity(userProfile.city || '');
-                    setProvince(userProfile.province || '');
                     setZipCode(userProfile.zipCode || '');
-                    setRegion(userProfile.region || '');
                     
                     // Education fields
                     setCollege(userProfile.college || '');
                     setCourse(userProfile.course || '');
-                    setYearLevel(userProfile.yearLevel || '');
-                    setGpa(userProfile.gpa || '');
+                    // Year level and GPA fields removed as they are not in the current schema
                   }
                 }}
                 disabled={isLoading}
@@ -630,7 +592,7 @@ export default function ProfilePage() {
         </div>
         {/* Right Column */}
         <div
-          className="w-4/5 flex flex-col gap-4 max-h-[calc(100vh-100px)] overflow-y-auto pr-2"
+          className="w-4/5 flex flex-col gap-4 max-h-[calc(100vh-32px)] overflow-y-auto pr-2 pb-8"
           style={{
             scrollbarWidth: "none", // Firefox
             msOverflowStyle: "none", // IE 10+
@@ -642,46 +604,7 @@ export default function ProfilePage() {
               display: none;
             }
           `}</style>
-          {/* Account Section */}
-          <div ref={accountRef} className="bg-white rounded-xl shadow p-6 mb-2">
-            <div className="flex items-center gap-2 mb-4">
-              <Image src="/icons/account.svg" alt="Account" width={19} height={19} />
-              <span className="font-semibold text-gray-700 text-lg">Account</span>
-            </div>
-            <hr className="border-gray-200 mb-4" />
-            <div className="grid grid-cols-2 gap-4 mb-2">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Scholar ID</label>
-                <input
-                  className="w-full bg-gray-100 rounded px-3 py-2 text-sm"
-                  value={scholarId || "Not assigned yet"}
-                  readOnly
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Email Address</label>
-                <input
-                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
-                  value={email}
-                  readOnly={!isEdit}
-                  onChange={e => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4 items-end">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Password</label>
-                <input
-                  className="w-full bg-gray-100 rounded px-3 py-2 text-sm"
-                  value="••••••••••••••••"
-                  readOnly
-                />
-              </div>
-              <div>
-                <button className="text-xs text-red-500 font-medium mt-2">Change Password</button>
-              </div>
-            </div>
-          </div>
+
           {/* Personal Section */}
           <div ref={personalRef} className="bg-white rounded-xl shadow p-6 mb-2">
             <div className="flex items-center gap-2 mb-4">
@@ -772,9 +695,9 @@ export default function ProfilePage() {
                   onChange={e => setMobile(e.target.value)}
                   placeholder={isEdit ? "e.g., 09171234567 or +639171234567" : ""}
                 />
-                {isEdit && mobile && !userValidation.validateMobile(mobile).isValid && (
+                {isEdit && mobile && !userValidation.validateContactNumber(mobile).isValid && (
                   <p className="text-xs text-red-500 mt-1">
-                    {userValidation.validateMobile(mobile).error || 'Invalid mobile number'}
+                    {userValidation.validateContactNumber(mobile).error || 'Invalid mobile number'}
                   </p>
                 )}
               </div>
@@ -810,7 +733,7 @@ export default function ProfilePage() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-4 gap-4 mb-3">
+            <div className="grid grid-cols-3 gap-4 mb-3">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Barangay</label>
                 <input
@@ -823,43 +746,13 @@ export default function ProfilePage() {
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">City/Municipality</label>
-                <select
+                <input
                   className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
                   value={city}
-                  disabled={!isEdit}
-                  onChange={e => {
-                    setCity(e.target.value);
-                    const region = getRegionByProvince(province);
-                    setRegion(region);
-                  }}
-                >
-                  <option value="">Select city/municipality</option>
-                  {getCitiesByProvince(province).map(cityOption => (
-                    <option key={cityOption} value={cityOption}>{cityOption}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Province</label>
-                <select
-                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
-                  value={province}
-                  disabled={!isEdit}
-                  onChange={e => {
-                    setProvince(e.target.value);
-                    const cities = getCitiesByProvince(e.target.value);
-                    if (cities.length > 0) {
-                      setCity(cities[0]);
-                    }
-                    const region = getRegionByProvince(e.target.value);
-                    setRegion(region);
-                  }}
-                >
-                  <option value="">Select province</option>
-                  {Object.keys(provincesData).map(provinceOption => (
-                    <option key={provinceOption} value={provinceOption}>{provinceOption}</option>
-                  ))}
-                </select>
+                  readOnly={!isEdit}
+                  onChange={e => setCity(e.target.value)}
+                  placeholder="City/Municipality"
+                />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">ZIP Code</label>
@@ -877,16 +770,6 @@ export default function ProfilePage() {
                 {isEdit && getZipCodeValidationMessage(zipCode) && (
                   <p className="text-xs text-red-500 mt-1">{getZipCodeValidationMessage(zipCode)}</p>
                 )}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">Region <span className="text-gray-400">(auto-derived)</span></label>
-                <input
-                  className="w-full bg-gray-100 rounded px-3 py-2 text-sm"
-                  value={region}
-                  readOnly
-                />
               </div>
             </div>
           </div>
@@ -1044,3 +927,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+
