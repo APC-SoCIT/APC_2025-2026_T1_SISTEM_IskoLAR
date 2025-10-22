@@ -145,43 +145,31 @@ export const useAuth = (redirectTo?: string): UseAuthReturn => {
         return () => subscription.unsubscribe();
     }, [router, redirectTo]);
  
-    const signOut = async () => {
+    const signOut = async (): Promise<void> => {
         try {
-        // Clear stored tokens
-        localStorage.removeItem('authToken');
-        sessionStorage.removeItem('authToken');
-        
-        // Clear cookies if any (using httpOnly cookies would require server action)
-        if (typeof document !== 'undefined') {
-          document.cookie = 'authToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-        }
-        
-        // Sign out from Supabase
-        // Call the API endpoint first
-        const response = await fetch('/api/admin-auth/signout', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
+            // Clear all auth state first
+            setUser(null);
+            setIsAuthenticated(false);
 
-        if (!response.ok) {
-          throw new Error('Failed to sign out');
-        }
+            // Clear stored tokens
+            localStorage.clear(); // Clear all localStorage
+            sessionStorage.clear(); // Clear all sessionStorage
+            
+            // Clear all cookies
+            document.cookie.split(";").forEach((c) => {
+                document.cookie = c
+                    .replace(/^ +/, "")
+                    .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+            
+            // Sign out from Supabase last
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
 
-        // Then sign out from Supabase
-        await supabase.auth.signOut();
-        setUser(null);
-        setIsAuthenticated(false);
-        
-        // Redirect based on the current path
-        if (window.location.pathname.startsWith('/admin')) {
-          router.push('/admin-auth/signin');
-        } else {
-          router.push('/auth/sign-in');
-        }
+            // Don't redirect here - let the component handle it
         } catch (error) {
-        console.error('Error signing out:', error);
+            console.error('Error signing out:', error);
+            throw error; // Propagate error to component
         }
     };
  
