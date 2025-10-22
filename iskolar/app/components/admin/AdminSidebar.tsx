@@ -12,9 +12,11 @@ const AdminSidebar = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
-      // The redirection will be handled by useAuth hook
+      // The auth state change will trigger a redirect in useAuth
     } catch (error) {
       console.error('Error during sign out:', error);
+      // Manual fallback redirect if needed
+      window.location.href = '/admin-auth/signin';
     }
   };
 
