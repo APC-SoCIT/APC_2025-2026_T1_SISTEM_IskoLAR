@@ -180,7 +180,7 @@ export default function UserManagementPage() {
       <div className="flex items-center justify-between pb-6">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold text-gray-900">User Management</h1>
-          <p className="text-sm text-gray-500">Manage and monitor user accounts</p>
+          <p className="text-sm text-gray-500">Manage and monitor user accounts.</p>
         </div>
         <div className="flex items-center gap-6">
           <div className="relative w-72">
