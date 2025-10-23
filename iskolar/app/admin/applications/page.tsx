@@ -36,37 +36,34 @@ export default function ApplicationsPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="px-10 pt-8 pb-6 max-w-7xl mx-auto">
       {/* Header Section */}
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Application & Verification</h1>
-          <p className="text-gray-600 mt-1">Manage scholarship applications and academic years</p>
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold text-gray-900">Application and Verification</h1>
+          <p className="text-sm text-gray-500">Manage and monitor scholarship applications.</p>
         </div>
-        <form className="relative">
-          <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-            <input
-              type="search"
-              placeholder="Search Academic Year..."
-              className="px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        <div className="flex items-center gap-6">
+          <div className="relative w-72">
+            <input 
+              type="text" 
+              placeholder="Search Academic Year..." 
               onChange={(e) => {
                 // TODO: Implement search functionality
                 console.log('Search:', e.target.value);
               }}
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:bg-white" 
             />
-            <button 
-              type="submit"
-              className="px-4 py-2 bg-white border-l border-gray-300 hover:bg-gray-50"
-            >
-              <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
               </svg>
-            </button>
+            </div>
           </div>
-        </form>
+        </div>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-8 mt-11">
         {/* School Year Section */}
         <SchoolYearSection 
           schoolYears={schoolYears}
@@ -96,25 +93,14 @@ export default function ApplicationsPage() {
       {yearToUndo && (
         <UndoYearModal 
           schoolYear={yearToUndo}
-          onClose={() => {
-            setYearToUndo(null);
-          }}
+          onClose={() => setYearToUndo(null)}
           onUndo={async () => {
             setIsLoadingYears(true);
+            // Filter out the undone year locally
+            setSchoolYears((prev) => prev.filter(y => y.id !== yearToUndo.id));
+            setYearToUndo(null);
+            // Then refresh the data
             await fetchSchoolYears();
-            setYearToUndo(null);
-          }}
-        />
-      )}
-
-      {/* Undo Year Modal */}
-      {yearToUndo && (
-        <UndoYearModal
-          schoolYear={yearToUndo}
-          onClose={() => setYearToUndo(null)}
-          onUndo={(id) => {
-            setSchoolYears((prev) => prev.filter(y => y.id !== id));
-            setYearToUndo(null);
           }}
         />
       )}
