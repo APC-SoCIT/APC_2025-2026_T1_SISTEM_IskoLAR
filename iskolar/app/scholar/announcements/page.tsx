@@ -1,9 +1,9 @@
 'use client';
 
-import Image from 'next/image';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/solid';
 import { supabase } from '@/lib/supabaseClient';
+import Image from 'next/image';
 
 type Announcement = {
   announcements_id?: string;
@@ -34,38 +34,13 @@ const formatDate = (d?: string | null) => {
 };
 
 export default function AnnouncementsPage() {
-  const [open, setOpen] = useState(false);
-  const notifRef = useRef<HTMLDivElement>(null);
-  const [userName, setUserName] = useState('');
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('first_name, last_name')
-            .eq('email_address', user.email)
-            .single();
-
-          if (error) console.error('Error loading user data', error);
-          if (userData) {
-            setUserName(`${userData.first_name} ${userData.last_name}`);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to fetch user data', err);
-      }
-    };
-
-    fetchUserData();
-  }, []);
+  // Remove unused effect for fetching user data
 
   useEffect(() => {
     let isSubscribed = true;
@@ -97,7 +72,13 @@ export default function AnnouncementsPage() {
 
     loadAnnouncements();
 
-    // Subscribe to realtime changes on announcements table
+    // Type for Supabase realtime payload
+  type RealtimePayload = {
+    new: Announcement;
+    old: Announcement;
+  };
+
+  // Subscribe to realtime changes on announcements table
     const channel = supabase
       .channel('public:announcements')
       .on(
@@ -105,7 +86,7 @@ export default function AnnouncementsPage() {
         { event: 'INSERT', schema: 'public', table: 'announcements' },
         (payload) => {
           console.log('[Announcements realtime] INSERT', payload);
-          const newRow = (payload as any).new as Announcement;
+          const newRow = (payload as RealtimePayload).new;
           // Prevent duplicate inserts if the row already exists in state
           setAnnouncements((prev) => [newRow, ...prev.filter((a) => String(a.announcements_id) !== String(newRow.announcements_id))]);
         }
@@ -115,7 +96,7 @@ export default function AnnouncementsPage() {
         { event: 'UPDATE', schema: 'public', table: 'announcements' },
         (payload) => {
           console.log('[Announcements realtime] UPDATE', payload);
-          const updated = (payload as any).new as Announcement;
+          const updated = (payload as RealtimePayload).new;
           setAnnouncements((prev) => prev.map((a) => (String(a.announcements_id) === String(updated.announcements_id) ? updated : a)));
         }
       )
@@ -124,7 +105,7 @@ export default function AnnouncementsPage() {
         { event: 'DELETE', schema: 'public', table: 'announcements' },
         (payload) => {
           console.log('[Announcements realtime] DELETE', payload);
-          const oldRow = (payload as any).old as Announcement;
+          const oldRow = (payload as RealtimePayload).old;
           setAnnouncements((prev) => prev.filter((a) => String(a.announcements_id) !== String(oldRow.announcements_id)));
         }
       )
@@ -134,8 +115,8 @@ export default function AnnouncementsPage() {
       isSubscribed = false;
       try {
         channel.unsubscribe();
-      } catch (e) {
-        // ignore
+      } catch {
+        // Ignore unsubscribe errors
       }
     };
   }, []);
@@ -188,7 +169,13 @@ export default function AnnouncementsPage() {
                     >
                       <div className="relative h-56 sm:h-64 md:h-48 lg:h-60">
                         {a.file_path && isImageUrl(a.file_path) ? (
-                          <img src={a.file_path} alt={a.title ?? 'Announcement image'} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                          <Image 
+                            src={a.file_path || ''} 
+                            alt={a.title ?? 'Announcement image'} 
+                            width={400}
+                            height={300}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
                         ) : (
                           <div className="w-full h-full bg-gray-100 flex items-center justify-center">
                             <div className="text-gray-400 text-lg">No image</div>
@@ -232,7 +219,13 @@ function ViewAnnouncementModal({ isOpen, onClose, announcement }: { isOpen: bool
         {/* Header image with reduced opacity, sized approx 820x312 */}
         {fileUrl && isImageUrl(fileUrl) && (
           <div className="w-full flex-shrink-0 relative" style={{ maxHeight: 320, overflow: 'hidden' }}>
-            <img src={fileUrl} alt={announcement.title ?? 'Announcement image'} style={{ width: '100%', height: 312, objectFit: 'cover' }} className="block" />
+            <Image 
+              src={fileUrl || ''} 
+              alt={announcement.title ?? 'Announcement image'} 
+              width={820}
+              height={312}
+              className="w-full h-[312px] object-cover"
+            />
             {/* 50% black overlay to fade image */}
             <div className="absolute inset-0 bg-black/50 pointer-events-none" />
             {/* centered title over header image */}
