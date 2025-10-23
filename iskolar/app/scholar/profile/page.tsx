@@ -1,7 +1,7 @@
 'use client';
 
 import Image from "next/image";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { userValidation } from "@/lib/types/user";
 import { getAuthToken } from "@/lib/useAuth";
 import { supabase } from '@/lib/supabaseClient';
@@ -136,7 +136,7 @@ export default function ProfilePage() {
   const [addressLine1, setAddressLine1] = useState("");
   const [addressLine2, setAddressLine2] = useState("");
   const [barangay, setBarangay] = useState("");
-  const [city, setCity] = useState("");
+  const [, setCity] = useState("");
   const [zipCode, setZipCode] = useState("");
   
   // Education states
@@ -146,13 +146,6 @@ export default function ProfilePage() {
 
 
   // Validation functions - use shared validation from our model
-  const getZipCodeValidationMessage = (zipCode: string) => {
-    if (!zipCode) return "";
-    if (!userValidation.validateZipCode(zipCode)) {
-      return "ZIP code must be exactly 4 digits";
-    }
-    return "";
-  };
   
   // Note: We now use the centralized getAuthToken function from useAuth.ts
   
@@ -293,10 +286,9 @@ export default function ProfilePage() {
         setEmail(userData.email || '');
         setMobile(userData.mobile || '');
         
-        // Format date from ISO to MM/DD/YYYY for display
+        // Format birthdate for input type="date"
         if (userData.birthdate) {
-          const displayDate = userValidation.formatDateForDisplay(userData.birthdate);
-          setBirthdate(displayDate);
+          setBirthdate(userData.birthdate.split('T')[0]);
         }
         
         // Address fields
@@ -324,107 +316,490 @@ export default function ProfilePage() {
   // Handle profile update
   const handleUpdateProfile = async () => {
     // Prevent duplicate submissions
-    if (isLoading) return;
+    if (isLoading) {
+      console.log('Update already in progress, returning...');
+      return;
+    }
     
     try {
+      console.log('Starting profile update...');
       setIsLoading(true);
       setError('');
       setSuccessMessage('');
       
       // Get auth token using the centralized helper function
       const token = getAuthToken();
+      console.log('Auth token check:', !!token);
       
-      // If no token is found, redirect to sign-in
       if (!token) {
         console.log('No authentication token found. Redirecting to sign-in page.');
+        setIsLoading(false);
         redirectToSignIn();
         return;
       }
+
+      if (!userProfile?.userId) {
+        console.error('No user ID found');
+        setIsLoading(false);
+        setError('User ID not found');
+        return;
+      }
+      
+      // Validate required fields
+      if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+        console.error('Required fields missing');
+        setIsLoading(false);
+        setError('First name, last name, and email are required');
+        return;
+      }
+
+      // Always set city to "Makati City"
+      const fixedCity = "Makati City";
+      
+      // Find ZIP code based on barangay
+      const selectedBarangay = BARANGAYS.find(b => b.name === barangay);
+      const zipCodeToUse = selectedBarangay ? selectedBarangay.zipCode : zipCode;
+
+      // Use the birthdate directly from the date input
+      // It's already in YYYY-MM-DD format
+      const formattedBirthdate = birthdate;
       
       // Prepare the profile data for API call
-      // Convert frontend model to database format
       const profileData = {
-        first_name: firstName,
-        last_name: lastName,
-        middle_name: middleName,
-        gender,
-        birthdate: userValidation.parseDisplayDate(birthdate),
-        email_address: email,
-        mobile_number: mobile,
-        address_line1: addressLine1,
-        address_line2: addressLine2,
-        barangay,
-        city,
-        zip_code: zipCode,
-        college_university: college,
-        college_course: course,
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        middle_name: middleName.trim() || null,
+        gender: gender.trim(),
+        birthdate: formattedBirthdate,
+        email_address: email.trim(),
+        mobile_number: mobile.trim(),
+        address_line1: addressLine1.trim(),
+        address_line2: addressLine2.trim() || null,
+        barangay: barangay.trim(),
+        city: fixedCity,
+        zip_code: zipCodeToUse,
+        college_university: college.trim(),
+        college_course: course.trim(),
+        updated_at: new Date().toISOString()
       };
 
-      // Update profile directly in Supabase
+      console.log('Updating profile with data:', profileData);
+
+      // Update profile in Supabase
       const { data: updatedProfile, error: updateError } = await supabase
         .from('users')
         .update(profileData)
-        .eq('user_id', userProfile?.userId)
+        .eq('user_id', userProfile.userId)
         .select()
         .single();
-
+        
       if (updateError) {
-        console.error('Profile update error:', updateError);
-        throw new Error(updateError.message || 'Failed to update profile');
-      }
-
-      const result = { profile: mapDatabaseToProfile(updatedProfile), message: 'Profile updated successfully' };
-
-      // Update the user profile state with the response data
-      if (result.profile) {
-        setUserProfile(result.profile);
-        
-        // Update form fields with the updated data
-        setFirstName(result.profile.firstName);
-        setLastName(result.profile.lastName);
-        setMiddleName(result.profile.middleName || '');
-        setGender(result.profile.gender || '');
-        setEmail(result.profile.email || '');
-        setMobile(result.profile.mobile || '');
-        setBirthdate(result.profile.birthdate 
-          ? userValidation.formatDateForDisplay(result.profile.birthdate) 
-          : '');
-        
-        // Address fields
-        setAddressLine1(result.profile.addressLine1 || '');
-        setAddressLine2(result.profile.addressLine2 || '');
-        setBarangay(result.profile.barangay || '');
-        setCity(result.profile.city || '');
-        setZipCode(result.profile.zipCode || '');
-        
-        // Education fields
-        setCollege(result.profile.college || '');
-        setCourse(result.profile.course || '');
+        console.error('Error updating profile:', updateError);
+        setError(updateError.message || 'Failed to update profile');
+        setIsLoading(false);
+        return;
       }
       
-      // Update was successful
-      setSuccessMessage(result.message || 'Profile updated successfully');
-      setIsEdit(false);
+      if (!updatedProfile) {
+        console.error('No profile data returned after update');
+        setError('Failed to update profile - no data returned');
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('Profile updated successfully:', updatedProfile);
+
+      // Map the updated profile data
+      console.log('Profile updated successfully:', updatedProfile);
+
+      try {
+        // Map the database response to our frontend model
+        const updatedProfileData = mapDatabaseToProfile(updatedProfile);
+        console.log('Mapped profile data:', updatedProfileData);
+
+        // Update states in sequence
+        setUserProfile(updatedProfileData);
+        setFirstName(updatedProfileData.firstName);
+        setLastName(updatedProfileData.lastName);
+        setMiddleName(updatedProfileData.middleName || '');
+        setGender(updatedProfileData.gender || '');
+        setEmail(updatedProfileData.email || '');
+        setMobile(updatedProfileData.mobile || '');
+        setBirthdate(updatedProfileData.birthdate || '');
+        setAddressLine1(updatedProfileData.addressLine1 || '');
+        setAddressLine2(updatedProfileData.addressLine2 || '');
+        setBarangay(updatedProfileData.barangay || '');
+        setZipCode(updatedProfileData.zipCode || '');
+        setCollege(updatedProfileData.college || '');
+        setCourse(updatedProfileData.course || '');
+
+        // Show success message and exit edit mode
+        console.log('Update successful, showing success message');
+        setSuccessMessage('Profile updated successfully!');
+        setIsEdit(false);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error updating local state:', error);
+        setError('An error occurred while updating the display');
+        setIsLoading(false);
+      }
       
     } catch (error) {
       console.error('Error updating profile:', error);
+      setIsLoading(false); // Clear loading state before showing error
       setError(error instanceof Error ? error.message : 'Failed to update profile');
-    } finally {
-      // Add a small delay before removing loading state to ensure UI feedback
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 500);
-      setIsLoading(false);
     }
   };
 
-  // Add state for each document file
-  const [, setPsaFile] = useState<File | null>(null);
-  const [psaFileName, setPsaFileName] = useState("");
-  const [, setVoterFile] = useState<File | null>(null);
-  const [voterFileName, setVoterFileName] = useState("");
-  const [, setNationalIdFile] = useState<File | null>(null);
-  const [nationalIdFileName, setNationalIdFileName] = useState("");
+  // Data arrays for select inputs
+  const BARANGAYS = [
+    { name: "Ayala-Paseo de Roxas", zipCode: "1226" },
+    { name: "Bangkal", zipCode: "1233" },
+    { name: "Bel-Air", zipCode: "1209" },
+    { name: "Cembo", zipCode: "1214" },
+    { name: "Comembo", zipCode: "1217" },
+    { name: "Dasmariñas Village North", zipCode: "1221" },
+    { name: "Dasmariñas Village South", zipCode: "1222" },
+    { name: "Forbes Park North", zipCode: "1219" },
+    { name: "Forbes Park South", zipCode: "1220" },
+    { name: "Fort Bonifacio Naval Station", zipCode: "1202" },
+    { name: "Fort Bonifacio (Camp)", zipCode: "1201" },
+    { name: "Greenbelt", zipCode: "1228" },
+    { name: "Guadalupe Nuevo", zipCode: "1212" },
+    { name: "Guadalupe Viejo", zipCode: "1211" },
+    { name: "Kasilawan", zipCode: "1206" },
+    { name: "La Paz–Singkamas–Tejeros", zipCode: "1204" },
+    { name: "Legaspi Village", zipCode: "1229" },
+    { name: "Magallanes Village", zipCode: "1232" },
+    { name: "Makati Commercial Center", zipCode: "1224" },
+    { name: "Makati CPO + Buendia Ave", zipCode: "1200" },
+    { name: "Olympia & Carmona", zipCode: "1207" },
+    { name: "Palanan", zipCode: "1235" },
+    { name: "Pasong Tamo & Ecology Village", zipCode: "1231" },
+    { name: "Pembo", zipCode: "1218" },
+    { name: "Pinagkaisahan–Pitogo", zipCode: "1213" },
+    { name: "Pio del Pilar", zipCode: "1230" },
+    { name: "Poblacion", zipCode: "1210" },
+    { name: "Rembo (East)", zipCode: "1216" },
+    { name: "Rembo (West)", zipCode: "1215" },
+    { name: "Salcedo Village", zipCode: "1227" },
+    { name: "San Antonio Village", zipCode: "1203" },
+    { name: "San Isidro", zipCode: "1234" },
+    { name: "San Lorenzo Village", zipCode: "1223" },
+    { name: "Sta. Cruz", zipCode: "1205" },
+    { name: "Urdaneta Village", zipCode: "1225" },
+    { name: "Valenzuela, Santiago, Rizal", zipCode: "1208" }
+  ];
+
+  const COLLEGES = [
+    "Adamson University",
+    "AMA Computer University",
+    "Arellano University",
+    "Asian Institute of Journalism and Communication",
+    "Asian Institute of Management",
+    "Asian Institute of Maritime Studies",
+    "Asian Social Institute",
+    "Asia Pacific College",
+    "Assumption College San Lorenzo",
+    "Central Colleges of the Philippines",
+    "Centro Escolar University",
+    "Chiang Kai Shek College",
+    "Colegio de San Juan de Letran",
+    "College of the Holy Spirit",
+    "De La Salle-College of Saint Benilde",
+    "De La Salle University",
+    "Don Bosco Technical College",
+    "Emilio Aguinaldo College",
+    "Eulogio \"Amang\" Rodriguez Institute of Science and Technology",
+    "Far Eastern University",
+    "FEATI University",
+    "FEU Institute of Technology",
+    "José Rizal University",
+    "La Consolacion College Manila",
+    "Lyceum of the Philippines University",
+    "Manila Central University",
+    "Manuel L. Quezon University",
+    "Mapúa University",
+    "Miriam College",
+    "National College of Business and Arts",
+    "National Defense College of the Philippines",
+    "National Teachers College",
+    "National University, Philippines",
+    "New Era University",
+    "Olivarez College",
+    "Our Lady of Fatima University",
+    "Pamantasan ng Lungsod ng Maynila",
+    "PATTS College of Aeronautics",
+    "Pasig Catholic College",
+    "Philippine Christian University",
+    "Philippine Normal University",
+    "Philippine School of Business Administration",
+    "Polytechnic University of the Philippines",
+    "Rizal Technological University",
+    "Saint Jude College",
+    "Saint Pedro Poveda College",
+    "San Beda University",
+    "Santa Isabel College",
+    "St. Joseph's College of Quezon City",
+    "St. Luke's College of Medicine - WHQM",
+    "St. Mary's College",
+    "St. Paul University Manila",
+    "St. Paul University Quezon City",
+    "St. Scholastica's College",
+    "St. Louis College Valenzuela",
+    "Technological Institute of the Philippines",
+    "Technological University of the Philippines",
+    "The Philippine Women's University",
+    "The University of Manila",
+    "Trinity University of Asia",
+    "University of Asia and the Pacific",
+    "University of Perpetual Help System DALTA",
+    "University of Santo Tomas",
+    "University of the East",
+    "University of the East Ramon Magsaysay",
+    "University of the Philippines Diliman",
+    "University of the Philippines Manila",
+    "University of the Philippines System"
+  ];
+
+  const COURSES = [
+    "BA Communication",
+    "BA English",
+    "BA History",
+    "BA Literature",
+    "BA Philosophy",
+    "BA Political Science",
+    "BA Psychology",
+    "BA Sociology",
+    "BCA (Bachelor of Customs Administration)",
+    "BEEd (Bachelor of Elementary Education)",
+    "BFA Fine Arts",
+    "BHRM (Bachelor of Hospitality and Restaurant Management)",
+    "BPEd (Bachelor of Physical Education)",
+    "BSEd (Bachelor of Secondary Education)",
+    "BS Accountancy",
+    "BS Accounting Information System",
+    "BS Aeronautical Engineering",
+    "BS Agriculture",
+    "BS Applied Mathematics",
+    "BS Architecture",
+    "BS Biology",
+    "BS Biotechnology",
+    "BS Business Administration",
+    "BS Chemical Engineering",
+    "BS Chemistry",
+    "BS Civil Engineering",
+    "BS Communication",
+    "BS Community Development",
+    "BS Computer Engineering",
+    "BS Computer Science",
+    "BS Criminology",
+    "BS Customs Administration",
+    "BS Dentistry",
+    "BS Economics",
+    "BS Education (Elementary / Secondary / Special Education)",
+    "BS Electrical Engineering",
+    "BS Electronics Engineering",
+    "BS Entrepreneurship",
+    "BS Environmental Science",
+    "BS Finance",
+    "BS Fine Arts",
+    "BS Forestry",
+    "BS Geology",
+    "BS Hospitality Management",
+    "BS Human Resource Management",
+    "BS Industrial Engineering",
+    "BS Information Systems",
+    "BS Information Technology",
+    "BS Interior Design",
+    "BS International Relations",
+    "BS International Studies",
+    "BS Journalism",
+    "BS Legal Management",
+    "BS Management Accounting",
+    "BS Marine Engineering",
+    "BS Marine Transportation",
+    "BS Mathematics",
+    "BS Mechanical Engineering",
+    "BS Medical Technology",
+    "BS Midwifery",
+    "BS Nursing",
+    "BS Nutrition and Dietetics",
+    "BS Occupational Therapy",
+    "BS Pharmacy",
+    "BS Physical Therapy",
+    "BS Physics",
+    "BS Political Science",
+    "BS Psychology",
+    "BS Public Administration",
+    "BS Radiologic Technology",
+    "BS Real Estate Management",
+    "BS Social Work",
+    "BS Sociology",
+    "BS Statistics",
+    "BS Tourism Management"
+  ];
+
+  // Document states with enhanced tracking
+  interface DocumentState {
+    file: File | null;
+    fileName: string;
+    uploadProgress: number;
+    isUploading: boolean;
+    documentId: string | null;
+    error: string | null;
+  }
+
+  const [documents, setDocuments] = useState<Record<string, DocumentState>>({
+    psa: { file: null, fileName: "", uploadProgress: 0, isUploading: false, documentId: null, error: null },
+    voter: { file: null, fileName: "", uploadProgress: 0, isUploading: false, documentId: null, error: null },
+    nationalId: { file: null, fileName: "", uploadProgress: 0, isUploading: false, documentId: null, error: null }
+  });
+
+  // Function to update document state
+  const updateDocumentState = useCallback((type: string, updates: Partial<DocumentState>) => {
+    setDocuments(prev => ({
+      ...prev,
+      [type]: { ...prev[type], ...updates }
+    }));
+  }, []);
+
+  // Function to handle document upload
+  const handleDocumentUpload = async (type: string, file: File) => {
+    try {
+      // Reset state and start upload
+      updateDocumentState(type, { 
+        file, 
+        fileName: file.name, 
+        isUploading: true, 
+        error: null,
+        uploadProgress: 0
+      });
+
+      // Check if we have a valid user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error('You must be logged in to upload documents');
+      }
+
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+      if (file.size > maxSize) {
+        throw new Error('File size must be less than 10MB');
+      }
+
+      // Validate file type
+      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error('File must be PDF, JPG, or PNG');
+      }
+
+      // Upload file to Supabase storage
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/${type}_${Date.now()}.${fileExt}`;
+      
+      // Create upload options with progress tracking
+      const options = {
+        cacheControl: '3600',
+        upsert: false,
+        onUploadProgress: (progress: { loaded: number; total: number }) => {
+          const percentage = Math.round((progress.loaded * 100) / progress.total);
+          updateDocumentState(type, { uploadProgress: percentage });
+        },
+      };
+
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, file, options);
+
+      if (uploadError) throw new Error(uploadError.message);
+
+      // Get the public URL for the uploaded file
+      const { data: publicUrlData } = await supabase.storage
+        .from('documents')
+        .getPublicUrl(filePath);
+
+      // Save document metadata to database
+      const { data: docData, error: docError } = await supabase
+        .from('documents')
+        .insert([{
+          document_type: type.toUpperCase(),
+          file_name: file.name,
+          file_path: filePath,
+          file_size: file.size,
+          file_url: publicUrlData?.publicUrl || '',
+          user_id: user.id,
+          uploaded_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (docError) throw new Error(docError.message);
+
+      // Update document state with success
+      updateDocumentState(type, {
+        documentId: docData.documents_id,
+        isUploading: false,
+        uploadProgress: 100,
+        fileName: file.name,
+        error: null
+      });
+
+      setSuccessMessage(`${type.charAt(0).toUpperCase() + type.slice(1)} document uploaded successfully!`);
+      
+      // Refresh the documents list
+      await fetchDocuments();
+    } catch (error) {
+      console.error(`Error uploading ${type} document:`, error);
+      updateDocumentState(type, {
+        error: error instanceof Error ? error.message : 'Upload failed',
+        isUploading: false,
+        uploadProgress: 0
+      });
+    }
+  };
+
+  // Function to fetch existing documents
+  const fetchDocuments = useCallback(async () => {
+    try {
+      // Get current authenticated user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        console.error('Authentication error:', authError);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Update state for each document type
+      if (data) {
+        data.forEach(doc => {
+          const type = doc.document_type.toLowerCase();
+          if (type in documents) {
+            updateDocumentState(type, {
+              fileName: doc.file_name,
+              documentId: doc.documents_id,
+              uploadProgress: 100
+            });
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+    }
+  }, [documents, updateDocumentState]);
+
+  // Fetch documents when profile loads
+  useEffect(() => {
+    if (userProfile?.userId) {
+      void fetchDocuments();
+    }
+  }, [userProfile?.userId, fetchDocuments]);
 
   // Refs for each card section
   const personalRef = useRef<HTMLDivElement | null>(null);
@@ -440,6 +815,41 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen w-full bg-[#f5f6fa] pl-64">
+      {/* Floating Success Message */}
+      {successMessage && (
+        <div className="fixed top-4 left-1/2 z-50 animate-slideDown">
+          <div className="transform -translate-x-1/2">
+            <div className="mx-4 inline-block min-w-[280px] max-w-[90vw]">
+              <div className="p-4 rounded-lg bg-green-50 border border-green-200 shadow-lg transition-all duration-200">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-green-800 whitespace-normal break-words">{successMessage}</p>
+                  </div>
+                  <div className="ml-auto pl-3">
+                    <div className="-mx-1.5 -my-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setSuccessMessage("")}
+                        className="inline-flex rounded-md p-1.5 text-green-500 hover:bg-green-100 focus:outline-none"
+                      >
+                        <span className="sr-only">Dismiss</span>
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main content area */}
       <div className="pt-8 flex max-w-7xl mx-auto gap-8 px-8 items-start">
@@ -498,11 +908,6 @@ export default function ProfilePage() {
               <span className="block sm:inline">{error}</span>
             </div>
           )}
-          {successMessage && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-              <span className="block sm:inline">{successMessage}</span>
-            </div>
-          )}
           {isEdit ? (
             <>
               <button
@@ -533,20 +938,26 @@ export default function ProfilePage() {
                     setEmail(userProfile.email || '');
                     setMobile(userProfile.mobile || '');
                     setBirthdate(userProfile.birthdate 
-                      ? userValidation.formatDateForDisplay(userProfile.birthdate) 
+                      ? userProfile.birthdate.split('T')[0]
                       : '');
                     
                     // Address fields
                     setAddressLine1(userProfile.addressLine1 || '');
                     setAddressLine2(userProfile.addressLine2 || '');
                     setBarangay(userProfile.barangay || '');
-                    setCity(userProfile.city || '');
-                    setZipCode(userProfile.zipCode || '');
+                    // City is always "Makati City"
+                    // ZIP code is set automatically based on barangay
+                    const selectedBarangay = BARANGAYS.find(b => b.name === userProfile.barangay);
+                    setZipCode(selectedBarangay ? selectedBarangay.zipCode : '');
                     
                     // Education fields
                     setCollege(userProfile.college || '');
                     setCourse(userProfile.course || '');
-                    // Year level and GPA fields removed as they are not in the current schema
+                    
+                    // Exit edit mode
+                    setIsEdit(false);
+                    setError('');
+                    setSuccessMessage('');
                   }
                 }}
                 disabled={isLoading}
@@ -555,15 +966,10 @@ export default function ProfilePage() {
                 Cancel
               </button>
               
-              {/* Error/Success messages */}
+              {/* Error message */}
               {error && (
                 <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded-lg text-red-600 text-sm">
                   {error}
-                </div>
-              )}
-              {successMessage && (
-                <div className="mt-4 p-3 bg-green-50 border-green-100 text-green-600 rounded-lg text-sm">
-                  {successMessage}
                 </div>
               )}
             </>
@@ -580,13 +986,6 @@ export default function ProfilePage() {
               >
                 Edit Profile
               </button>
-              
-              {/* Only show success message in view mode */}
-              {successMessage && (
-                <div className="mt-4 p-3 bg-green-50 border-green-100 text-green-600 rounded-lg text-sm">
-                  {successMessage}
-                </div>
-              )}
             </>
           )}
         </div>
@@ -602,6 +1001,33 @@ export default function ProfilePage() {
           <style jsx>{`
             div::-webkit-scrollbar {
               display: none;
+            }
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            .animate-fadeIn {
+              animation: fadeIn 0.2s ease;
+            }
+            @keyframes scaleIn {
+              from { opacity: 0; transform: scale(0.95); }
+              to { opacity: 1; transform: scale(1); }
+            }
+            .animate-scaleIn {
+              animation: scaleIn 0.25s cubic-bezier(0.4,0,0.2,1);
+            }
+            @keyframes slideDown {
+              from { 
+                opacity: 0;
+                transform: translateY(-1rem) translateX(-50%);
+              }
+              to { 
+                opacity: 1;
+                transform: translateY(0) translateX(-50%);
+              }
+            }
+            .animate-slideDown {
+              animation: slideDown 0.3s ease-out forwards;
             }
           `}</style>
 
@@ -653,17 +1079,17 @@ export default function ProfilePage() {
                   <option value="">Select gender</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                  <option value="Prefer not to say">Prefer not to say</option>
                 </select>
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Birthdate</label>
                 <input
+                  type="date"
                   className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
                   value={birthdate}
                   readOnly={!isEdit}
                   onChange={e => setBirthdate(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]} // Prevents future dates
                   placeholder="MM/DD/YYYY"
                 />
               </div>
@@ -736,40 +1162,40 @@ export default function ProfilePage() {
             <div className="grid grid-cols-3 gap-4 mb-3">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Barangay</label>
-                <input
+                <select
                   className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
                   value={barangay}
-                  readOnly={!isEdit}
-                  onChange={e => setBarangay(e.target.value)}
-                  placeholder="Sample Barangay"
-                />
+                  disabled={!isEdit}
+                  onChange={e => {
+                    setBarangay(e.target.value);
+                    const selected = BARANGAYS.find(b => b.name === e.target.value);
+                    if (selected) {
+                      setZipCode(selected.zipCode);
+                    }
+                  }}
+                >
+                  <option value="">Select Barangay</option>
+                  {BARANGAYS.map(b => (
+                    <option key={b.name} value={b.name}>{b.name}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">City/Municipality</label>
                 <input
-                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
-                  value={city}
-                  readOnly={!isEdit}
-                  onChange={e => setCity(e.target.value)}
-                  placeholder="City/Municipality"
+                  className="w-full bg-gray-100 rounded px-3 py-2 text-sm"
+                  value="Makati City"
+                  readOnly
                 />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">ZIP Code</label>
                 <input
-                  className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
+                  className="w-full bg-gray-100 rounded px-3 py-2 text-sm"
                   value={zipCode}
-                  readOnly={!isEdit}
-                  onChange={e => {
-                    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-                    setZipCode(value);
-                  }}
-                  placeholder="1234"
-                  maxLength={4}
+                  readOnly
+                  placeholder="Will be set based on barangay"
                 />
-                {isEdit && getZipCodeValidationMessage(zipCode) && (
-                  <p className="text-xs text-red-500 mt-1">{getZipCodeValidationMessage(zipCode)}</p>
-                )}
               </div>
             </div>
           </div>
@@ -783,21 +1209,31 @@ export default function ProfilePage() {
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">College/University</label>
-                <input
+                <select
                   className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
                   value={college}
-                  readOnly={!isEdit}
+                  disabled={!isEdit}
                   onChange={e => setCollege(e.target.value)}
-                />
+                >
+                  <option value="">Select College/University</option>
+                  {COLLEGES.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Course</label>
-                <input
+                <select
                   className={`w-full ${isEdit ? "bg-white border border-gray-300" : "bg-gray-100"} rounded px-3 py-2 text-sm`}
                   value={course}
-                  readOnly={!isEdit}
+                  disabled={!isEdit}
                   onChange={e => setCourse(e.target.value)}
-                />
+                >
+                  <option value="">Select Course</option>
+                  {COURSES.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
               </div>
             </div>
             {/* Temporarily commented out until database migration is run */}
@@ -836,90 +1272,96 @@ export default function ProfilePage() {
           <div ref={documentsRef} className="bg-white rounded-xl shadow p-6 mb-2">
             <div className="flex items-center gap-2 mb-4">
               <Image src="/icons/documents.svg" alt="Documents" width={19} height={19} />
-              <span className="font-semibold text-gray-700 text-lg">Required Documents</span>
+              <span className="font-semibold text-gray-700 text-lg">Documents</span>
             </div>
             <hr className="border-gray-200 mb-4" />
-            <div className="mb-6 bg-gradient-to-r from-[#e3f2fd] to-[#f8fafc] rounded-xl px-5 py-4 border border-[#B6D6F6] shadow-sm flex flex-col justify-center">
-              <div className="text-[15px] text-[#1976d2] font-semibold">
-                Upload the following documents to complete your application.
-              </div>
-              <div className="text-xs text-gray-500">
-                Please upload clear and valid copies of your documents below.
-              </div>
-            </div>
             <div className="grid grid-cols-1 gap-5">
-              {/* PSA Birth Certificate */}
-              <div>
-                <label className="block text-xs text-gray-600 mb-1 font-medium">PSA Birth Certificate</label>
-                <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
-                  {isEdit ? (
-                    <>
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        className="cursor-pointer block w-full text-sm text-gray-700 bg-transparent file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#e3f2fd] file:text-[#1976d2] file:font-medium"
-                        onChange={e => {
-                          if (e.target.files && e.target.files[0]) {
-                            setPsaFile(e.target.files[0]);
-                            setPsaFileName(e.target.files[0].name);
-                          }
-                        }}
-                      />
-                      <span className="text-xs text-gray-500 truncate">{psaFileName || "No document uploaded"}</span>
-                    </>
-                  ) : (
-                    <span className="text-xs text-gray-700 truncate">{psaFileName || "No document uploaded"}</span>
-                  )}
-                </div>
-              </div>
-              {/* Voter's Certification */}
-              <div>
-                <label className="block text-xs text-gray-600 mb-1 font-medium">Voter&apos;s Certification</label>
-                <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
-                  {isEdit ? (
-                    <>
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        className="cursor-pointer block w-full text-sm text-gray-700 bg-transparent file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#e3f2fd] file:text-[#1976d2] file:font-medium"
-                        onChange={e => {
-                          if (e.target.files && e.target.files[0]) {
-                            setVoterFile(e.target.files[0]);
-                            setVoterFileName(e.target.files[0].name);
-                          }
-                        }}
-                      />
-                      <span className="text-xs text-gray-500 truncate">{voterFileName || "No document uploaded"}</span>
-                    </>
-                  ) : (
-                    <span className="text-xs text-gray-700 truncate">{voterFileName || "No document uploaded"}</span>
-                  )}
-                </div>
-              </div>
-              {/* National ID */}
-              <div>
-                <label className="block text-xs text-gray-600 mb-1 font-medium">National ID</label>
-                <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
-                  {isEdit ? (
-                    <>
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        className="cursor-pointer block w-full text-sm text-gray-700 bg-transparent file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#e3f2fd] file:text-[#1976d2] file:font-medium"
-                        onChange={e => {
-                          if (e.target.files && e.target.files[0]) {
-                            setNationalIdFile(e.target.files[0]);
-                            setNationalIdFileName(e.target.files[0].name);
-                          }
-                        }}
-                      />
-                      <span className="text-xs text-gray-500 truncate">{nationalIdFileName || "No document uploaded"}</span>
-                    </>
-                  ) : (
-                    <span className="text-xs text-gray-700 truncate">{nationalIdFileName || "No document uploaded"}</span>
-                  )}
-                </div>
-              </div>
+              {Object.entries(documents).map(([type, doc]) => {
+                const title = type === 'psa' ? 'PSA Birth Certificate' :
+                            type === 'voter' ? "Voter's Certification" :
+                            'National ID';
+                
+                return (
+                  <div key={type}>
+                    <label className="block text-xs text-gray-600 mb-1 font-medium">{title}</label>
+                    <div className="flex items-center gap-3 rounded-lg px-4 py-3 bg-[#F8F9FB] border-2 border-dashed border-[#90caf9]">
+                      {isEdit ? (
+                        <>
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            className="cursor-pointer block w-full text-sm text-gray-700 bg-transparent file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:bg-[#e3f2fd] file:text-[#1976d2] file:font-medium"
+                            onChange={e => {
+                              if (e.target.files && e.target.files[0]) {
+                                handleDocumentUpload(type, e.target.files[0]);
+                              }
+                            }}
+                          />
+                          <div className="flex flex-col w-full">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500 truncate max-w-[200px]">
+                                {doc.fileName || "No document uploaded"}
+                              </span>
+                              {doc.isUploading && (
+                                <span className="text-xs text-blue-500 ml-2">
+                                  {doc.uploadProgress}%
+                                </span>
+                              )}
+                            </div>
+                            {doc.isUploading && (
+                              <div className="w-full h-2 bg-gray-100 rounded-full mt-2">
+                                <div 
+                                  className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-out"
+                                  style={{ width: `${doc.uploadProgress}%` }}
+                                >
+                                  <div className="w-full h-full bg-blue-400 rounded-full animate-pulse"/>
+                                </div>
+                              </div>
+                            )}
+                            {doc.error && (
+                              <div className="flex items-center mt-1">
+                                <svg className="w-4 h-4 text-red-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-xs text-red-500">{doc.error}</span>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center justify-between w-full">
+                          <span className="text-xs text-gray-700 truncate">
+                            {doc.fileName || "No document uploaded"}
+                          </span>
+                          {doc.documentId && (
+                            <button
+                              type="button"
+                              className="text-[#2196F3] hover:text-[#1976D2] text-xs font-medium"
+                              onClick={async () => {
+                                try {
+                                  const { data } = await supabase
+                                    .storage
+                                    .from('documents')
+                                    .createSignedUrl(doc.fileName, 60); // 60 seconds expiry
+                                  
+                                  if (data?.signedUrl) {
+                                    window.open(data.signedUrl, '_blank');
+                                  }
+                                } catch (error) {
+                                  console.error('Error getting download URL:', error);
+                                  setError('Failed to download file');
+                                }
+                              }}
+                            >
+                              View Document
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
