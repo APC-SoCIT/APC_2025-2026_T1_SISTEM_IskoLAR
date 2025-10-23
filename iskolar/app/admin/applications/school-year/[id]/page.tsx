@@ -172,7 +172,7 @@ export default function SchoolYearDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      <main className="p-8 max-w-7xl mx-auto">
+      <main className="px-10 pt-8 pb-6 max-w-[1600px] mx-auto">
         <div className="space-y-8">
           {/* Header */}
           <div className="bg-white rounded-2xl shadow-sm px-8 py-6 border border-gray-100">
