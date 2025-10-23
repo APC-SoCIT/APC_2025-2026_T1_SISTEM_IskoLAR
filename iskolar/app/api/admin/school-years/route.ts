@@ -24,21 +24,31 @@ export async function GET() {
       );
     }
 
-    // Get current academic year
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    // Academic year typically starts in August/September
-    const academicYear = currentDate.getMonth() >= 7 
-      ? currentYear 
-      : currentYear - 1;
+    // Get undo status for each year and determine current status
+    const undoChecks = await Promise.all(
+      schoolYears?.map(async (year) => {
+        const { data: canUndo, error: undoError } = await supabaseAdmin.rpc(
+          'can_undo_school_year',
+          { p_school_year_id: year.id }
+        );
 
-    // Mark current year in the response
-    const schoolYearsWithCurrent = schoolYears?.map(year => ({
+        if (undoError) {
+          console.error('Error checking undo status:', undoError);
+          return false;
+        }
+
+        return canUndo;
+      }) || []
+    );
+
+    // Combine the results
+    const schoolYearsWithCurrentAndUndo = schoolYears?.map((year, index) => ({
       ...(year as any),
-      isCurrent: (year as any).academic_year === academicYear
+      isCurrent: (year as any).is_active === true,  // Use is_active from database
+      canUndo: undoChecks[index]
     })) || [];
 
-    return NextResponse.json(schoolYearsWithCurrent);
+    return NextResponse.json(schoolYearsWithCurrentAndUndo);
   } catch (error) {
     console.error('Error in school years GET:', error);
     return NextResponse.json(
@@ -50,82 +60,140 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { year } = body;
+    console.log('Starting POST request to create school year');
     
-    // Get admin token from Authorization header
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.replace('Bearer ', '');
-
-    if (!token) {
+    // Expect adminEmail and adminPassword in the body
+    const body = await request.json().catch(e => {
+      console.error('Error parsing request body:', e);
+      return {};
+    });
+    
+    const { adminEmail, adminPassword } = body;
+    
+    if (!adminEmail || !adminPassword) {
+      console.error('Missing required fields:', { hasEmail: !!adminEmail, hasPassword: !!adminPassword });
       return NextResponse.json(
-        { error: 'Missing or invalid authentication token' },
-        { status: 401 }
+        { error: 'adminEmail and adminPassword are required', debug: { body } },
+        { status: 400 }
       );
     }
+    
+    console.log('Processing request for admin:', adminEmail);
 
-    let tokenData;
-    try {
-      tokenData = JSON.parse(atob(token));
-      
-      // Check if token is expired
-      if (tokenData.exp < Math.floor(Date.now() / 1000)) {
-        return NextResponse.json(
-          { error: 'Token expired' },
-          { status: 401 }
-        );
-      }
-
-      // Verify the admin exists and is a super_admin
-      const { data: admin, error: adminError } = await supabaseAdmin
-        .from('admin')
-        .select('role')
-        .eq('id', tokenData.id)
-        .single();
-
-      if (adminError || !admin || admin.role !== 'super_admin') {
-        return NextResponse.json(
-          { error: 'Unauthorized. Super admin access required.' },
-          { status: 403 }
-        );
-      }
-    } catch (e) {
+    if (!adminEmail || !adminPassword) {
       return NextResponse.json(
-        { error: 'Invalid token format' },
-        { status: 401 }
-      );
-    }
-
-    // Role check already done above with token data
-
-    const { data: existingYear, error: checkError } = await supabaseAdmin
-      .from('school_years')
-      .select()
-      .eq('academic_year', year)
-      .single();
-
-    if (existingYear) {
-      return NextResponse.json(
-        { error: 'School year already exists' },
+        { error: 'adminEmail and adminPassword are required' },
         { status: 400 }
       );
     }
 
-    const { data, error } = await supabaseAdmin
-      .from('school_years')
-      .insert([{ academic_year: year }])
-      .select()
+    // Verify the user exists in auth metadata
+    const { data: { users }, error: adminUserError } = await supabaseAdmin.auth.admin.listUsers();
+    if (adminUserError) {
+      console.error('Error listing users for verification:', adminUserError);
+      return NextResponse.json({ error: 'Failed to verify user' }, { status: 500 });
+    }
+
+    const adminUser = users?.find((u: any) => u.email === adminEmail);
+    if (!adminUser) {
+      return NextResponse.json({ error: 'Admin user not found' }, { status: 404 });
+    }
+
+    // Ensure the user is a super_admin in the admin table
+    const { data: adminData, error: adminError } = await supabaseAdmin
+      .from('admin')
+      .select('role_id')
+      .eq('email_address', adminEmail)
       .single();
+
+    if (adminError || !adminData) {
+      console.error('Error fetching admin row:', adminError);
+      return NextResponse.json({ error: 'Failed to verify admin role' }, { status: 500 });
+    }
+
+    // This GUID is used elsewhere to identify super_admins
+    const SUPER_ADMIN_ROLE_ID = '4f53ccf0-9d4a-4345-8061-50a1e728494d';
+    if (adminData.role_id !== SUPER_ADMIN_ROLE_ID) {
+      return NextResponse.json({ error: 'Only super administrators can create academic years' }, { status: 403 });
+    }
+
+    // Create a client for the specific admin user to verify their password
+    console.log('Creating user client for password verification...');
+    const userClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    console.log('Attempting password verification...');
+    const { error: authError } = await userClient.auth.signInWithPassword({
+      email: adminEmail,
+      password: adminPassword,
+    });
+
+    if (authError) {
+      console.error('Password verification failed:', authError);
+      return NextResponse.json({ 
+        error: 'Invalid password',
+        details: authError.message
+      }, { status: 403 });
+    }
+    
+    console.log('Password verification successful');
+
+    // Compute the next academic year. If none exists, start at 2025.
+    const { data: latestRow, error: latestError } = await supabaseAdmin
+      .from('school_years')
+      .select('academic_year')
+      .order('academic_year', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (latestError && latestError.code !== 'PGRST116') {
+      // PGRST116 can indicate no rows found in some contexts; still handle gracefully
+      console.error('Error fetching latest academic year:', latestError);
+      return NextResponse.json({ error: 'Failed to determine next academic year' }, { status: 500 });
+    }
+
+    const DEFAULT_START_YEAR = 2025;
+    const nextYear = latestRow && (latestRow as any).academic_year
+      ? (latestRow as any).academic_year + 1
+      : DEFAULT_START_YEAR;
+
+    console.log('Calling stored procedure to create school year...');
+    // Call the stored procedure to create the school year and audit record
+    const { data: yearData, error } = await supabaseAdmin.rpc(
+      'admin_create_school_year',
+      { p_academic_year: nextYear, p_admin_email: adminEmail }
+    );
 
     if (error) {
       console.error('Error creating school year:', error);
-      return NextResponse.json(
-        { error: 'Failed to create school year' },
-        { status: 500 }
-      );
+      return NextResponse.json({ 
+        error: error.message || 'Failed to create school year',
+        details: error
+      }, { status: 500 });
+    }
+    
+    if (!yearData) {
+      console.error('No year ID returned from create procedure');
+      return NextResponse.json({ error: 'Failed to create school year - no ID returned' }, { status: 500 });
+    }
+    
+    console.log('School year created with ID:', yearData);
+
+    // Fetch the created school year with complete data
+    const { data: createdYear, error: fetchError } = await supabaseAdmin
+      .from('school_years')
+      .select('*')
+      .eq('id', yearData)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching created school year:', fetchError);
+      return NextResponse.json({ error: 'Failed to fetch created school year' }, { status: 500 });
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(createdYear);
   } catch (error) {
     console.error('Error in school years POST:', error);
     return NextResponse.json(

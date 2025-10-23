@@ -5,29 +5,31 @@ import { useState, useEffect } from 'react';
 import SchoolYearSection from '@/app/components/admin/SchoolYearSection';
 import { SchoolYear } from '@/lib/types/school-year';
 import AddYearModal from './AddYearModal';
+import UndoYearModal from './UndoYearModal';
 
 export default function ApplicationsPage() {
   const [schoolYears, setSchoolYears] = useState<SchoolYear[]>([]);
   const [isLoadingYears, setIsLoadingYears] = useState(true);
   const [showAddYearModal, setShowAddYearModal] = useState(false);
+  const [yearToUndo, setYearToUndo] = useState<SchoolYear | null>(null);
 
-  // Fetch school years
+  // Fetch school years on mount
   useEffect(() => {
-    async function fetchSchoolYears() {
-      try {
-        const response = await fetch('/api/admin/school-years');
-        if (!response.ok) throw new Error('Failed to fetch school years');
-        const data = await response.json();
-        setSchoolYears(data);
-      } catch (error) {
-        console.error('Error fetching school years:', error);
-      } finally {
-        setIsLoadingYears(false);
-      }
-    }
-
     fetchSchoolYears();
   }, []);
+
+  const fetchSchoolYears = async () => {
+    try {
+      const response = await fetch('/api/admin/school-years');
+      if (!response.ok) throw new Error('Failed to fetch school years');
+      const data = await response.json();
+      setSchoolYears(data);
+    } catch (error) {
+      console.error('Error fetching school years:', error);
+    } finally {
+      setIsLoadingYears(false);
+    }
+  };
 
   const handleAddYear = () => {
     setShowAddYearModal(true);
@@ -68,7 +70,14 @@ export default function ApplicationsPage() {
         {/* School Year Section */}
         <SchoolYearSection 
           schoolYears={schoolYears}
+          isLoading={isLoadingYears}
           onAddYear={handleAddYear}
+          onUndoYear={(id: string) => {
+            const yearToUndo = schoolYears.find(y => y.id === id);
+            if (yearToUndo) {
+              setYearToUndo(yearToUndo);
+            }
+          }}
         />
       </div>
 
@@ -76,16 +85,36 @@ export default function ApplicationsPage() {
       {showAddYearModal && (
         <AddYearModal
           onClose={() => setShowAddYearModal(false)}
-          onAdd={(newYear) => {
-            // Convert the new year format to match SchoolYear type
-            const schoolYear: SchoolYear = {
-              id: newYear.id,
-              academic_year: newYear.year,
-              created_at: new Date().toISOString(),
-              semesters: []
-            };
-            setSchoolYears((prev) => [...prev, schoolYear]);
+          onAdd={async () => {
+            await fetchSchoolYears();
             setShowAddYearModal(false);
+          }}
+        />
+      )}
+
+      {/* Undo Year Modal */}
+      {yearToUndo && (
+        <UndoYearModal 
+          schoolYear={yearToUndo}
+          onClose={() => {
+            setYearToUndo(null);
+          }}
+          onUndo={async () => {
+            setIsLoadingYears(true);
+            await fetchSchoolYears();
+            setYearToUndo(null);
+          }}
+        />
+      )}
+
+      {/* Undo Year Modal */}
+      {yearToUndo && (
+        <UndoYearModal
+          schoolYear={yearToUndo}
+          onClose={() => setYearToUndo(null)}
+          onUndo={(id) => {
+            setSchoolYears((prev) => prev.filter(y => y.id !== id));
+            setYearToUndo(null);
           }}
         />
       )}

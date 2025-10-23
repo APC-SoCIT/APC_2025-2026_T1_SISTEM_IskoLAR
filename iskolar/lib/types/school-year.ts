@@ -6,6 +6,7 @@ export interface SchoolYear {
   created_at?: string;
   updated_at?: string;
   isCurrent?: boolean;
+  canUndo?: boolean;
   semesters?: Semester[];
 }
 
