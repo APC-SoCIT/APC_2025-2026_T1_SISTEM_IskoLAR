@@ -45,7 +45,7 @@ export default function UserManagementPage() {
   const itemsPerPage = 6;
   
   // Role-based permissions
-  const [adminRole, setAdminRole] = useState<AdminRoleName | null>(null);
+  const [, setAdminRole] = useState<AdminRoleName | null>(null);
   const [permissions, setPermissions] = useState({
     canCreate: false,
     canEdit: false,

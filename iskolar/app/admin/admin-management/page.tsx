@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon, UserPlusIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect, useCallback } from 'react';
+import { PlusIcon, TrashIcon, UserPlusIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
 type AdminRole = 'admin' | 'super_admin';
@@ -41,7 +41,11 @@ export default function AdminManagementPage() {
     confirmationPassword: ''
   });
 
-  const fetchAdmins = async () => {
+  const showNotification = useCallback((message: string, type: 'success' | 'error') => {
+    setNotification({ message, type });
+  }, []);
+
+  const fetchAdmins = useCallback(async () => {
     setIsLoading(true);
     try {
       console.log('[fetchAdmins] Getting session...');
@@ -82,11 +86,11 @@ export default function AdminManagementPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [showNotification]);
 
   useEffect(() => {
     fetchAdmins();
-  }, []);
+  }, [fetchAdmins]);
 
   useEffect(() => {
     if (notification) {
@@ -94,10 +98,6 @@ export default function AdminManagementPage() {
       return () => clearTimeout(timer);
     }
   }, [notification]);
-
-  const showNotification = (message: string, type: 'success' | 'error') => {
-    setNotification({ message, type });
-  };
 
   const resetForm = () => {
     setFormData({
