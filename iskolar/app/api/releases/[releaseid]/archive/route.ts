@@ -1,11 +1,29 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export async function PATCH(request: Request, { params }: { params: { releaseid: string } }) {
+type ArchiveResponse = {
+  success?: boolean;
+  message?: string;
+  error?: string;
+};
+
+type Context = {
+  params: Promise<{
+    releaseid: string;
+  }>;
+};
+
+export async function PATCH(
+  request: NextRequest,
+  context: Context
+): Promise<NextResponse<ArchiveResponse>> {
+  const params = await context.params;
+  
   if (!params.releaseid) {
     return NextResponse.json(
-      { error: 'Release ID is required' },
+      { success: false, error: 'Release ID is required' },
       { status: 400 }
     );
   }
@@ -28,7 +46,7 @@ export async function PATCH(request: Request, { params }: { params: { releaseid:
 
     if (fetchError || !existingRelease) {
       return NextResponse.json(
-        { error: 'Release not found' },
+        { success: false, error: 'Release not found' },
         { status: 404 }
       );
     }
@@ -42,7 +60,7 @@ export async function PATCH(request: Request, { params }: { params: { releaseid:
     if (updateError) {
       console.error('Update error:', updateError);
       return NextResponse.json(
-        { error: 'Failed to update release status' },
+        { success: false, error: 'Failed to update release status' },
         { status: 500 }
       );
     }
@@ -55,6 +73,7 @@ export async function PATCH(request: Request, { params }: { params: { releaseid:
   } catch (error) {
     console.error('Error in archive route:', error);
     return NextResponse.json({ 
+      success: false,
       error: 'Internal server error while updating release' 
     }, { 
       status: 500 
