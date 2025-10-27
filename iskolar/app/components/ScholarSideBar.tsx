@@ -87,22 +87,6 @@ const ScholarSidebar = () => {
     },
   ];
 
-  const extraItems = [
-    {
-      label: 'User Manual',
-      href: '/scholar/user-manual',
-      icon: (
-        <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
-          <path
-            stroke="currentColor"
-            strokeWidth="2"
-            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-          />
-        </svg>
-      ),
-    },
-  ];
-
   // Fetch active school year and semesters
   useEffect(() => {
     const fetchSchoolYearData = async () => {
@@ -416,32 +400,6 @@ const ScholarSidebar = () => {
             )}
           </div>
         )}
-
-        {extraItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href);
-
-          return (
-            <Link href={item.href} key={item.label}>
-              <div
-                className={`group flex items-center gap-3 py-2.5 px-4 rounded-xl transition-all duration-200 cursor-pointer ${
-                  isActive
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-600 hover:bg-gray-50/80'
-                }`}
-              >
-                <span className={`transition-colors duration-200 ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`}>
-                  {item.icon}
-                </span>
-                <span className={`text-sm font-medium transition-colors duration-200 ${
-                  isActive ? 'text-blue-600' : 'text-gray-700 group-hover:text-gray-900'
-                }`}>{item.label}</span>
-                {isActive && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600" />
-                )}
-              </div>
-            </Link>
-          );
-        })}
       </nav>
 
       {/* Scholar Profile and Logout */}

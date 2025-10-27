@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 // GET - Fetch application details with user info and documents
 export async function GET(
@@ -7,20 +12,19 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await params; // Await params for Next.js 15 compatibility
+    const { id: userId } = await params; // The [id] in the URL is the userId
     const searchParams = request.nextUrl.searchParams;
-    const userId = searchParams.get('userId');
     const semesterId = searchParams.get('semesterId');
 
-    if (!userId || !semesterId) {
+    if (!semesterId) {
       return NextResponse.json(
-        { error: 'User ID and Semester ID are required' },
+        { error: 'Semester ID is required' },
         { status: 400 }
       );
     }
 
     // Fetch user information
-    const { data: userData, error: userError } = await supabase
+    const { data: userData, error: userError } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('user_id', userId)
@@ -35,7 +39,7 @@ export async function GET(
     }
 
     // Fetch application details
-    const { data: appData, error: appError } = await supabase
+    const { data: appData, error: appError } = await supabaseAdmin
       .from('application_details')
       .select('*')
       .eq('user_id', userId)
@@ -51,7 +55,7 @@ export async function GET(
     }
 
     // Fetch documents
-    const { data: docsData, error: docsError } = await supabase
+    const { data: docsData, error: docsError } = await supabaseAdmin
       .from('documents')
       .select('*')
       .eq('user_id', userId)
@@ -100,7 +104,7 @@ export async function PATCH(
     }
 
     // Update the application status
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('application_details')
       .update({ 
         status,
@@ -147,7 +151,7 @@ export async function DELETE(
     const { id } = await params;
 
     // Delete the application
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('application_details')
       .delete()
       .eq('appdet_id', id)

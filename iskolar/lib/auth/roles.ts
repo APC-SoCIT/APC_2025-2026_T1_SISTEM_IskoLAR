@@ -57,6 +57,27 @@ export interface RoleCheckResult {
   adminData?: AdminUser;
 }
 
+// Type for Supabase query result with nested role
+interface AdminWithRole {
+  admin_id: string;
+  email_address: string;
+  role_id: string;
+  created_at?: string;
+  updated_at?: string;
+  role: {
+    role_id: string;
+    name: RoleName;
+    description?: string;
+  } | null;
+}
+
+// Type for partial admin query with only role
+interface AdminRoleOnly {
+  role: {
+    name: RoleName;
+  } | null;
+}
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -106,7 +127,16 @@ export async function isAdmin(sessionEmail: string): Promise<RoleCheckResult> {
       };
     }
 
-    const roleName = (data.role as any)?.name as RoleName;
+    const adminWithRole = data as AdminWithRole;
+    const roleName = adminWithRole.role?.name;
+    
+    if (!roleName) {
+      return {
+        isAdmin: false,
+        isSuperAdmin: false,
+      };
+    }
+
     const isAdminRole = roleName === ROLE_NAMES.ADMIN || roleName === ROLE_NAMES.SUPER_ADMIN;
     const isSuperAdminRole = roleName === ROLE_NAMES.SUPER_ADMIN;
 
@@ -149,7 +179,9 @@ export async function isSuperAdmin(sessionEmail: string): Promise<boolean> {
       return false;
     }
 
-    const roleName = (data.role as any)?.name;
+    // Supabase returns the role as an object, not an array
+    const adminRoleData = data as unknown as AdminRoleOnly;
+    const roleName = adminRoleData.role?.name;
     return roleName === ROLE_NAMES.SUPER_ADMIN;
   } catch (error) {
     console.error('Error checking super admin status:', error);

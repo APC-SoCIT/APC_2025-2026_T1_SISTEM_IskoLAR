@@ -7,12 +7,12 @@ import Image from 'next/image';
 import { useAuth } from '@/lib/useAuth';
 import { useEffect, useState } from 'react';
 import { fetchCurrentAdmin } from '@/lib/auth/currentAdmin';
-import { roleDisplay, roleSubtitle, canManageAdmins, type AdminRoleName } from '@/lib/auth/roles';
+import { roleDisplay, roleSubtitle, canManageAdmins } from '@/lib/auth/roles';
 
 const AdminSidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
-  const { signOut, user } = useAuth();
+  const { signOut } = useAuth();
   const [title, setTitle] = useState('Administrator');
   const [subtitle, setSubtitle] = useState('Application Management');
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);

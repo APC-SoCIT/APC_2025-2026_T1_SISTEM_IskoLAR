@@ -31,6 +31,14 @@ export default function SemesterApplicationsPage() {
   const schoolYearId = params.id as string;
   const semesterId = params.semesterID as string;
   
+  console.log('🔧 Page Parameters (DETAILED):', { 
+    schoolYearId, 
+    semesterId,
+    semesterIdType: typeof semesterId,
+    semesterIdLength: semesterId?.length,
+    rawParams: params 
+  });
+  
   const [applications, setApplications] = useState<Application[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<ApplicationFilters>({ dateRange: { from: '', to: '' }, status: 'all' });
@@ -44,25 +52,49 @@ export default function SemesterApplicationsPage() {
   const fetchApplications = useCallback(async () => { 
     setIsLoading(true); 
     try { 
-      console.log('Fetching applications for semester:', semesterId);
+      console.log('🔍 Fetching applications for semester:', semesterId);
+      console.log('📍 API URL:', `/api/admin/applications?semesterId=${semesterId}`);
+      
       const response = await fetch(`/api/admin/applications?semesterId=${semesterId}`);
       const data = await response.json();
       
-      console.log('API Response status:', response.status);
-      console.log('API Response data:', data);
+      console.log('📊 API Response status:', response.status);
+      console.log('📦 API Response data:', data);
+      console.log('📈 Number of applications:', Array.isArray(data) ? data.length : 0);
+      
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('🔍 First application details:', {
+          application_id: data[0].application_id,
+          user_id: data[0].user_id,
+          first_name: data[0].first_name,
+          last_name: data[0].last_name,
+          email: data[0].email_address,
+          barangay: data[0].barangay,
+          school: data[0].school,
+          status: data[0].status
+        });
+      }
       
       if (!response.ok) {
         const errorMsg = data.details || data.error || 'Failed to fetch applications';
+        console.error('❌ API Error:', errorMsg);
         throw new Error(errorMsg);
       }
       
-      setApplications(data); 
+      if (Array.isArray(data)) {
+        console.log('✅ Successfully fetched', data.length, 'applications');
+        setApplications(data); 
+      } else {
+        console.warn('⚠️ Expected array but got:', typeof data);
+        setApplications([]);
+      }
     } catch (error) { 
-      console.error('Error fetching applications:', error); 
+      console.error('💥 Error fetching applications:', error); 
       setNotification({ 
         message: error instanceof Error ? error.message : 'Failed to fetch applications', 
         type: 'error' 
       }); 
+      setApplications([]);
     } finally { 
       setIsLoading(false); 
     } 

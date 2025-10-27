@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
 import { verifyDocumentFile } from '@/lib/ai-verification';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 /**
  * POST /api/admin/documents/verify
@@ -20,7 +25,7 @@ export async function POST(request: NextRequest) {
     console.log('Starting AI verification for document:', documentId);
 
     // Fetch document from database
-    const { data: document, error: docError } = await supabase
+    const { data: document, error: docError } = await supabaseAdmin
       .from('documents')
       .select('*')
       .eq('documents_id', documentId)
@@ -59,7 +64,7 @@ export async function POST(request: NextRequest) {
     // Fetch user data - use document.user_id to get the correct user
     console.log('Fetching user data for user_id:', document.user_id);
     let user = null;
-    const { data: userData, error: userError } = await supabase
+    const { data: userData, error: userError } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('user_id', document.user_id)
@@ -71,7 +76,7 @@ export async function POST(request: NextRequest) {
     if (userError || !user) {
       console.warn('User not found by document.user_id, trying application_details...');
       
-      const { data: appDetails } = await supabase
+      const { data: appDetails } = await supabaseAdmin
         .from('application_details')
         .select('user_id')
         .eq('user_id', document.user_id)
@@ -79,7 +84,7 @@ export async function POST(request: NextRequest) {
 
       if (appDetails) {
         // Try fetching user again with the user_id from application
-        const { data: userFromApp, error: userFromAppError } = await supabase
+        const { data: userFromApp, error: userFromAppError } = await supabaseAdmin
           .from('users')
           .select('*')
           .eq('user_id', appDetails.user_id)
@@ -116,7 +121,7 @@ export async function POST(request: NextRequest) {
 
     // Download document from Supabase Storage
     console.log('Downloading document from storage:', document.file_path);
-    const { data: fileData, error: downloadError } = await supabase.storage
+    const { data: fileData, error: downloadError } = await supabaseAdmin.storage
       .from('documents')
       .download(document.file_path);
 
@@ -176,7 +181,7 @@ export async function POST(request: NextRequest) {
     console.log('AI verification complete:', verificationResult);
 
     // Update document with verification results
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('documents')
       .update({
         ai_verified: true,
@@ -233,7 +238,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all documents for the user with verification data
-    const { data: documents, error } = await supabase
+    const { data: documents, error } = await supabaseAdmin
       .from('documents')
       .select('*')
       .eq('user_id', userId)

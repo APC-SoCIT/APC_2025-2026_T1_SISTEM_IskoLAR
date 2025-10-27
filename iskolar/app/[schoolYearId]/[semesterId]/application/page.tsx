@@ -24,22 +24,39 @@ export default function ApplicationPage() {
 
   // Handle form submission
   const handleSubmit = async () => {
+    // Prevent double submission
+    if (isSubmitting) {
+      console.log('Already submitting, ignoring click');
+      return;
+    }
+
+    console.log('=== SUBMIT CLICKED ===');
+    setIsSubmitting(true);
+
     try {
-      setIsSubmitting(true);
-      
       // Check authentication
+      console.log('Checking authentication...');
+      console.log('Supabase client initialized:', !!supabase);
+      
       const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('Auth check complete - User:', !!user, 'Error:', !!authError);
+      
       if (authError) {
+        console.error('Auth error:', authError);
         throw new Error('Authentication error: ' + authError.message);
       }
       if (!user) {
+        console.error('No user found in session');
         throw new Error('Please sign in to submit your application');
       }
 
+      console.log('✓ User authenticated:', user.id);
       console.log('Starting submission process...');
 
       // Validate required fields
+      console.log('Validating required fields...');
       const requiredFields = {
+        'Years of Residency': yearsOfResidency,
         'Junior High School Name': juniorHighName,
         'Junior High School Address': juniorHighAddress,
         'Junior High Year Started': juniorHighYearStarted,
@@ -61,12 +78,14 @@ export default function ApplicationPage() {
         .map(([key]) => key);
 
       if (missingFields.length > 0) {
+        console.error('Missing fields:', missingFields);
         throw new Error(`Please fill in the following required fields:\n${missingFields.join('\n')}`);
       }
 
-      console.log('Required fields validated...');
+      console.log('✓ Required fields validated');
 
       // Validate document uploads
+      console.log('Validating documents...');
       const requiredDocuments = [
         { name: "PSA Birth Certificate", fileName: birthCertFileName },
         { name: "Student's Voter's Certification", fileName: voterCertFileName },
@@ -82,38 +101,48 @@ export default function ApplicationPage() {
         .map(doc => doc.name);
 
       if (missingDocuments.length > 0) {
+        console.error('Missing documents:', missingDocuments);
         throw new Error(`Please upload the following required documents:\n${missingDocuments.join('\n')}`);
       }
 
-      console.log('Documents validated...');
+      console.log('✓ Documents validated');
 
-      // Check for existing application first
+      // Validate semester_id first
+      console.log('Checking semester ID:', semesterId);
+      if (!semesterId) {
+        throw new Error('Semester ID is required');
+      }
+      console.log('✓ Semester ID valid');
+
+      // Check for existing application for THIS semester
+      console.log('Checking for existing application...');
       const { data: existingApp, error: checkError } = await supabase
         .from('application_details')
         .select('appdet_id')
         .eq('user_id', user.id)
-        .single();
+        .eq('semester_id', semesterId)
+        .maybeSingle();
 
-      if (checkError && checkError.code !== 'PGRST116') {
+      if (checkError) {
+        console.error('Error checking existing application:', checkError);
         throw new Error('Error checking existing application: ' + checkError.message);
       }
 
       if (existingApp) {
-        throw new Error('You have already submitted an application');
+        console.log('Existing application found:', existingApp);
+        throw new Error('You have already submitted an application for this semester');
       }
+      
+      console.log('✓ No existing application found');
 
       // Start the database transaction
       console.log('Starting database transaction...');
 
       // 1. Save application details
-      // Validate semester_id
-      if (!semesterId) {
-        throw new Error('Semester ID is required');
-      }
-
       const applicationData = {
         user_id: user.id,
         semester_id: semesterId,
+        years_of_residency: parseInt(yearsOfResidency),
         junior_high_school_name: juniorHighName.trim(),
         junior_high_school_address: juniorHighAddress.trim(),
         junior_high_year_started: parseInt(juniorHighYearStarted),
@@ -132,19 +161,26 @@ export default function ApplicationPage() {
         father_occupation: fatherJob ? fatherJob.trim() : null
       };
 
+      console.log('Application data to insert:', applicationData);
       console.log('Saving application details...');
-      const { error: applicationError } = await supabase
+      
+      const { data: insertedApp, error: applicationError } = await supabase
         .from('application_details')
         .insert([applicationData])
         .select()
         .single();
 
       if (applicationError) {
+        console.error('Database insertion error:', applicationError);
         throw new Error('Failed to save application details: ' + applicationError.message);
       }
+      
+      console.log('Application saved successfully:', insertedApp);
 
       // 2. Upload and save documents
       console.log('Processing document uploads...');
+      console.log('Uploaded files count:', Object.keys(uploadedFiles).length);
+      console.log('Uploaded files:', Object.keys(uploadedFiles));
       
       const documentTypeMap: Record<string, string> = {
         'birthCert': 'PSA Birth Certificate',
@@ -157,10 +193,12 @@ export default function ApplicationPage() {
       };
 
       for (const [type, fileInfo] of Object.entries(uploadedFiles)) {
+        console.log(`Uploading ${type}...`);
         const timestamp = Date.now();
         const filePath = `${user.id}/${type}/${timestamp}_${fileInfo.file.name}`;
         
         // Upload file to storage
+        console.log(`Uploading file to storage: ${filePath}`);
         const { error: uploadError } = await supabase.storage
           .from('documents')
           .upload(filePath, fileInfo.file, {
@@ -169,8 +207,10 @@ export default function ApplicationPage() {
           });
 
         if (uploadError) {
+          console.error(`Upload error for ${type}:`, uploadError);
           throw new Error(`Failed to upload ${documentTypeMap[type]}: ${uploadError.message}`);
         }
+        console.log(`✓ File uploaded: ${type}`);
 
         // Save document metadata
         const documentData = {
@@ -188,18 +228,28 @@ export default function ApplicationPage() {
           .insert([documentData]);
 
         if (metadataError) {
+          console.error(`Metadata error for ${type}:`, metadataError);
           throw new Error(`Failed to save metadata for ${documentTypeMap[type]}: ${metadataError.message}`);
         }
+        console.log(`✓ Metadata saved: ${type}`);
       }
+      
+      console.log('✓ All documents processed');
 
       console.log('Application submitted successfully!');
       setHasExistingApplication(true);
-      alert('Application submitted successfully!');
+      alert('✅ Application submitted successfully! You will be redirected to the status page.');
       
     } catch (error: unknown) {
-      console.error('Error submitting application:', error);
-      alert(error instanceof Error ? error.message : 'Failed to submit application. Please try again.');
+      console.error('=== SUBMISSION ERROR ===');
+      console.error('Error details:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit application. Please try again.';
+      console.error('Error message:', errorMessage);
+      
+      alert('❌ Submission Failed:\n\n' + errorMessage);
     } finally {
+      console.log('=== SUBMISSION COMPLETE ===');
       setIsSubmitting(false);
     }
   };
@@ -669,12 +719,7 @@ export default function ApplicationPage() {
                         max="2030"
                         className={inputClassName} 
                         value={juniorHighYearStarted} 
-                        onChange={e => {
-                          const value = e.target.value;
-                          if (value === '' || (Number(value) >= 2000 && Number(value) <= 2030)) {
-                            setJuniorHighYearStarted(value);
-                          }
-                        }}
+                        onChange={e => setJuniorHighYearStarted(e.target.value)}
                         placeholder="YYYY"
                       />
                       {juniorHighYearStarted && (Number(juniorHighYearStarted) < 2000 || Number(juniorHighYearStarted) > 2030) && (
@@ -690,12 +735,7 @@ export default function ApplicationPage() {
                         max="2030"
                         className={inputClassName} 
                         value={juniorHighYearGraduated} 
-                        onChange={e => {
-                          const value = e.target.value;
-                          if (value === '' || (Number(value) >= 2000 && Number(value) <= 2030)) {
-                            setJuniorHighYearGraduated(value);
-                          }
-                        }}
+                        onChange={e => setJuniorHighYearGraduated(e.target.value)}
                         placeholder="YYYY"
                       />
                       {juniorHighYearGraduated && (Number(juniorHighYearGraduated) < 2000 || Number(juniorHighYearGraduated) > 2030) && (
@@ -721,12 +761,7 @@ export default function ApplicationPage() {
                         max="2030"
                         className={inputClassName} 
                         value={seniorHighYearStarted} 
-                        onChange={e => {
-                          const value = e.target.value;
-                          if (value === '' || (Number(value) >= 2000 && Number(value) <= 2030)) {
-                            setSeniorHighYearStarted(value);
-                          }
-                        }}
+                        onChange={e => setSeniorHighYearStarted(e.target.value)}
                         placeholder="YYYY"
                       />
                       {seniorHighYearStarted && (Number(seniorHighYearStarted) < 2000 || Number(seniorHighYearStarted) > 2030) && (
@@ -742,12 +777,7 @@ export default function ApplicationPage() {
                         max="2030"
                         className={inputClassName} 
                         value={seniorHighYearGraduated} 
-                        onChange={e => {
-                          const value = e.target.value;
-                          if (value === '' || (Number(value) >= 2000 && Number(value) <= 2030)) {
-                            setSeniorHighYearGraduated(value);
-                          }
-                        }}
+                        onChange={e => setSeniorHighYearGraduated(e.target.value)}
                         placeholder="YYYY"
                       />
                       {seniorHighYearGraduated && (Number(seniorHighYearGraduated) < 2000 || Number(seniorHighYearGraduated) > 2030) && (
