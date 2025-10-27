@@ -566,7 +566,7 @@ export default function DashboardPage() {
                   <h3 className="text-lg font-bold text-purple-900">Super Admin Tools</h3>
                 </div>
                 <p className="text-sm text-purple-700 mb-4">
-                  Manage administrators, system settings, and perform destructive operations.
+                  Manage administrators and platform-level configuration. Application and user management are available in their respective sections.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <a
