@@ -47,9 +47,10 @@ interface Props {
   onClose: () => void;
   onSuccess?: () => void;
   release?: Release;
+  semesterId?: string;
 }
 
-export default function ScheduleReleaseModal({ onClose, onSuccess, release }: Props) {
+export default function ScheduleReleaseModal({ onClose, onSuccess, release, semesterId }: Props) {
   const [formData, setFormData] = useState({
     releasetype: '',
     releasedate: '',
@@ -90,7 +91,8 @@ export default function ScheduleReleaseModal({ onClose, onSuccess, release }: Pr
           numberofrecipients: parseInt(formData.numberofrecipients),
           barangay: formData.barangay || null,
           location: formData.location || null,
-          additionalnotes: formData.additionalnotes || null
+          additionalnotes: formData.additionalnotes || null,
+          semester_id: semesterId || release?.semester_id
         })
       });
       

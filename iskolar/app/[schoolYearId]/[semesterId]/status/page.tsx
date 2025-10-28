@@ -29,6 +29,19 @@ interface ApplicationStatus {
   updated_at: string;
 }
 
+interface Release {
+  releaseid: number;
+  releasetype: string;
+  releasedate: string;
+  releasetime: string;
+  barangay: string | null;
+  location: string | null;
+  amountperstudent: number;
+  numberofrecipients: number;
+  additionalnotes: string | null;
+  isArchived: boolean;
+}
+
 export default function StatusPage() {
   const params = useParams();
   const router = useRouter();
@@ -40,6 +53,9 @@ export default function StatusPage() {
   const [schoolYear, setSchoolYear] = useState<SchoolYear | null>(null);
   const [semester, setSemester] = useState<Semester | null>(null);
   const [application, setApplication] = useState<ApplicationStatus | null>(null);
+  const [releases, setReleases] = useState<Release[]>([]);
+  const [userBarangay, setUserBarangay] = useState<string | null>(null);
+  const [loadingReleases, setLoadingReleases] = useState(false);
 
   // Helper function to format semester name
   const formatSemesterName = (name: string) => {
@@ -47,6 +63,50 @@ export default function StatusPage() {
     if (name === 'SECOND') return 'Second Semester';
     return name;
   };
+
+  // Fetch releases for user's barangay
+  const fetchReleasesForBarangay = useCallback(async (barangay: string) => {
+    setLoadingReleases(true);
+    try {
+      console.log('Fetching releases for barangay:', barangay);
+      
+      // Try exact match first
+      let { data, error } = await supabase
+        .from('releases')
+        .select('*')
+        .ilike('barangay', barangay)
+        .eq('isArchived', false)
+        .gte('releasedate', new Date().toISOString().split('T')[0])
+        .order('releasedate', { ascending: true })
+        .order('releasetime', { ascending: true });
+
+      // If no results and barangay contains "Village", try with just the first part
+      if ((!data || data.length === 0) && barangay.includes('Village')) {
+        const barangayBase = barangay.split(' Village')[0];
+        console.log('Trying alternative search with:', barangayBase);
+        
+        ({ data, error } = await supabase
+          .from('releases')
+          .select('*')
+          .ilike('barangay', `%${barangayBase}%`)
+          .eq('isArchived', false)
+          .gte('releasedate', new Date().toISOString().split('T')[0])
+          .order('releasedate', { ascending: true })
+          .order('releasetime', { ascending: true }));
+      }
+
+      if (error) {
+        console.error('Error fetching releases:', error);
+      } else {
+        console.log('Releases found:', data);
+        setReleases(data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching releases:', err);
+    } finally {
+      setLoadingReleases(false);
+    }
+  }, []);
 
   const validateAndFetchData = useCallback(async () => {
     try {
@@ -111,6 +171,25 @@ export default function StatusPage() {
 
         if (appData) {
           setApplication(appData);
+          
+          // If approved, fetch user's barangay and releases
+          if (appData.status === 'approved') {
+            const { data: userData, error: userError } = await supabase
+              .from('users')
+              .select('barangay')
+              .eq('user_id', user.id)
+              .single();
+
+            console.log('User barangay data:', userData);
+            console.log('User barangay error:', userError);
+
+            if (!userError && userData?.barangay) {
+              setUserBarangay(userData.barangay);
+              await fetchReleasesForBarangay(userData.barangay);
+            } else {
+              console.log('No barangay found or error occurred');
+            }
+          }
         }
       }
 
@@ -120,7 +199,7 @@ export default function StatusPage() {
       setError('An unexpected error occurred');
       setLoading(false);
     }
-  }, [schoolYearId, semesterId]);
+  }, [schoolYearId, semesterId, fetchReleasesForBarangay]);
 
   useEffect(() => {
     validateAndFetchData();
@@ -305,6 +384,105 @@ export default function StatusPage() {
               </div>
             </div>
           </div>
+
+          {/* Disbursement Schedule Section - Only show for approved applications */}
+          {application.status === 'approved' && (
+            <div className="bg-white rounded-lg shadow-sm p-8 mb-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-10 w-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">Disbursement Schedule</h3>
+                  <p className="text-sm text-gray-500">
+                    {userBarangay ? `Schedule for ${userBarangay}` : 'Loading schedule information...'}
+                  </p>
+                </div>
+              </div>
+
+              {loadingReleases ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : releases.length > 0 ? (
+                <div className="space-y-4">
+                  {releases.map((release) => (
+                    <div 
+                      key={release.releaseid}
+                      className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{release.releasetype}</h4>
+                          {release.location && (
+                            <p className="text-sm text-gray-600 mt-1">
+                              <svg className="inline h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              {release.location}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-green-600">
+                            ₱{release.amountperstudent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                          <div className="text-xs text-gray-500">per student</div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100">
+                        <div>
+                          <p className="text-xs text-gray-500">Date</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {new Date(release.releasedate).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500">Time</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {new Date(`2000-01-01T${release.releasetime}`).toLocaleTimeString('en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              hour12: true
+                            })}
+                          </p>
+                        </div>
+                      </div>
+
+                      {release.additionalnotes && (
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <p className="text-xs text-gray-500 mb-1">Additional Notes</p>
+                          <p className="text-sm text-gray-700">{release.additionalnotes}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="mx-auto h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                    <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h4 className="text-sm font-medium text-gray-900 mb-1">No Disbursement Schedule Yet</h4>
+                  <p className="text-sm text-gray-500">
+                    {userBarangay 
+                      ? `There is no scheduled disbursement for ${userBarangay} at this time. Please check back later.`
+                      : 'Disbursement schedule information is not available yet. Please check back later.'}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex justify-between items-center">

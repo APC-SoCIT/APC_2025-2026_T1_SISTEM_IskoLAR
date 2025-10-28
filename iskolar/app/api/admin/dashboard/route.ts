@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
+
+// Use service role client to bypass RLS for admin operations
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+// Regular client for non-admin operations (kept for compatibility)
+const supabase = supabaseAdmin;
 
 export async function GET(request: NextRequest) {
   try {
@@ -86,14 +95,17 @@ export async function GET(request: NextRequest) {
       applicationsByStatus.submitted + 
       applicationsByStatus.under_review;
 
-    // Fetch total users count from auth.users
+    // Fetch total users count from users table
     const { count: totalUsers, error: usersError } = await supabase
       .from('users')
-      .select('*', { count: 'exact', head: true });
+      .select('user_id', { count: 'exact', head: true });
 
     if (usersError) {
       console.error('[Dashboard API] Error fetching users count:', usersError);
+      console.error('[Dashboard API] Users error details:', JSON.stringify(usersError, null, 2));
     }
+    
+    console.log('[Dashboard API] Total users count:', totalUsers || 0);
 
     // Fetch recent applications (last 10) with user details
     // Using the same pattern as the applications route

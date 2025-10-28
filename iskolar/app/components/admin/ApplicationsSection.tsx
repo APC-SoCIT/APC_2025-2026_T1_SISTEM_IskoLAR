@@ -186,6 +186,10 @@ export default function ApplicationsSection({ schoolYears }: ApplicationsSection
                                 <div className="h-6 w-10 bg-gray-200 rounded"></div>
                                 <div className="text-xs text-gray-500 mt-1">Pending</div>
                               </div>
+                              <div className="text-center">
+                                <div className="h-6 w-10 bg-gray-200 rounded"></div>
+                                <div className="text-xs text-gray-500 mt-1">Rejected</div>
+                              </div>
                             </div>
                           ) : stats ? (
                             <div className="flex items-center gap-4 px-4 py-2 bg-white rounded-lg border border-gray-200">
@@ -201,6 +205,10 @@ export default function ApplicationsSection({ schoolYears }: ApplicationsSection
                               <div className="text-center">
                                 <div className="text-lg font-semibold text-yellow-600">{stats.pending_count}</div>
                                 <div className="text-xs text-gray-500">Pending</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-lg font-semibold text-red-600">{stats.rejected_count}</div>
+                                <div className="text-xs text-gray-500">Rejected</div>
                               </div>
                             </div>
                           ) : null}

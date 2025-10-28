@@ -291,7 +291,8 @@ export default function ApplicationPage() {
             .from('application_details')
             .select('*')
             .eq('user_id', user.id)
-            .single(),
+            .eq('semester_id', semesterId) // FIXED: Check for application in THIS semester only
+            .maybeSingle(),
           supabase
             .from('users')
             .select('*')
@@ -303,8 +304,9 @@ export default function ApplicationPage() {
             .eq('user_id', user.id)
         ]);
 
-        // Check for existing application
+        // Check for existing application FOR THIS SEMESTER
         if (!applicationResult.error && applicationResult.data) {
+          console.log('User already has an application for this semester:', applicationResult.data);
           setHasExistingApplication(true);
           setIsLoadingData(false);
           return;
@@ -364,7 +366,7 @@ export default function ApplicationPage() {
     }
 
     fetchUserData();
-  }, []);
+  }, [semesterId]); // Added semesterId dependency since we use it in the query
 
   // File validation and upload
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes

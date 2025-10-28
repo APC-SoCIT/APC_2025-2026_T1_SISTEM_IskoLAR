@@ -3,7 +3,24 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import BrandedLoader from "@/app/components/ui/BrandedLoader";
 import { XMarkIcon } from '@heroicons/react/24/solid';
-import { AdjustmentsHorizontalIcon, UserIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { AdjustmentsHorizontalIcon, UserIcon, ArrowLeftIcon, PlusIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import type { Release } from '@/lib/types/release';
+import dynamic from 'next/dynamic';
+
+const ScheduleReleaseModal = dynamic(
+  () => import('@/app/components/admin/releases/ScheduleReleaseModal'),
+  { ssr: false }
+);
+
+const DeleteReleaseModal = dynamic(
+  () => import('@/app/components/admin/releases/DeleteReleaseModal'),
+  { ssr: false }
+);
+
+const ArchiveReleaseModal = dynamic(
+  () => import('@/app/components/admin/releases/ArchiveReleaseModal'),
+  { ssr: false }
+);
 
 // --- TYPE DEFINITIONS ---
 type Application = {
@@ -49,6 +66,29 @@ export default function SemesterApplicationsPage() {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
+
+  // Releases state
+  const [releases, setReleases] = useState<Release[]>([]);
+  const [isLoadingReleases, setIsLoadingReleases] = useState(true);
+  const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
+  const [budget, setBudget] = useState<number>(0);
+  const [budgetInput, setBudgetInput] = useState<string>("");
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [editingRelease, setEditingRelease] = useState<Release | null>(null);
+  const [selectedRelease, setSelectedRelease] = useState<Release | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [archivingRelease, setArchivingRelease] = useState<Release | null>(null);
+  const [isUnarchiving, setIsUnarchiving] = useState(false);
+
+  // Calculate total released amount (only for active releases)
+  const totalReleased = useMemo(() => {
+    return releases
+      .filter(r => !r.isArchived)
+      .reduce((sum, r) => sum + (r.amountperstudent * r.numberofrecipients), 0);
+  }, [releases]);
+
+  const remainingBudget = budget - totalReleased;
 
   const fetchApplications = useCallback(async () => { 
     setIsLoading(true); 
@@ -101,7 +141,70 @@ export default function SemesterApplicationsPage() {
     } 
   }, [semesterId]);
 
+  const fetchReleases = useCallback(async () => {
+    try {
+      setIsLoadingReleases(true);
+      const response = await fetch(`/api/releases?semesterId=${semesterId}`, {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      if (!response.ok) throw new Error('Failed to fetch releases');
+      const data = await response.json();
+      setReleases(data);
+    } catch (error) {
+      console.error('Error fetching releases:', error);
+    } finally {
+      setIsLoadingReleases(false);
+    }
+  }, [semesterId]);
+
+  const handleArchive = async (releaseId: number, archive: boolean) => {
+    try {
+      const response = await fetch(`/api/releases/${releaseId}/archive`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isArchived: archive })
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        console.error('Server response:', responseData);
+        throw new Error(responseData.error || `Failed to ${archive ? 'archive' : 'unarchive'} release`);
+      }
+
+      await fetchReleases();
+    } catch (error) {
+      console.error('Archive operation failed:', error);
+      if (error instanceof Error) {
+        setNotification({
+          message: `Failed to ${archive ? 'archive' : 'unarchive'} release: ${error.message}`,
+          type: 'error'
+        });
+      }
+    }
+  };
+
+  const handleDeleteRelease = async (releaseId: number) => {
+    try {
+      const response = await fetch(`/api/releases/${releaseId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete release');
+      await fetchReleases();
+      setNotification({ message: 'Release deleted successfully', type: 'success' });
+    } catch (error) {
+      console.error('Error deleting release:', error);
+      setNotification({ message: 'Failed to delete release', type: 'error' });
+    }
+  };
+
   useEffect(() => { fetchApplications(); }, [fetchApplications]);
+  useEffect(() => { fetchReleases(); }, [fetchReleases]);
   useEffect(() => { 
     if (notification) { 
       const timer = setTimeout(() => { setNotification(null); }, 3000); 
@@ -375,6 +478,286 @@ export default function SemesterApplicationsPage() {
           </div>
         )}
       </div>
+
+      {/* Releases Section */}
+      <div className="mt-8 space-y-6">
+        <div className="flex items-center justify-end">
+          <button
+            onClick={() => {
+              setEditingRelease(null);
+              setShowScheduleModal(true);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <PlusIcon className="h-5 w-5" />
+            Schedule Release
+          </button>
+        </div>
+
+        {/* Budget Input Section */}
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">Semester Budget:</h3>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-40"
+                placeholder="Enter budget (₱)"
+                value={budgetInput}
+                onChange={e => setBudgetInput(e.target.value)}
+              />
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                onClick={() => {
+                  const val = parseFloat(budgetInput);
+                  if (!isNaN(val) && val >= 0) setBudget(val);
+                }}
+              >
+                Set Budget
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 rounded-lg bg-gray-50">
+              <div className="text-sm text-gray-500">Total Released</div>
+              <div className="mt-1 text-2xl font-semibold text-blue-600">
+                {budget > 0 ? (
+                  `₱${totalReleased.toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}`
+                ) : (
+                  <span className="text-gray-400">—</span>
+                )}
+              </div>
+              <div className="text-sm text-gray-500 mt-1">This semester</div>
+            </div>
+
+            <div className="p-4 rounded-lg bg-gray-50">
+              <div className="text-sm text-gray-500">Remaining Budget</div>
+              <div className={`mt-1 text-2xl font-semibold ${budget === 0 ? 'text-gray-400' : remainingBudget < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                {budget > 0 ? (
+                  `₱${remainingBudget.toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}`
+                ) : (
+                  <span>—</span>
+                )}
+              </div>
+              <div className="text-sm text-gray-500 mt-1">Available funds</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Releases Table */}
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-4">
+                <div className="flex space-x-1 rounded-lg bg-gray-100 p-0.5">
+                  <button
+                    onClick={() => setActiveTab('active')}
+                    className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium ${
+                      activeTab === 'active' 
+                        ? 'bg-white text-gray-900 shadow-sm' 
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Active
+                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-600">
+                      {releases.filter(r => !r.isArchived).length}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('archived')}
+                    className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium ${
+                      activeTab === 'archived' 
+                        ? 'bg-white text-gray-900 shadow-sm' 
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Archived
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                      {releases.filter(r => r.isArchived).length}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {isLoadingReleases ? (
+            <div className="px-6 py-4 text-center text-gray-500">Loading releases...</div>
+          ) : releases.filter(r => activeTab === 'active' ? !r.isArchived : r.isArchived).length === 0 ? (
+            <div className="text-center py-12">
+              <CalendarIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No {activeTab === 'active' ? 'Active' : 'Archived'} Releases</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {activeTab === 'active' ? 'Get started by scheduling a new release.' : 'No releases have been archived yet.'}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TYPE</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DATE & TIME</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">LOCATION</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">AMOUNT PER PERSON (₱)</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RECIPIENTS</th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {releases
+                    .filter(r => activeTab === 'active' ? !r.isArchived : r.isArchived)
+                    .sort((a, b) => {
+                      const dateA = new Date(`${a.releasedate}T${a.releasetime}`);
+                      const dateB = new Date(`${b.releasedate}T${b.releasetime}`);
+                      return dateB.getTime() - dateA.getTime();
+                    })
+                    .map((release) => {
+                    const releaseDateTime = new Date(`${release.releasedate}T${release.releasetime}`);
+                    const isPast = new Date() > releaseDateTime;
+
+                    return (
+                      <tr key={release.releaseid} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <div className="text-sm font-medium text-gray-900 capitalize">{release.releasetype}</div>
+                            {isPast && activeTab === 'active' && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">Done</span>
+                            )}
+                            {activeTab === 'archived' && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">Archived</span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{release.releasedate}</div>
+                          <div className="text-sm text-gray-500">{release.releasetime}</div>
+                        </td>
+
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{release.location || '—'}</div>
+                          {release.barangay && <div className="text-sm text-gray-500">{release.barangay}</div>}
+                        </td>
+
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {release.amountperstudent.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        </td>
+
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{release.numberofrecipients}</td>
+
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-yellow-600 bg-yellow-50 text-xs font-medium rounded hover:bg-yellow-100 transition-colors"
+                              onClick={() => {
+                                setEditingRelease(release);
+                                setShowScheduleModal(true);
+                              }}
+                            >
+                              Edit
+                            </button>
+                            {activeTab === 'active' ? (
+                              <button
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-gray-600 bg-gray-50 text-xs font-medium rounded hover:bg-gray-100 transition-colors"
+                                onClick={() => {
+                                  setArchivingRelease(release);
+                                  setIsUnarchiving(false);
+                                  setShowArchiveModal(true);
+                                }}
+                              >
+                                Archive
+                              </button>
+                            ) : (
+                              <button
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-blue-600 bg-blue-50 text-xs font-medium rounded hover:bg-blue-100 transition-colors"
+                                onClick={() => {
+                                  setArchivingRelease(release);
+                                  setIsUnarchiving(true);
+                                  setShowArchiveModal(true);
+                                }}
+                              >
+                                Unarchive
+                              </button>
+                            )}
+                            <button
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-red-600 bg-red-50 text-xs font-medium rounded hover:bg-red-100 transition-colors"
+                              onClick={() => {
+                                setSelectedRelease(release);
+                                setShowDeleteModal(true);
+                              }}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Modals */}
+      {showScheduleModal && (
+        <ScheduleReleaseModal
+          onClose={() => {
+            setShowScheduleModal(false);
+            setEditingRelease(null);
+          }}
+          release={editingRelease || undefined}
+          semesterId={semesterId}
+          onSuccess={() => {
+            fetchReleases();
+            setShowScheduleModal(false);
+            setEditingRelease(null);
+            setNotification({ message: 'Release scheduled successfully', type: 'success' });
+          }}
+        />
+      )}
+
+      {showDeleteModal && selectedRelease && (
+        <DeleteReleaseModal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setSelectedRelease(null);
+          }}
+          onConfirm={async () => {
+            if (selectedRelease) {
+              await handleDeleteRelease(selectedRelease.releaseid);
+              setShowDeleteModal(false);
+              setSelectedRelease(null);
+            }
+          }}
+          release={selectedRelease}
+        />
+      )}
+
+      {showArchiveModal && archivingRelease && (
+        <ArchiveReleaseModal
+          isOpen={showArchiveModal}
+          onClose={() => {
+            setShowArchiveModal(false);
+            setArchivingRelease(null);
+          }}
+          onConfirm={async () => {
+            if (archivingRelease) {
+              await handleArchive(archivingRelease.releaseid, !isUnarchiving);
+              setShowArchiveModal(false);
+              setArchivingRelease(null);
+            }
+          }}
+          release={archivingRelease}
+          isUnarchiving={isUnarchiving}
+        />
+      )}
 
       <ApplicationFilterModal 
         isOpen={isFilterModalOpen} 

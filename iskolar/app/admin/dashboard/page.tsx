@@ -456,10 +456,9 @@ export default function DashboardPage() {
         1. TOTAL APPLICATIONS - Shows overall program scale and growth
         2. NEEDS REVIEW - Most urgent action item for admin (prevents backlog)
         3. APPROVED - Success metric (program effectiveness, conversion rate)
-        4. AVG PROCESSING TIME - Efficiency metric (how fast applications are handled)
-        5. REGISTERED USERS - Shows reach and potential applicant pool
+        4. REGISTERED USERS - Shows reach and potential applicant pool
       */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Total Applications - Most Critical */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start">
@@ -508,37 +507,13 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Average Processing Time */}
-        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-xl shadow-sm border border-blue-200 hover:shadow-md transition-shadow">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-medium text-blue-800">Avg Processing Time</p>
-              <p className="text-3xl font-bold text-blue-900 mt-2">
-                {stats.averageProcessingTime !== undefined && stats.averageProcessingTime > 0
-                  ? `${stats.averageProcessingTime.toFixed(1)}`
-                  : '—'}
-              </p>
-              <p className="text-xs text-blue-700 mt-1 font-medium">
-                {stats.averageProcessingTime !== undefined && stats.averageProcessingTime > 0
-                  ? 'days to process'
-                  : 'No completed apps'}
-              </p>
-            </div>
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
         {/* Registered Users */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-gray-600">Registered Users</p>
               <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalUsers}</p>
-              <p className="text-xs text-gray-500 mt-1">Total scholars</p>
+              <p className="text-xs text-gray-500 mt-1">Total users</p>
             </div>
             <div className="p-3 bg-purple-50 rounded-lg">
               <CalendarDaysIcon className="w-6 h-6 text-purple-600" />

@@ -186,24 +186,32 @@ export default function ProfilePage() {
           if (profileError.code === 'PGRST116') { // PostgreSQL error for no rows
             console.log('User profile does not exist, creating a new one');
             
-            // Create a basic profile for the user with required fields
+            // Get registration data from user metadata (if available)
+            const metadata = user.user_metadata || {};
+            console.log('User metadata:', metadata);
+            
+            // Create profile using metadata from registration
             const newProfile = {
               user_id: user.id,
               email_address: user.email || '',
-              first_name: user.user_metadata?.first_name || '',
-              last_name: user.user_metadata?.last_name || '',
-              gender: '',
-              birthdate: new Date().toISOString(),
-              mobile_number: '',
-              address_line1: '',
-              barangay: '',
-              city: '',
-              zip_code: '',
-              college_university: '',
-              college_course: '',
+              first_name: metadata.first_name || '',
+              last_name: metadata.last_name || '',
+              middle_name: metadata.middle_name || null,
+              gender: metadata.gender || '',
+              birthdate: metadata.birthdate || new Date().toISOString().split('T')[0],
+              mobile_number: metadata.mobile_number || '',
+              address_line1: metadata.address_line1 || '',
+              address_line2: metadata.address_line2 || null,
+              barangay: metadata.barangay || '',
+              city: metadata.city || 'Makati City',
+              zip_code: metadata.zip_code || '',
+              college_university: metadata.college_university || '',
+              college_course: metadata.college_course || '',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             };
+            
+            console.log('Creating profile with data:', newProfile);
             
             // Insert the new profile
             const { data: createdProfile, error: createError } = await supabase
@@ -217,6 +225,8 @@ export default function ProfilePage() {
               setError('Failed to create your profile. Please contact support.');
               return;
             }
+            
+            console.log('Profile created successfully:', createdProfile);
             
             // Use the newly created profile
             profile = createdProfile;

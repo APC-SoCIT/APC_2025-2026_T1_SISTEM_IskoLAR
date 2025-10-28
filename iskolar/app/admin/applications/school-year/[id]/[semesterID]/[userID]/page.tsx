@@ -237,12 +237,57 @@ export default function ApplicationReviewPage() {
 
   return (
     <div className="px-10 pt-8 pb-6 max-w-[1600px] mx-auto space-y-6">
-      {/* Notification */}
+      {/* Floating Notification Banner */}
       {notification && (
-        <div className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
-          notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-        }`}>
-          {notification.message}
+        <div className="fixed top-4 left-1/2 z-50 animate-slideDown">
+          <div className="transform -translate-x-1/2">
+            <div className="mx-4 inline-block min-w-[280px] max-w-[90vw]">
+              <div className={`p-4 rounded-lg border shadow-lg transition-all duration-200 ${
+                notification.type === 'success' 
+                  ? 'bg-green-50 border-green-200' 
+                  : 'bg-red-50 border-red-200'
+              }`}>
+                <div className="flex items-start">
+                  <div className="shrink-0">
+                    {notification.type === 'success' ? (
+                      <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="ml-3">
+                    <p className={`text-sm font-medium whitespace-normal wrap-break-word ${
+                      notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+                    }`}>
+                      {notification.message}
+                    </p>
+                  </div>
+                  <div className="ml-auto pl-3">
+                    <div className="-mx-1.5 -my-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setNotification(null)}
+                        className={`inline-flex rounded-md p-1.5 focus:outline-none ${
+                          notification.type === 'success' 
+                            ? 'text-green-500 hover:bg-green-100' 
+                            : 'text-red-500 hover:bg-red-100'
+                        }`}
+                      >
+                        <span className="sr-only">Dismiss</span>
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

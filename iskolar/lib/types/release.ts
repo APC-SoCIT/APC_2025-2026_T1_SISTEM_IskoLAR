@@ -9,4 +9,5 @@ export interface Release {
   numberofrecipients: number;
   additionalnotes: string | null;
   isArchived: boolean;
+  semester_id: string;
 }

@@ -354,37 +354,37 @@ export default function SignUpPage() {
  
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-       
+
         // Form validation for required fields
         if (!firstName || !lastName || !email || !password || !confirmPassword || !birthday || 
             !gender || !mobile || !college || !course || !addressLine1 || !barangay || !city || !zipCode) {
             setError("Please fill in all required fields.");
             return;
         }
- 
+
         if (password !== confirmPassword) {
             setError("Passwords do not match.");
             return;
         }
- 
+
         if (!agree) {
             setError("Please agree to the Data Privacy Act.");
             return;
         }
-        
+
         // Validate ZIP code
         if (!validateZipCode(zipCode)) {
             setError("ZIP code must be exactly 4 digits.");
             return;
         }
- 
+
         setIsLoading(true);
         setError("");
- 
+
         try {
             const supabase = createClientComponentClient();
 
-            // First, create the user in Supabase Auth
+            // Store all registration data in user metadata
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email,
                 password,
@@ -392,6 +392,17 @@ export default function SignUpPage() {
                     data: {
                         first_name: firstName,
                         last_name: lastName,
+                        middle_name: middleName || null,
+                        gender: gender,
+                        birthdate: birthday,
+                        mobile_number: mobile,
+                        address_line1: addressLine1,
+                        address_line2: addressLine2 || null,
+                        barangay: barangay,
+                        city: city,
+                        zip_code: zipCode,
+                        college_university: college,
+                        college_course: course,
                     },
                     emailRedirectTo: `${window.location.origin}/auth/callback`
                 },
@@ -409,48 +420,13 @@ export default function SignUpPage() {
                 throw new Error('Failed to create user account');
             }
 
-            // Prepare request payload for users table
-            const userPayload = {
-                user_id: authData.user.id,
-                email_address: email,
-                first_name: firstName,
-                last_name: lastName,
-                middle_name: middleName || null,
-                gender,
-                birthdate: birthday,
-                mobile_number: mobile,
-                address_line1: addressLine1,
-                address_line2: addressLine2 || null,
-                barangay: barangay,
-                city: city,
-                zip_code: zipCode,
-                college_university: college,
-                college_course: course
-            };
-            
-            // Insert the user data into the users table
-            const { error: insertError } = await supabase
-                .from('users')
-                .insert([userPayload]);
-
-            if (insertError) {
-                // Check for specific database constraint violations
-                if (insertError.message?.includes('users_contact_number_key')) {
-                    throw new Error('This mobile number is already registered. Please use a different number.');
-                } else if (insertError.message?.includes('users_email_key')) {
-                    throw new Error('This email address is already registered. Please use a different email.');
-                } else {
-                    throw new Error(insertError.message);
-                }
-            }
-
             // Show success message
-            setSuccess("Please check your email for confirmation.");
-            
+            setSuccess("Registration successful! Please check your email for confirmation. After verifying your email and signing in, your profile will be automatically created.");
+
             // Set a timeout for redirection
             setTimeout(() => {
                 window.location.href = '/auth/sign-in';
-            }, 3000);
+            }, 4000);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Registration failed');
         } finally {
@@ -460,17 +436,47 @@ export default function SignUpPage() {
  
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#e3f0ff] via-[#f5f7fa] to-[#e3f0ff] py-16">
+            {/* Floating Success Banner at Top Center */}
+            {success && (
+                <div className="fixed top-4 left-1/2 z-50 animate-slideDown">
+                    <div className="transform -translate-x-1/2">
+                        <div className="mx-4 inline-block min-w-[280px] max-w-[90vw]">
+                            <div className="p-4 rounded-lg bg-green-50 border border-green-200 shadow-lg transition-all duration-200">
+                                <div className="flex items-start">
+                                    <div className="flex-shrink-0">
+                                        <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div className="ml-3">
+                                        <p className="text-sm font-medium text-green-800 whitespace-normal break-words">{success}</p>
+                                    </div>
+                                    <div className="ml-auto pl-3">
+                                        <div className="-mx-1.5 -my-1.5">
+                                            <button
+                                                type="button"
+                                                onClick={() => setSuccess("")}
+                                                className="inline-flex rounded-md p-1.5 text-green-500 hover:bg-green-100 focus:outline-none"
+                                            >
+                                                <span className="sr-only">Dismiss</span>
+                                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* Top Spacer */}
             <div className="h-8" />
             {/* Card */}
-            <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center">
+            <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 flex flex-col items-center relative">
                 <h2 className="text-2xl font-bold mb-1 text-gray-900">Welcome</h2>
                 <p className="text-gray-500 mb-6">Create your account</p>
-                {success && (
-                    <div className="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-green-600 text-sm">
-                        {success}
-                    </div>
-                )}
                 <form className="w-full flex flex-col gap-4">
                     {/* First Name */}
                     <div>
@@ -994,35 +1000,6 @@ export default function SignUpPage() {
                                 <p className="text-center text-gray-500">For more information, visit the <a href="https://privacy.gov.ph/data-privacy-act/" target="_blank" rel="noopener noreferrer" className="text-[#1976D2] underline">National Privacy Commission</a> website.</p>
                             </div>
                         </div>
-                        <style jsx>{`
-                            @keyframes fadeIn {
-                                from { opacity: 0; }
-                                to { opacity: 1; }
-                            }
-                            .animate-fadeIn {
-                                animation: fadeIn 0.2s ease;
-                            }
-                            @keyframes scaleIn {
-                                from { opacity: 0; transform: scale(0.95); }
-                                to { opacity: 1; transform: scale(1); }
-                            }
-                            .animate-scaleIn {
-                                animation: scaleIn 0.25s cubic-bezier(0.4,0,0.2,1);
-                            }
-                            @keyframes slideDown {
-                                from { 
-                                    opacity: 0;
-                                    transform: translateY(-1rem) translateX(-50%);
-                                }
-                                to { 
-                                    opacity: 1;
-                                    transform: translateY(0) translateX(-50%);
-                                }
-                            }
-                            .animate-slideDown {
-                                animation: slideDown 0.3s ease-out forwards;
-                            }
-                        `}</style>
                     </div>
                 )}
                 <div className="mt-4 text-sm text-gray-500">
@@ -1033,6 +1010,37 @@ export default function SignUpPage() {
             {/* Copyright */}
             <div className="mt-8 text-xs text-gray-400">© 2025 IskoLAR</div>
             <div className="h-8" /> {/* Extra space at the bottom */}
+            
+            {/* Global Styles for Animations */}
+            <style jsx>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                .animate-fadeIn {
+                    animation: fadeIn 0.2s ease;
+                }
+                @keyframes scaleIn {
+                    from { opacity: 0; transform: scale(0.95); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+                .animate-scaleIn {
+                    animation: scaleIn 0.25s cubic-bezier(0.4,0,0.2,1);
+                }
+                @keyframes slideDown {
+                    from { 
+                        opacity: 0;
+                        transform: translateY(-1rem) translateX(-50%);
+                    }
+                    to { 
+                        opacity: 1;
+                        transform: translateY(0) translateX(-50%);
+                    }
+                }
+                .animate-slideDown {
+                    animation: slideDown 0.3s ease-out forwards;
+                }
+            `}</style>
         </div>
     );
 }

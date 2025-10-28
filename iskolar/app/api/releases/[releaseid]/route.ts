@@ -11,18 +11,25 @@ export async function PUT(
     const json = await request.json();
     const { releaseid } = await context.params;
 
+    const updateData: Record<string, unknown> = {
+      releasetype: json.releasetype,
+      releasedate: json.releasedate,
+      releasetime: json.releasetime,
+      barangay: json.barangay,
+      location: json.location,
+      amountperstudent: json.amountperstudent,
+      numberofrecipients: json.numberofrecipients,
+      additionalnotes: json.additionalnotes
+    };
+
+    // Include semester_id if provided (for consistency, though it shouldn't change)
+    if (json.semester_id) {
+      updateData.semester_id = json.semester_id;
+    }
+
     const { error } = await supabase
       .from('releases')
-      .update({
-        releasetype: json.releasetype,
-        releasedate: json.releasedate,
-        releasetime: json.releasetime,
-        barangay: json.barangay,
-        location: json.location,
-        amountperstudent: json.amountperstudent,
-        numberofrecipients: json.numberofrecipients,
-        additionalnotes: json.additionalnotes
-      })
+      .update(updateData)
       .eq('releaseid', releaseid);
 
     if (error) throw error;

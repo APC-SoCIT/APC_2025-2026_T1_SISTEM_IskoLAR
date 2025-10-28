@@ -10,7 +10,7 @@ interface AddSemesterModalProps {
 
 export default function AddSemesterModal({ onClose, onAdd }: AddSemesterModalProps) {
   const params = useParams();
-  const [name, setName] = useState('');
+  const [name, setName] = useState('FIRST');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -84,15 +84,17 @@ export default function AddSemesterModal({ onClose, onAdd }: AddSemesterModalPro
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">
               Semester Name
             </label>
-            <input
-              type="text"
+            <select
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-4 py-2.5 text-gray-900 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              placeholder="e.g., First Semester"
               required
-            />
+            >
+              <option value="FIRST">First Semester</option>
+              <option value="SECOND">Second Semester</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">Only FIRST and SECOND are allowed.</p>
           </div>
 
           <div className="space-y-1.5">
