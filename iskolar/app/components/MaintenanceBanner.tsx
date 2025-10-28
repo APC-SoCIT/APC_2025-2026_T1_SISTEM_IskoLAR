@@ -44,10 +44,15 @@ export default function MaintenanceBanner() {
       
       // User is super admin if they're in admin table and their role name is 'super_admin'
       // The role might be an object or array depending on the query
-      const roleName = Array.isArray(admin?.role) ? admin?.role[0]?.name : (admin?.role as any)?.name;
+      type RoleType = { name?: string } | null | undefined;
+      let roleName: string | undefined;
+      if (Array.isArray(admin?.role)) {
+        roleName = admin.role[0]?.name;
+      } else {
+        roleName = (admin?.role as RoleType)?.name;
+      }
       const isSuperAdminRole = roleName === 'super_admin';
       console.log('✅ Is Super Admin:', isSuperAdminRole, '| Role Name:', roleName);
-      
       setIsSuperAdmin(isSuperAdminRole);
     } catch (error) {
       console.error('❌ Failed to check user role:', error);

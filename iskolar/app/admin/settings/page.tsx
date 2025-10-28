@@ -38,11 +38,23 @@ interface Settings {
 interface AuditLog {
   audit_id: string;
   key: string;
-  old_value: any;
-  new_value: any;
+  old_value: unknown;
+  new_value: unknown;
   changed_by: string;
   changed_by_email: string;
   changed_at: string;
+}
+
+interface SchoolYear {
+  id: string;
+  academic_year: string;
+}
+
+interface Semester {
+  id: string;
+  name: string;
+  applications_open: boolean;
+  school_year: SchoolYear | SchoolYear[];
 }
 
 export default function SettingsPage() {
@@ -53,8 +65,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<Settings | null>(null);
-  const [currentSchoolYear, setCurrentSchoolYear] = useState<any>(null);
-  const [currentSemester, setCurrentSemester] = useState<any>(null);
+  const [currentSchoolYear, setCurrentSchoolYear] = useState<SchoolYear | null>(null);
+  const [currentSemester, setCurrentSemester] = useState<Semester | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   
   // General tab state
@@ -90,7 +102,7 @@ export default function SettingsPage() {
   const [resetPassword, setResetPassword] = useState('');
   const [resetConfirmText, setResetConfirmText] = useState('');
   const [resetSemesterId, setResetSemesterId] = useState('');
-  const [semesters, setSemesters] = useState<any[]>([]);
+  const [semesters, setSemesters] = useState<Semester[]>([]);
   const [resetting, setResetting] = useState(false);
   
   const [exporting, setExporting] = useState(false);
@@ -127,6 +139,7 @@ export default function SettingsPage() {
     };
 
     checkAccess();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchSettings = async () => {
@@ -204,16 +217,16 @@ export default function SettingsPage() {
     try {
       const { data } = await supabase
         .from('semesters')
-        .select('id, name, applications_open, school_year:school_year_id(academic_year)')
+        .select('id, name, applications_open, school_year:school_year_id(id, academic_year)')
         .order('name', { ascending: false });
 
-      setSemesters(data || []);
+      setSemesters((data as unknown as Semester[]) || []);
     } catch (error) {
       console.error('Failed to fetch semesters:', error);
     }
   };
 
-  const saveSettings = async (key: string, value: any) => {
+  const saveSettings = async (key: string, value: unknown) => {
     try {
       setSaving(true);
       const { data: { session } } = await supabase.auth.getSession();
@@ -277,9 +290,9 @@ export default function SettingsPage() {
 
       setMessage({ type: 'success', text: data.message });
       setTestEmail('');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to send test email:', error);
-      setMessage({ type: 'error', text: error.message || 'Failed to send test email' });
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Failed to send test email' });
     } finally {
       setSendingTest(false);
     }
@@ -317,8 +330,8 @@ export default function SettingsPage() {
       setMessage({ type: 'success', text: data.message });
       setPurgePassword('');
       setPurgeConfirmText('');
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error.message });
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Failed to purge users' });
     } finally {
       setPurging(false);
     }
@@ -356,8 +369,8 @@ export default function SettingsPage() {
       setMessage({ type: 'success', text: data.message });
       setDeletePassword('');
       setDeleteConfirmText('');
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error.message });
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Failed to delete drafts' });
     } finally {
       setDeleting(false);
     }
@@ -396,8 +409,8 @@ export default function SettingsPage() {
       setResetPassword('');
       setResetConfirmText('');
       setResetSemesterId('');
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error.message });
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Failed to reset semester' });
     } finally {
       setResetting(false);
     }
@@ -431,8 +444,8 @@ export default function SettingsPage() {
       document.body.removeChild(a);
 
       setMessage({ type: 'success', text: `Exported ${type} successfully` });
-    } catch (error: any) {
-      setMessage({ type: 'error', text: error.message });
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Failed to export data' });
     } finally {
       setExporting(false);
     }
@@ -1042,7 +1055,7 @@ export default function SettingsPage() {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
                         >
                           <option value="">-- Select Semester --</option>
-                          {semesters.filter(s => !s.applications_open).map((sem: any) => (
+                          {semesters.filter(s => !s.applications_open).map((sem) => (
                             <option key={sem.id} value={sem.id}>
                               {sem.name} (S.Y. {Array.isArray(sem.school_year) ? sem.school_year[0]?.academic_year : sem.school_year?.academic_year})
                             </option>

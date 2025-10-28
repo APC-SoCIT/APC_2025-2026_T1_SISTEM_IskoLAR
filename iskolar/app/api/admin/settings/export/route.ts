@@ -8,6 +8,30 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Type definitions for database records
+interface AdminRecord {
+  admin_id: string;
+  email_address: string;
+  role_id: string;
+  role: { role_name: string } | { role_name: string }[];
+  created_at: string;
+}
+
+interface ApplicationRecord {
+  application_id: string;
+  user_id: string;
+  users: { email_address: string; first_name: string; last_name: string } | { email_address: string; first_name: string; last_name: string }[];
+  school_year_id: string;
+  school_year: { academic_year: string } | { academic_year: string }[];
+  semester_id: string;
+  semester: { name: string } | { name: string }[];
+  status: string;
+  rejection_reason: string | null;
+  created_at: string;
+  submitted_at: string | null;
+  reviewed_at: string | null;
+}
+
 // Helper to get user from Authorization header
 async function getUserFromRequest(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -30,7 +54,7 @@ async function getUserFromRequest(request: NextRequest) {
 }
 
 // Helper to convert array of objects to CSV
-function arrayToCSV(data: any[], headers: string[]): string {
+function arrayToCSV(data: Record<string, unknown>[], headers: string[]): string {
   const csvHeaders = headers.join(',');
   const csvRows = data.map(row => {
     return headers.map(header => {
@@ -108,7 +132,7 @@ export async function GET(request: NextRequest) {
       if (error) throw error;
 
       // Flatten role data
-      const flatData = data?.map((admin: any) => ({
+      const flatData = data?.map((admin: AdminRecord) => ({
         admin_id: admin.admin_id,
         email_address: admin.email_address,
         role_id: admin.role_id,
@@ -143,7 +167,7 @@ export async function GET(request: NextRequest) {
       if (error) throw error;
 
       // Flatten nested data
-      const flatData = data?.map((app: any) => ({
+      const flatData = data?.map((app: ApplicationRecord) => ({
         application_id: app.application_id,
         user_id: app.user_id,
         email_address: Array.isArray(app.users) ? app.users[0]?.email_address : app.users?.email_address || '',
