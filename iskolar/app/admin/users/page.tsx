@@ -5,6 +5,7 @@ import { XMarkIcon } from '@heroicons/react/24/solid';
 import { AdjustmentsHorizontalIcon, UserIcon } from '@heroicons/react/24/outline';
 import { fetchCurrentAdmin } from '@/lib/auth/currentAdmin';
 import { canCreateUsers, canEditOrDeleteUsers, canArchiveUsers, type AdminRoleName } from '@/lib/auth/roles';
+import BrandedLoader from '@/app/components/ui/BrandedLoader';
 
 // --- TYPE DEFINITIONS ---
 type User = {
@@ -221,6 +222,7 @@ export default function UserManagementPage() {
               value={searchQuery} 
               onChange={(e) => setSearchQuery(e.target.value)} 
               className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 bg-gray-50 text-sm transition-all duration-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:bg-white" 
+              disabled={isLoading}
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
@@ -243,7 +245,8 @@ export default function UserManagementPage() {
             <div className="flex items-center gap-3">
               <button 
                 onClick={() => setIsFilterModalOpen(true)} 
-                className="inline-flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                disabled={isLoading}
+                className="inline-flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <AdjustmentsHorizontalIcon className="h-5 w-5 text-gray-500" />
                 Filter
@@ -251,7 +254,8 @@ export default function UserManagementPage() {
               {permissions.canCreate && (
                 <button
                   onClick={() => window.location.href = '/admin/users/create'}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors cursor-pointer"
+                  disabled={isLoading}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -263,8 +267,10 @@ export default function UserManagementPage() {
           </div>
         </div>
         
-        {isLoading ? (
-          <div className="px-6 py-4 text-center text-gray-500">Loading...</div>
+        {isLoading && users.length === 0 ? (
+          <div className="px-6 py-12">
+            <BrandedLoader title="Loading Scholars" subtitle="Retrieving scholar data…" />
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">

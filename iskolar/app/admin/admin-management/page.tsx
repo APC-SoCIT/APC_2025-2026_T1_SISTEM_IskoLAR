@@ -1,7 +1,9 @@
 "use client";
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { PlusIcon, TrashIcon, UserPlusIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { supabaseBrowser } from '@/lib/supabase/browser';
+import BrandedLoader from '@/app/components/ui/BrandedLoader';
+import { timeAsync } from '@/lib/utils/performance';
 
 type AdminRole = 'admin' | 'super_admin';
 
@@ -28,6 +30,8 @@ type FormData = {
 export default function AdminManagementPage() {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'delete' | 'promote' | 'demote'>('create');
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
@@ -48,35 +52,37 @@ export default function AdminManagementPage() {
   const fetchAdmins = useCallback(async () => {
     setIsLoading(true);
     try {
-      console.log('[fetchAdmins] Getting session...');
-      const supabase = supabaseBrowser();
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        console.error('[fetchAdmins] No session found:', sessionError);
-        throw new Error('No active session. Please log in again.');
-      }
-      
-      console.log('[fetchAdmins] Session found, fetching admins...');
-      const response = await fetch('/api/admin-auth/admins', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
+      await timeAsync('fetch-admins', async () => {
+        console.log('[fetchAdmins] Getting session...');
+        const supabase = supabaseBrowser();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError || !session) {
+          console.error('[fetchAdmins] No session found:', sessionError);
+          throw new Error('No active session. Please log in again.');
+        }
+        
+        console.log('[fetchAdmins] Session found, fetching admins...');
+        const response = await fetch('/api/admin-auth/admins', {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+        console.log('[fetchAdmins] Response status:', response.status);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('[fetchAdmins] Error response:', errorData);
+          throw new Error(errorData.error || 'Failed to fetch admins');
+        }
+        
+        const data = await response.json();
+        console.log('[fetchAdmins] Fetched', data?.length || 0, 'admins');
+        setAdmins(data);
       });
-      console.log('[fetchAdmins] Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('[fetchAdmins] Error response:', errorData);
-        throw new Error(errorData.error || 'Failed to fetch admins');
-      }
-      
-      const data = await response.json();
-      console.log('[fetchAdmins] Fetched', data?.length || 0, 'admins');
-      setAdmins(data);
     } catch (error) {
       console.error('[fetchAdmins] Error fetching admins:', error);
       showNotification(
@@ -87,6 +93,14 @@ export default function AdminManagementPage() {
       setIsLoading(false);
     }
   }, [showNotification]);
+
+  // Paginated admins
+  const paginatedAdmins = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return admins.slice(start, start + pageSize);
+  }, [admins, currentPage]);
+
+  const totalPages = Math.ceil(admins.length / pageSize);
 
   useEffect(() => {
     fetchAdmins();
@@ -269,6 +283,16 @@ export default function AdminManagementPage() {
     }
   };
 
+  // Single unified loading state
+  if (isLoading) {
+    return (
+      <BrandedLoader 
+        title="Loading Admin Management" 
+        subtitle="Retrieving administrator accounts…" 
+      />
+    );
+  }
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
       {/* Header */}
@@ -301,19 +325,13 @@ export default function AdminManagementPage() {
       </div>
 
       {/* Admin List */}
-      {isLoading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading admins...</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Email
+              </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Role
                 </th>
@@ -326,7 +344,7 @@ export default function AdminManagementPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {admins.map((admin) => (
+              {paginatedAdmins.map((admin) => (
                 <tr key={admin.admin_id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -379,8 +397,69 @@ export default function AdminManagementPage() {
               ))}
             </tbody>
           </table>
-        </div>
-      )}
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+              <div className="flex-1 flex justify-between sm:hidden">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{(currentPage - 1) * pageSize + 1}</span> to{' '}
+                  <span className="font-medium">{Math.min(currentPage * pageSize, admins.length)}</span> of{' '}
+                  <span className="font-medium">{admins.length}</span> admins
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  {[...Array(totalPages)].map((_, i) => (
+                    <button
+                      key={i + 1}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                        currentPage === i + 1
+                          ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Modal */}
       {isModalOpen && (

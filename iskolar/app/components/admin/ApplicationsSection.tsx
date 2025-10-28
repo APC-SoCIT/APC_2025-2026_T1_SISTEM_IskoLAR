@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { SchoolYear, Semester, SemesterStats } from '@/lib/types/school-year';
 import { supabase } from '@/lib/supabaseClient';
+import { timeAsync } from '@/lib/utils/performance';
 
 interface Application {
   id: string;
@@ -19,40 +20,52 @@ interface Application {
 interface ApplicationsSectionProps {
   schoolYears: SchoolYear[];
   isLoading: boolean;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
-export default function ApplicationsSection({ schoolYears, isLoading }: ApplicationsSectionProps) {
+export default function ApplicationsSection({ schoolYears, isLoading, onLoadingChange }: ApplicationsSectionProps) {
   const [semesterStats, setSemesterStats] = useState<Record<string, SemesterStats>>({});
-  const [loadingStats, setLoadingStats] = useState(true);
   const [expandedSemesters, setExpandedSemesters] = useState<Set<string>>(new Set());
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
-    fetchAllSemesterStats();
-  }, [schoolYears]);
+    // Only fetch once when schoolYears becomes available
+    if (fetchedRef.current || schoolYears.length === 0) return;
+    fetchedRef.current = true;
 
-  const fetchAllSemesterStats = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('application_stats_by_semester')
-        .select('*')
-        .order('academic_year', { ascending: false })
-        .order('start_date', { ascending: false });
+    (async () => {
+      try {
+        onLoadingChange?.(true);
+        await timeAsync('fetch-semester-stats', async () => {
+          // Get all semester IDs from the schoolYears we already have
+          const semesterIds = schoolYears.flatMap(year => 
+            (year.semesters || []).map((s: Semester) => s.id)
+          );
 
-      if (error) throw error;
+          // Only fetch stats for semesters we're actually displaying
+          // This is much faster than fetching all 50 semesters
+          const { data, error } = await supabase
+            .from('application_stats_by_semester')
+            .select('*')
+            .in('semester_id', semesterIds);
 
-      // Convert array to record for easy lookup
-      const statsMap = (data || []).reduce((acc, stat) => {
-        acc[stat.semester_id] = stat;
-        return acc;
-      }, {} as Record<string, SemesterStats>);
+          if (error) throw error;
 
-      setSemesterStats(statsMap);
-    } catch (error) {
-      console.error('Error fetching semester stats:', error);
-    } finally {
-      setLoadingStats(false);
-    }
-  };
+          // Convert array to record for easy lookup
+          const statsMap = (data || []).reduce((acc, stat) => {
+            acc[stat.semester_id] = stat;
+            return acc;
+          }, {} as Record<string, SemesterStats>);
+
+          setSemesterStats(statsMap);
+        });
+      } catch (error) {
+        console.error('Error fetching semester stats:', error);
+      } finally {
+        onLoadingChange?.(false);
+      }
+    })();
+  }, [schoolYears, onLoadingChange]);
 
   const toggleSemester = (semesterId: string) => {
     setExpandedSemesters(prev => {
@@ -93,21 +106,8 @@ export default function ApplicationsSection({ schoolYears, isLoading }: Applicat
     );
   };
 
-  if (isLoading || loadingStats) {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-          <div className="space-y-3">
-            <div className="h-24 bg-gray-200 rounded"></div>
-            <div className="h-24 bg-gray-200 rounded"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // No inline loading - parent page handles all loading states
+  
   // Group semesters by active/previous
   const activeSemesters: Semester[] = [];
   const previousSemesters: Semester[] = [];

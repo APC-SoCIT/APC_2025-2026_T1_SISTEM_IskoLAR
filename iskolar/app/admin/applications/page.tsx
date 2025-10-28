@@ -7,20 +7,39 @@ import ApplicationsSection from '@/app/components/admin/ApplicationsSection';
 import { SchoolYear } from '@/lib/types/school-year';
 import AddYearModal from './AddYearModal';
 import UndoYearModal from './UndoYearModal';
+import BrandedLoader from '@/app/components/ui/BrandedLoader';
+import { usePageGate } from '@/app/hooks/usePageGate';
+import { timeAsync } from '@/lib/utils/performance';
 
 export default function ApplicationsPage() {
   const [schoolYears, setSchoolYears] = useState<SchoolYear[]>([]);
-  const [isLoadingYears, setIsLoadingYears] = useState(true);
   const [showAddYearModal, setShowAddYearModal] = useState(false);
   const [yearToUndo, setYearToUndo] = useState<SchoolYear | null>(null);
+  
+  const gate = usePageGate({ years: true, stats: true });
 
   // Fetch school years on mount
   useEffect(() => {
-    fetchSchoolYears();
+    (async () => {
+      try {
+        gate.setTaskLoading('years', true);
+        await timeAsync('fetch-school-years', async () => {
+          const response = await fetch('/api/admin/school-years');
+          if (!response.ok) throw new Error('Failed to fetch school years');
+          const data = await response.json();
+          setSchoolYears(data);
+        });
+      } catch (error) {
+        console.error('Error fetching school years:', error);
+      } finally {
+        gate.setTaskLoading('years', false);
+      }
+    })();
   }, []);
 
   const fetchSchoolYears = async () => {
     try {
+      gate.setTaskLoading('years', true);
       const response = await fetch('/api/admin/school-years');
       if (!response.ok) throw new Error('Failed to fetch school years');
       const data = await response.json();
@@ -28,13 +47,27 @@ export default function ApplicationsPage() {
     } catch (error) {
       console.error('Error fetching school years:', error);
     } finally {
-      setIsLoadingYears(false);
+      gate.setTaskLoading('years', false);
     }
   };
 
   const handleAddYear = () => {
     setShowAddYearModal(true);
   };
+
+  const handleStatsLoadingChange = (loading: boolean) => {
+    gate.setTaskLoading('stats', loading);
+  };
+
+  // Single unified loader - wait for both years AND stats to load
+  if (!gate.allDone()) {
+    return (
+      <BrandedLoader 
+        title="Loading Applications" 
+        subtitle="Fetching school years and semester statistics…" 
+      />
+    );
+  }
 
   return (
     <div className="px-10 pt-8 pb-6 max-w-7xl mx-auto">
@@ -68,7 +101,7 @@ export default function ApplicationsPage() {
         {/* School Year Section */}
         <SchoolYearSection 
           schoolYears={schoolYears}
-          isLoading={isLoadingYears}
+          isLoading={false}
           onAddYear={handleAddYear}
           onUndoYear={(id: string) => {
             const yearToUndo = schoolYears.find(y => y.id === id);
@@ -81,7 +114,8 @@ export default function ApplicationsPage() {
         {/* Applications Section - Shows applications grouped by semester */}
         <ApplicationsSection 
           schoolYears={schoolYears}
-          isLoading={isLoadingYears}
+          isLoading={false}
+          onLoadingChange={handleStatsLoadingChange}
         />
       </div>
 
@@ -102,7 +136,7 @@ export default function ApplicationsPage() {
           schoolYear={yearToUndo}
           onClose={() => setYearToUndo(null)}
           onUndo={async () => {
-            setIsLoadingYears(true);
+            gate.setTaskLoading('years', true);
             // Filter out the undone year locally
             setSchoolYears((prev) => prev.filter(y => y.id !== yearToUndo.id));
             setYearToUndo(null);

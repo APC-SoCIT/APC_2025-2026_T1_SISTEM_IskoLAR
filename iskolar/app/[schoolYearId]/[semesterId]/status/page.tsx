@@ -5,6 +5,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import ScholarSideBar from "@/app/components/ScholarSideBar";
+import BrandedLoader from '@/app/components/ui/BrandedLoader';
+import { usePageGate } from '@/app/hooks/usePageGate';
+import { timeAsync } from '@/lib/utils/performance';
 
 interface SchoolYear {
   id: string;
@@ -60,12 +63,25 @@ export default function StatusPage() {
         return;
       }
 
-      // Fetch school year
-      const { data: yearData, error: yearError } = await supabase
-        .from('school_years')
-        .select('id, academic_year, is_active')
-        .eq('id', schoolYearId)
-        .single();
+      // Fetch all data in parallel for better performance
+      const [
+        { data: yearData, error: yearError },
+        { data: semesterData, error: semesterError },
+        { data: { user } }
+      ] = await Promise.all([
+        supabase
+          .from('school_years')
+          .select('id, academic_year, is_active')
+          .eq('id', schoolYearId)
+          .single(),
+        supabase
+          .from('semesters')
+          .select('id, name, school_year_id, applications_open, start_date, end_date')
+          .eq('id', semesterId)
+          .eq('school_year_id', schoolYearId)
+          .single(),
+        supabase.auth.getUser()
+      ]);
 
       if (yearError || !yearData) {
         setError('Academic Year not found');
@@ -73,26 +89,16 @@ export default function StatusPage() {
         return;
       }
 
-      setSchoolYear(yearData);
-
-      // Fetch semester
-      const { data: semesterData, error: semesterError } = await supabase
-        .from('semesters')
-        .select('id, name, school_year_id, applications_open, start_date, end_date')
-        .eq('id', semesterId)
-        .eq('school_year_id', schoolYearId)
-        .single();
-
       if (semesterError || !semesterData) {
         setError('Semester not found for this academic year');
         setLoading(false);
         return;
       }
 
+      setSchoolYear(yearData);
       setSemester(semesterData);
 
       // Fetch application status
-      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: appData, error: appError } = await supabase
           .from('application_details')
@@ -122,16 +128,16 @@ export default function StatusPage() {
     validateAndFetchData();
   }, [validateAndFetchData]);
 
-  // Loading state
+  // Full-page loading screen with IskoLARS branding
   if (loading) {
     return (
       <>
         <ScholarSideBar />
-        <div className="min-h-screen w-full bg-[#f5f6fa] pl-64 flex items-center justify-center">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600">Loading status...</p>
-          </div>
+        <div className="min-h-screen w-full pl-64">
+          <BrandedLoader 
+            title="Loading Application Status" 
+            subtitle="Retrieving your application details…" 
+          />
         </div>
       </>
     );

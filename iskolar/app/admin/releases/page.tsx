@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from 'react';
+import BrandedLoader from "@/app/components/ui/BrandedLoader";
 import {
   PlusIcon,
   CalendarIcon,
@@ -161,6 +162,11 @@ export default function ReleasesPage() {
     }
   };
 
+  // Full page loading state
+  if (isLoading && releases.length === 0) {
+    return <BrandedLoader title="Loading Releases" subtitle="Loading scholarship disbursements..." />;
+  }
+
   return (
     <div className="px-8 pt-12 pb-8 max-w-[1600px] mx-auto space-y-6">
       <div className="flex items-center justify-between mb-8">
@@ -293,7 +299,7 @@ export default function ReleasesPage() {
         </div>
 
         {isLoading ? (
-          <div className="px-6 py-4 text-center text-gray-500">Loading...</div>
+          <tr><td colSpan={6} className="px-6 py-4 text-center text-gray-500">Loading...</td></tr>
         ) : filteredReleases.filter(r => activeTab === 'active' ? !r.isArchived : r.isArchived).length === 0 ? (
           <div className="text-center py-12">
             <CalendarIcon className="mx-auto h-12 w-12 text-gray-400" />
