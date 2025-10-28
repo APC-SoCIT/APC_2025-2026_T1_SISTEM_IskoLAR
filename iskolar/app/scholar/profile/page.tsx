@@ -5,6 +5,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { userValidation } from "@/lib/types/user";
 import { getAuthToken } from "@/lib/useAuth";
 import { supabase } from '@/lib/supabaseClient';
+import TransactionHistory from '@/app/components/scholar/TransactionHistory';
 
 // Interface for the frontend (camelCase)
 interface ExtendedUserProfile {
@@ -1434,6 +1435,9 @@ export default function ProfilePage() {
               })}
             </div>
           </div>
+
+          {/* Transaction History Section */}
+          <TransactionHistory />
         </div>
       </div>
 
