@@ -179,61 +179,69 @@ export default function ProfilePage() {
         console.log('Profile Data:', profile);
         console.log('Profile Error:', profileError);
           
-        if (profileError) {
-          console.error('Error fetching profile from database:', profileError);
+        // If profile doesn't exist, create one
+        if (profileError && profileError.code === 'PGRST116') {
+          console.log('User profile does not exist, creating a new one');
           
-          // If the profile doesn't exist, we need to create it
-          if (profileError.code === 'PGRST116') { // PostgreSQL error for no rows
-            console.log('User profile does not exist, creating a new one');
+          // Get registration data from user metadata (if available)
+          const metadata = user.user_metadata || {};
+          console.log('User metadata:', metadata);
+          
+          // Create profile using metadata from registration
+          const newProfile = {
+            user_id: user.id,
+            email_address: user.email || '',
+            first_name: metadata.first_name || '',
+            last_name: metadata.last_name || '',
+            middle_name: metadata.middle_name || null,
+            gender: metadata.gender || '',
+            birthdate: metadata.birthdate || new Date().toISOString().split('T')[0],
+            mobile_number: metadata.mobile_number || '',
+            address_line1: metadata.address_line1 || '',
+            address_line2: metadata.address_line2 || null,
+            barangay: metadata.barangay || '',
+            city: metadata.city || 'Makati City',
+            zip_code: metadata.zip_code || '',
+            college_university: metadata.college_university || '',
+            college_course: metadata.college_course || '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          
+          console.log('Creating profile with data:', newProfile);
+          
+          // Insert the new profile
+          const { data: createdProfile, error: createError } = await supabase
+            .from('users')
+            .insert([newProfile])
+            .select()
+            .single();
             
-            // Get registration data from user metadata (if available)
-            const metadata = user.user_metadata || {};
-            console.log('User metadata:', metadata);
-            
-            // Create profile using metadata from registration
-            const newProfile = {
-              user_id: user.id,
-              email_address: user.email || '',
-              first_name: metadata.first_name || '',
-              last_name: metadata.last_name || '',
-              middle_name: metadata.middle_name || null,
-              gender: metadata.gender || '',
-              birthdate: metadata.birthdate || new Date().toISOString().split('T')[0],
-              mobile_number: metadata.mobile_number || '',
-              address_line1: metadata.address_line1 || '',
-              address_line2: metadata.address_line2 || null,
-              barangay: metadata.barangay || '',
-              city: metadata.city || 'Makati City',
-              zip_code: metadata.zip_code || '',
-              college_university: metadata.college_university || '',
-              college_course: metadata.college_course || '',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            };
-            
-            console.log('Creating profile with data:', newProfile);
-            
-            // Insert the new profile
-            const { data: createdProfile, error: createError } = await supabase
-              .from('users')
-              .insert([newProfile])
-              .select()
-              .single();
-              
-            if (createError) {
-              console.error('Failed to create user profile:', createError);
-              setError('Failed to create your profile. Please contact support.');
-              return;
-            }
-            
-            console.log('Profile created successfully:', createdProfile);
-            
-            // Use the newly created profile
-            profile = createdProfile;
-          } else {
-            setError('Failed to fetch your profile. Please try again later.');
+          if (createError) {
+            console.error('Failed to create user profile:', {
+              message: createError.message,
+              details: createError.details,
+              hint: createError.hint,
+              code: createError.code
+            });
+            setError('Failed to create your profile. Please contact support.');
             return;
           }
+          
+          console.log('Profile created successfully:', createdProfile);
+          
+          // Use the newly created profile
+          profile = createdProfile;
+        } else if (profileError) {
+          // Handle other types of errors
+          console.error('Error fetching profile from database:', {
+            message: profileError.message,
+            details: profileError.details,
+            hint: profileError.hint,
+            code: profileError.code
+          });
+          setError('Failed to fetch your profile. Please try again later.');
+          return;
         }
         
         if (!profile) {
