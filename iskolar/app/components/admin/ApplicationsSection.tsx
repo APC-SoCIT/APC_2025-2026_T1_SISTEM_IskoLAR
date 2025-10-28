@@ -22,7 +22,7 @@ interface ApplicationsSectionProps {
   isLoading: boolean;
 }
 
-export default function ApplicationsSection({ schoolYears, isLoading }: ApplicationsSectionProps) {
+export default function ApplicationsSection({ schoolYears }: ApplicationsSectionProps) {
   const [semesterStats, setSemesterStats] = useState<Record<string, SemesterStats>>({});
   const [expandedSemesters, setExpandedSemesters] = useState<Set<string>>(new Set());
   const [isLoadingStats, setIsLoadingStats] = useState(true);

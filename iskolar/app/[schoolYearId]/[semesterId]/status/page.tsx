@@ -6,8 +6,6 @@ import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import ScholarSideBar from "@/app/components/ScholarSideBar";
 import BrandedLoader from '@/app/components/ui/BrandedLoader';
-import { usePageGate } from '@/app/hooks/usePageGate';
-import { timeAsync } from '@/lib/utils/performance';
 
 interface SchoolYear {
   id: string;

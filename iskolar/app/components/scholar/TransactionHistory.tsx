@@ -5,7 +5,6 @@
 
 'use client';
 
-import { useState } from 'react';
 import { format } from 'date-fns';
 import { mockScholarTransactions } from '@/lib/data/mockTransactions';
 import { formatCurrency, getStatusBadgeClasses } from '@/lib/utils/transactionUtils';
