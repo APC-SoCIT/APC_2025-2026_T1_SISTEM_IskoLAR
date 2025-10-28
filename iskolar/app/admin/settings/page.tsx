@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 import { useRouter } from 'next/navigation';
+import BrandedLoader from '@/app/components/ui/BrandedLoader';
+import { usePageGate } from '@/app/hooks/usePageGate';
+import { timeAsync } from '@/lib/utils/performance';
 
 type TabType = 'general' | 'email' | 'authPolicy' | 'features' | 'maintenance' | 'audit' | 'danger';
 
@@ -60,9 +63,9 @@ interface Semester {
 export default function SettingsPage() {
   const router = useRouter();
   const supabase = supabaseBrowser();
+  const gate = usePageGate({ access: true, settings: true, audit: true, semesters: true });
   
   const [activeTab, setActiveTab] = useState<TabType>('general');
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [currentSchoolYear, setCurrentSchoolYear] = useState<SchoolYear | null>(null);
@@ -112,39 +115,62 @@ export default function SettingsPage() {
 
   // Check if user is super admin
   useEffect(() => {
-    const checkAccess = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/admin-auth/signin');
-        return;
-      }
-
-      // Call API route to check if user is super_admin
-      const response = await fetch('/api/admin/check-role', {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
+    (async () => {
+      try {
+        gate.setTaskLoading('access', true);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          router.push('/admin-auth/signin');
+          return;
         }
-      });
 
-      const data = await response.json();
-      
-      if (!data.isSuperAdmin) {
-        router.push('/admin/dashboard');
-        return;
+        // Call API route to check if user is super_admin
+        const response = await fetch('/api/admin/check-role', {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+
+        const data = await response.json();
+        
+        if (!data.isSuperAdmin) {
+          router.push('/admin/dashboard');
+          return;
+        }
+
+        gate.setTaskLoading('access', false);
+
+        // Fetch all data in parallel for optimal performance
+        await Promise.all([
+          (async () => {
+            gate.setTaskLoading('settings', true);
+            await timeAsync('fetch-settings', fetchSettings);
+            gate.setTaskLoading('settings', false);
+          })(),
+          (async () => {
+            gate.setTaskLoading('audit', true);
+            await timeAsync('fetch-audit-logs', fetchAuditLogs);
+            gate.setTaskLoading('audit', false);
+          })(),
+          (async () => {
+            gate.setTaskLoading('semesters', true);
+            await timeAsync('fetch-semesters', fetchSemesters);
+            gate.setTaskLoading('semesters', false);
+          })()
+        ]);
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        gate.setTaskLoading('access', false);
+        gate.setTaskLoading('settings', false);
+        gate.setTaskLoading('audit', false);
+        gate.setTaskLoading('semesters', false);
       }
-
-      fetchSettings();
-      fetchAuditLogs();
-      fetchSemesters();
-    };
-
-    checkAccess();
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchSettings = async () => {
     try {
-      setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       
       const response = await fetch('/api/admin/settings', {
@@ -183,8 +209,6 @@ export default function SettingsPage() {
         type: 'error', 
         text: error instanceof Error ? error.message : 'Failed to load settings. Please ensure database migrations have been run.' 
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -451,11 +475,12 @@ export default function SettingsPage() {
     }
   };
 
-  if (loading) {
+  if (!gate.allDone()) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
-      </div>
+      <BrandedLoader 
+        title="Loading Settings" 
+        subtitle="Loading configuration, audit history, and semesters…" 
+      />
     );
   }
 
@@ -476,7 +501,7 @@ export default function SettingsPage() {
         )}
 
         {/* Migration Warning Banner */}
-        {!loading && !migrationApplied && !message && (
+        {!migrationApplied && !message && (
           <div className="mb-6 p-4 rounded-lg bg-yellow-100 border-l-4 border-yellow-500">
             <div className="flex items-start">
               <svg className="w-5 h-5 text-yellow-700 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">

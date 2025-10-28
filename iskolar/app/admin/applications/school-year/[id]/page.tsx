@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import BrandedLoader from "@/app/components/ui/BrandedLoader";
 import { SchoolYear, Semester } from '@/lib/types/school-year';
 import AddSemesterModal from './AddSemesterModal';
 import { useAuth } from '@/lib/useAuth';
@@ -169,7 +170,7 @@ export default function SchoolYearDetailPage() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <BrandedLoader title="Loading School Year" subtitle="Loading semester details..." />;
   }
 
   if (!schoolYear) {

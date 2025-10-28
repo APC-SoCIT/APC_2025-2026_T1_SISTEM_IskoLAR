@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import BrandedLoader from "@/app/components/ui/BrandedLoader";
 import { supabase } from "@/lib/supabaseClient";
 import ScholarSideBar from "@/app/components/ScholarSideBar";
 
@@ -18,6 +19,7 @@ export default function ApplicationPage() {
   // Track if user has already submitted an application
   const [hasExistingApplication, setHasExistingApplication] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   
   // Stepper state: 0 = Personal Info, 1 = Documents
   const [step, setStep] = useState(0);
@@ -276,40 +278,41 @@ export default function ApplicationPage() {
   useEffect(() => {
     async function fetchUserData() {
       try {
+        setIsLoadingData(true);
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          setIsLoadingData(false);
+          return;
+        }
+
+        // Parallel fetch for better performance - fetch all data at once
+        const [applicationResult, userResult, documentsResult] = await Promise.all([
+          supabase
+            .from('application_details')
+            .select('*')
+            .eq('user_id', user.id)
+            .single(),
+          supabase
+            .from('users')
+            .select('*')
+            .eq('user_id', user.id)
+            .single(),
+          supabase
+            .from('documents')
+            .select('*')
+            .eq('user_id', user.id)
+        ]);
 
         // Check for existing application
-        const { data: applicationData, error: applicationError } = await supabase
-          .from('application_details')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-
-        if (applicationError && applicationError.code !== 'PGRST116') {
-          console.error('Error checking application:', applicationError);
-          return;
-        }
-
-        if (applicationData) {
+        if (!applicationResult.error && applicationResult.data) {
           setHasExistingApplication(true);
+          setIsLoadingData(false);
           return;
         }
 
-        // Fetch user profile if no existing application
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-
-        if (userError) {
-          console.error('Error fetching user data:', userError);
-          return;
-        }
-
-        if (userData) {
-          // Set user profile data
+        // Set user profile data
+        if (userResult.data) {
+          const userData = userResult.data;
           setLastName(userData.last_name);
           setFirstName(userData.first_name);
           setMiddleName(userData.middle_name || "");
@@ -325,20 +328,9 @@ export default function ApplicationPage() {
           setCourse(userData.college_course);
         }
 
-        // Fetch existing documents
-        const { data: documents, error: docsError } = await supabase
-          .from('documents')
-          .select('*')
-          .eq('user_id', user.id);
-
-        if (docsError) {
-          console.error('Error fetching documents:', docsError);
-          return;
-        }
-
-          // Map documents to their respective state variables
-        if (documents) {
-          documents.forEach(doc => {
+        // Map documents to their respective state variables
+        if (documentsResult.data) {
+          documentsResult.data.forEach(doc => {
             switch (doc.document_type) {
               case 'PSA Birth Certificate':
                 setBirthCertFileName(doc.file_name);
@@ -363,8 +355,11 @@ export default function ApplicationPage() {
                 break;
             }
           });
-        }      } catch (error) {
+        }
+      } catch (error) {
         console.error('Error:', error);
+      } finally {
+        setIsLoadingData(false);
       }
     }
 
@@ -512,6 +507,16 @@ export default function ApplicationPage() {
     { label: "Personal" },
     { label: "Documents" },
   ];
+
+  // Full-page loading screen
+  if (isLoadingData) {
+    return (
+      <>
+        <ScholarSideBar />
+        <BrandedLoader title="Loading Application Form" subtitle="Preparing your application..." />
+      </>
+    );
+  }
 
   if (hasExistingApplication) {
     return (

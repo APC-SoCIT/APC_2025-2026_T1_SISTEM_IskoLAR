@@ -2,6 +2,11 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  swcMinify: true,
+  productionBrowserSourceMaps: false,
+  experimental: {
+    optimizePackageImports: ['@heroicons/react', 'lucide-react', 'date-fns'],
+  },
   images: {
     remotePatterns: [
       {
