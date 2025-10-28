@@ -782,6 +782,7 @@ export default function ProfilePage() {
   const addressRef = useRef<HTMLDivElement | null>(null);
   const programRef = useRef<HTMLDivElement | null>(null);
   const documentsRef = useRef<HTMLDivElement | null>(null);
+  const applicantHistoryRef = useRef<HTMLDivElement | null>(null);
 
   // Scroll to section helper
   const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
@@ -880,6 +881,27 @@ export default function ProfilePage() {
               >
                 <Image src="/icons/documents.svg" alt="Documents" width={17} height={17} />
                 Documents
+              </button>
+              {/* Applicant History Button */}
+              <button
+                className="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-100 cursor-pointer"
+                onClick={() => scrollToSection(applicantHistoryRef)}
+                type="button"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-700"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                Applicant History
               </button>
             </nav>
           </div>
@@ -1397,8 +1419,10 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Transaction History Section */}
-          <TransactionHistory />
+          {/* Applicant History Section */}
+          <div ref={applicantHistoryRef}>
+            <TransactionHistory />
+          </div>
         </div>
       </div>
 
