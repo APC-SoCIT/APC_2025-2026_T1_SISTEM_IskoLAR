@@ -20,12 +20,12 @@ interface Application {
 interface ApplicationsSectionProps {
   schoolYears: SchoolYear[];
   isLoading: boolean;
-  onLoadingChange?: (loading: boolean) => void;
 }
 
-export default function ApplicationsSection({ schoolYears, isLoading, onLoadingChange }: ApplicationsSectionProps) {
+export default function ApplicationsSection({ schoolYears, isLoading }: ApplicationsSectionProps) {
   const [semesterStats, setSemesterStats] = useState<Record<string, SemesterStats>>({});
   const [expandedSemesters, setExpandedSemesters] = useState<Set<string>>(new Set());
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
   const fetchedRef = useRef(false);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export default function ApplicationsSection({ schoolYears, isLoading, onLoadingC
 
     (async () => {
       try {
-        onLoadingChange?.(true);
+        setIsLoadingStats(true);
         await timeAsync('fetch-semester-stats', async () => {
           // Get all semester IDs from the schoolYears we already have
           const semesterIds = schoolYears.flatMap(year => 
@@ -62,10 +62,10 @@ export default function ApplicationsSection({ schoolYears, isLoading, onLoadingC
       } catch (error) {
         console.error('Error fetching semester stats:', error);
       } finally {
-        onLoadingChange?.(false);
+        setIsLoadingStats(false);
       }
     })();
-  }, [schoolYears, onLoadingChange]);
+  }, [schoolYears]);
 
   const toggleSemester = (semesterId: string) => {
     setExpandedSemesters(prev => {
@@ -171,7 +171,23 @@ export default function ApplicationsSection({ schoolYears, isLoading, onLoadingC
                         </div>
                         
                         <div className="flex items-center gap-3">
-                          {stats && (
+                          {isLoadingStats ? (
+                            <div className="flex items-center gap-4 px-4 py-2 bg-white rounded-lg border border-gray-200 animate-pulse">
+                              <div className="text-center">
+                                <div className="h-8 w-12 bg-gray-200 rounded"></div>
+                                <div className="text-xs text-gray-500 mt-1">Total</div>
+                              </div>
+                              <div className="h-10 w-px bg-gray-200"></div>
+                              <div className="text-center">
+                                <div className="h-6 w-10 bg-gray-200 rounded"></div>
+                                <div className="text-xs text-gray-500 mt-1">Approved</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="h-6 w-10 bg-gray-200 rounded"></div>
+                                <div className="text-xs text-gray-500 mt-1">Pending</div>
+                              </div>
+                            </div>
+                          ) : stats ? (
                             <div className="flex items-center gap-4 px-4 py-2 bg-white rounded-lg border border-gray-200">
                               <div className="text-center">
                                 <div className="text-2xl font-bold text-blue-600">{stats.total_applications}</div>
@@ -187,7 +203,7 @@ export default function ApplicationsSection({ schoolYears, isLoading, onLoadingC
                                 <div className="text-xs text-gray-500">Pending</div>
                               </div>
                             </div>
-                          )}
+                          ) : null}
                           <button
                             onClick={() => toggleSemester(semester.id)}
                             className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
@@ -247,11 +263,13 @@ export default function ApplicationsSection({ schoolYears, isLoading, onLoadingC
                         </div>
                         
                         <div className="flex items-center gap-3">
-                          {stats && (
+                          {isLoadingStats ? (
+                            <div className="h-5 w-32 bg-gray-200 rounded animate-pulse"></div>
+                          ) : stats ? (
                             <div className="text-sm text-gray-600">
                               {stats.total_applications} applications
                             </div>
-                          )}
+                          ) : null}
                           <button
                             onClick={() => toggleSemester(semester.id)}
                             className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
