@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import BrandedLoader from "@/app/components/ui/BrandedLoader";
 import { XMarkIcon } from '@heroicons/react/24/solid';
 import { AdjustmentsHorizontalIcon, UserIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 
@@ -147,6 +148,11 @@ export default function SemesterApplicationsPage() {
     setFilters({ dateRange: { from: '', to: '' }, status: 'all' }); 
     setIsFilterModalOpen(false); 
   };
+
+  // Full page loading state
+  if (isLoading && applications.length === 0) {
+    return <BrandedLoader title="Loading Applications" subtitle="Reviewing scholarship applications..." />;
+  }
 
   return (
     <div className="px-10 pt-8 pb-6 max-w-[1600px] mx-auto space-y-6">

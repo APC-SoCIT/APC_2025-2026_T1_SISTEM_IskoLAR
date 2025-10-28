@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Merge with defaults
-    const settings: Record<string, any> = { ...defaultSettings };
+    const settings: Record<string, unknown> = { ...defaultSettings };
     
     if (settingsData) {
       settingsData.forEach(({ key, value }) => {
@@ -175,7 +175,7 @@ export async function PUT(request: NextRequest) {
         .from('app_settings')
         .upsert({
           key,
-          value: value as any,
+          value: value as unknown,
           updated_by: user.id,
           updated_at: new Date().toISOString()
         }, {

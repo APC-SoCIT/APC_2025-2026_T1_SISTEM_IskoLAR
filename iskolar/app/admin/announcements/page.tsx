@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
+import BrandedLoader from "@/app/components/ui/BrandedLoader";
 import { MegaphoneIcon, XMarkIcon } from '@heroicons/react/24/solid';
 import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
 
@@ -188,6 +189,11 @@ export default function AnnouncementManagementPage() {
     handleCloseModals();
   };
 
+  // Full page loading state
+  if (isLoading && announcements.length === 0) {
+    return <BrandedLoader title="Loading Announcements" subtitle="Fetching latest updates..." />;
+  }
+
   return (
     <div className="px-6 pb-6 max-w-[1600px] mx-auto space-y-4">
       <div className="flex items-center justify-between pb-4">
@@ -243,7 +249,7 @@ export default function AnnouncementManagementPage() {
           </div>
         </div>
         {isLoading ? (
-          <div className="px-6 py-4 text-center text-gray-500">Loading...</div>
+          <tr><td colSpan={5} className="px-6 py-4 text-center text-gray-500">Loading...</td></tr>
         ) : (
           <div className="overflow-x-hidden">
             <table className="min-w-full divide-y divide-gray-200">

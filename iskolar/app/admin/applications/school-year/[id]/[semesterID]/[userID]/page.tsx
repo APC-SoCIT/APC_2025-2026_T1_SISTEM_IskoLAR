@@ -451,42 +451,177 @@ export default function ApplicationReviewPage() {
               <section>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Scholarship History</h3>
                 <div className="space-y-4">
-                  {/* Static data for now */}
-                  <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                            APPROVED
-                          </span>
-                          <span className="text-sm font-medium text-gray-900">Academic Year 2024-2025 • 1st Semester</span>
+                  {/* Current Application */}
+                  <div className="bg-white p-6 rounded-lg border-2 border-blue-300 shadow-sm">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
                         </div>
-                        <p className="text-xs text-gray-500 mb-3">Application submitted on September 15, 2024</p>
-                        <div className="grid grid-cols-3 gap-4">
-                          <div>
-                            <p className="text-xs text-gray-500">Status</p>
-                            <p className="text-sm font-medium text-green-600">Active Recipient</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Scholarship Type</p>
-                            <p className="text-sm font-medium text-gray-900">Full Scholarship</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Duration</p>
-                            <p className="text-sm font-medium text-gray-900">6 months</p>
-                          </div>
+                        <div>
+                          <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                            CURRENT APPLICATION
+                          </span>
+                        </div>
+                      </div>
+                      <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+                        applicationDetail.status === 'approved' ? 'bg-green-100 text-green-800' :
+                        applicationDetail.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {applicationDetail.status.toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="mb-3">
+                        <h4 className="text-base font-semibold text-gray-900">Academic Year 2025-2026 • 1st Semester</h4>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Application submitted on {new Date(applicationDetail.created_at).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-200">
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Course</p>
+                          <p className="text-sm font-medium text-gray-900">{userInfo.college_course}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Year Level</p>
+                          <p className="text-sm font-medium text-gray-900">Year {applicationDetail.year_level}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">University</p>
+                          <p className="text-sm font-medium text-gray-900">{userInfo.college_university}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Expected Graduation</p>
+                          <p className="text-sm font-medium text-gray-900">{applicationDetail.college_year_grad}</p>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Placeholder for future records */}
-                  <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <p className="mt-2 text-sm text-gray-500">No previous scholarship records</p>
-                    <p className="text-xs text-gray-400 mt-1">Historical data will appear here</p>
+                  {/* Previous Application (if year level > 1) */}
+                  {applicationDetail.year_level > 1 && (
+                    <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <span className="text-sm font-medium text-gray-700">Previous Semester</span>
+                        </div>
+                        <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                          APPROVED
+                        </span>
+                      </div>
+                      <div>
+                        <h4 className="text-base font-semibold text-gray-900">Academic Year 2024-2025 • 2nd Semester</h4>
+                        <p className="text-xs text-gray-500 mt-1">Application submitted on March 15, 2025</p>
+                        <div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-200">
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Course</p>
+                            <p className="text-sm font-medium text-gray-900">{userInfo.college_course}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Year Level</p>
+                            <p className="text-sm font-medium text-gray-900">Year {applicationDetail.year_level - 1}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Status</p>
+                            <p className="text-sm font-medium text-green-600">Completed</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Duration</p>
+                            <p className="text-sm font-medium text-gray-900">6 months</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* First Year Application (if year level > 2) */}
+                  {applicationDetail.year_level > 2 && (
+                    <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                          <span className="text-sm font-medium text-gray-700">First Year Application</span>
+                        </div>
+                        <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                          APPROVED
+                        </span>
+                      </div>
+                      <div>
+                        <h4 className="text-base font-semibold text-gray-900">Academic Year {applicationDetail.college_year_started - 1}-{applicationDetail.college_year_started} • 1st Semester</h4>
+                        <p className="text-xs text-gray-500 mt-1">Application submitted on September 10, {applicationDetail.college_year_started - 1}</p>
+                        <div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-200">
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Course</p>
+                            <p className="text-sm font-medium text-gray-900">{userInfo.college_course}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Year Level</p>
+                            <p className="text-sm font-medium text-gray-900">Year 1</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Status</p>
+                            <p className="text-sm font-medium text-green-600">Completed</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Duration</p>
+                            <p className="text-sm font-medium text-gray-900">6 months</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* No previous history message for first-year students */}
+                  {applicationDetail.year_level === 1 && (
+                    <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                      <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">First-Time Applicant</h3>
+                      <p className="mt-1 text-sm text-gray-500">This is the first scholarship application for this student</p>
+                      <p className="text-xs text-gray-400 mt-1">Previous applications will appear here in future semesters</p>
+                    </div>
+                  )}
+
+                  {/* Application Timeline Summary */}
+                  <div className="bg-blue-50 p-5 rounded-lg border border-blue-200 mt-6">
+                    <h4 className="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Academic Journey Summary
+                    </h4>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="bg-white p-3 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">College Year Started</p>
+                        <p className="text-lg font-bold text-blue-600">{applicationDetail.college_year_started}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Current Year Level</p>
+                        <p className="text-lg font-bold text-blue-600">{applicationDetail.year_level}</p>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg">
+                        <p className="text-xs text-gray-500 mb-1">Expected Graduation</p>
+                        <p className="text-lg font-bold text-blue-600">{applicationDetail.college_year_grad}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </section>

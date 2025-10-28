@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState, useRef, useEffect, useCallback } from "react";
+import BrandedLoader from "@/app/components/ui/BrandedLoader";
 import { userValidation } from "@/lib/types/user";
 import { getAuthToken } from "@/lib/useAuth";
 import { supabase } from '@/lib/supabaseClient';
@@ -93,48 +94,7 @@ export default function ProfilePage() {
   const [birthdate, setBirthdate] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
-
-  // Basic user data fetch (name only)
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        console.log('Starting initial user data fetch...');
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
-        if (authError) {
-          console.error('Auth error in initial fetch:', authError);
-          return;
-        }
-
-        console.log('Auth user in initial fetch:', user);
-        
-        if (user && user.email) {
-          console.log('Fetching user data with email:', user.email);
-          const { data: userData, error: dbError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email_address', user.email)
-            .single();
-          
-          console.log('Initial user data fetch result:', userData);
-          console.log('Initial user data fetch error:', dbError);
-          
-          if (userData) {
-            console.log('Setting initial user data...');
-            setFirstName(userData.first_name || '');
-            setLastName(userData.last_name || '');
-            setCollege(userData.college_university || '');
-            setCourse(userData.college_course || '');
-          }
-        }
-      } catch (error) {
-        console.error('Error in initial user data fetch:', error);
-      }
-    };
-
-    fetchUserData();
-  }, []);
-
+  
   // Address states
   const [addressLine1, setAddressLine1] = useState("");
   const [addressLine2, setAddressLine2] = useState("");
@@ -146,10 +106,6 @@ export default function ProfilePage() {
   const [college, setCollege] = useState("");
   const [course, setCourse] = useState("");
 
-
-
-  // Validation functions - use shared validation from our model
-  
   // Note: We now use the centralized getAuthToken function from useAuth.ts
   
   // This function will redirect the user to the sign-in page if they are not authenticated
@@ -831,6 +787,11 @@ export default function ProfilePage() {
   const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  // Full-page loading screen for initial profile load
+  if (isLoading && !userProfile) {
+    return <BrandedLoader title="Loading Profile" subtitle="Retrieving your information..." />;
+  }
 
   return (
     <div className="min-h-screen w-full bg-[#f5f6fa] pl-64">

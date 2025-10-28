@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { WrenchScrewdriverIcon } from '@heroicons/react/24/solid';
 import { supabaseBrowser } from '@/lib/supabase/browser';
 
@@ -12,18 +12,15 @@ export default function MaintenanceBanner() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
-  useEffect(() => {
-    checkUserRole();
-    fetchMaintenanceSettings();
-  }, []);
-
   // Check if current user is a super admin
-  const checkUserRole = async () => {
+  const checkUserRole = useCallback(async () => {
     try {
       const supabase = supabaseBrowser();
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
-      console.log('🔍 Checking user role...', { user: user?.id, userError });
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('🔍 Checking user role...', { user: user?.id, userError });
+      }
       
       if (!user) {
         console.log('❌ No user found');
@@ -44,16 +41,46 @@ export default function MaintenanceBanner() {
       
       // User is super admin if they're in admin table and their role name is 'super_admin'
       // The role might be an object or array depending on the query
-      const roleName = Array.isArray(admin?.role) ? admin?.role[0]?.name : (admin?.role as any)?.name;
+      type RoleType = { name?: string } | null | undefined;
+      let roleName: string | undefined;
+      if (Array.isArray(admin?.role)) {
+        roleName = admin.role[0]?.name;
+      } else {
+        roleName = (admin?.role as RoleType)?.name;
+      }
       const isSuperAdminRole = roleName === 'super_admin';
-      console.log('✅ Is Super Admin:', isSuperAdminRole, '| Role Name:', roleName);
-      
       setIsSuperAdmin(isSuperAdminRole);
     } catch (error) {
-      console.error('❌ Failed to check user role:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('❌ Failed to check user role:', error);
+      }
       setIsSuperAdmin(false);
     }
-  };
+  }, []);
+
+  const fetchMaintenanceSettings = useCallback(async () => {
+    try {
+      const response = await fetch('/api/maintenance-status');
+      
+      if (response.ok) {
+        const data = await response.json();
+        setMaintenanceMode(data.maintenanceMode || false);
+        setMaintenanceMessage(data.maintenanceMessage || 'System is under maintenance. Please check back later.');
+        setEstimatedEnd(data.estimatedEnd || null);
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to fetch maintenance status:', error);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkUserRole();
+    fetchMaintenanceSettings();
+  }, [checkUserRole, fetchMaintenanceSettings]);
 
   // Update countdown timer every second
   useEffect(() => {
@@ -88,33 +115,18 @@ export default function MaintenanceBanner() {
     return () => clearInterval(interval);
   }, [estimatedEnd]);
 
-  const fetchMaintenanceSettings = async () => {
-    try {
-      const response = await fetch('/api/maintenance-status');
-      
-      if (response.ok) {
-        const data = await response.json();
-        setMaintenanceMode(data.maintenanceMode || false);
-        setMaintenanceMessage(data.maintenanceMessage || 'System is under maintenance. Please check back later.');
-        setEstimatedEnd(data.estimatedEnd || null);
-      }
-    } catch (error) {
-      console.error('Failed to fetch maintenance status:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Don't render if:
   // - Still loading
   // - Maintenance mode is off
   // - User is a super admin (they need access to turn it off)
-  console.log('🎯 MaintenanceBanner render check:', { 
-    isLoading, 
-    maintenanceMode, 
-    isSuperAdmin,
-    shouldShow: !isLoading && maintenanceMode && !isSuperAdmin
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('🎯 MaintenanceBanner render check:', { 
+      isLoading, 
+      maintenanceMode, 
+      isSuperAdmin,
+      shouldShow: !isLoading && maintenanceMode && !isSuperAdmin
+    });
+  }
   
   if (isLoading || !maintenanceMode || isSuperAdmin) {
     return null;

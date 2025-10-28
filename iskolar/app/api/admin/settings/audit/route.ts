@@ -8,6 +8,17 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Type for audit log from database
+interface AuditLogRecord {
+  audit_id: string;
+  key: string;
+  old_value: unknown;
+  new_value: unknown;
+  changed_by: string;
+  changed_by_email: string;
+  changed_at: string;
+}
+
 // Helper to get user from Authorization header
 async function getUserFromRequest(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -82,7 +93,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Data is already in the correct format from the database
-    const flatData = auditData?.map((log: any) => ({
+    const flatData = auditData?.map((log: AuditLogRecord) => ({
       audit_id: log.audit_id,
       key: log.key,
       old_value: log.old_value,

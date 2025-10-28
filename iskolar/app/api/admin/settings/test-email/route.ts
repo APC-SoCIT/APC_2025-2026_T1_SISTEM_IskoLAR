@@ -114,15 +114,16 @@ export async function POST(request: NextRequest) {
       success: true,
       message: `Test email sent to ${recipientEmail}`
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[POST /api/admin/settings/test-email] Error:', error);
     
     // SendGrid-specific error handling
-    if (error.response) {
+    if (typeof error === 'object' && error !== null && 'response' in error) {
+      const err = error as { response?: { body?: unknown }, message?: string };
       return NextResponse.json(
         { 
           error: 'SendGrid error',
-          details: error.response.body || error.message 
+          details: err.response?.body || err.message 
         },
         { status: 500 }
       );

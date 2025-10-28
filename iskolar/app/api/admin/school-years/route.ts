@@ -21,13 +21,16 @@ type SupabaseUser = { email?: string };
 
 export async function GET() {
   try {
+    // Only fetch the last 5 academic years to improve performance
+    // Most admins only need to see recent years
     const { data: schoolYears, error } = await supabaseAdmin
       .from('school_years')
       .select(`
         *,
         semesters (*)
       `)
-      .order('academic_year', { ascending: false });
+      .order('academic_year', { ascending: false })
+      .limit(5);
 
     if (error) {
       console.error('Error fetching school years:', error);
@@ -38,6 +41,7 @@ export async function GET() {
     }
 
     // Get undo status for each year and determine current status
+    // Run these in parallel for better performance
     const undoChecks = await Promise.all(
       schoolYears?.map(async (year: SchoolYearRow) => {
         const { data: canUndo, error: undoError } = await supabaseAdmin.rpc(

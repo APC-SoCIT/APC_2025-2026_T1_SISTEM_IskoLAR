@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import BrandedLoader from "@/app/components/ui/BrandedLoader";
 import { XMarkIcon } from '@heroicons/react/24/solid';
 import { supabase } from '@/lib/supabaseClient';
 import Image from 'next/image';
@@ -131,6 +132,11 @@ export default function AnnouncementsPage() {
     };
   }, []);
 
+  // Full-page loading screen for initial load
+  if (loading && announcements.length === 0) {
+    return <BrandedLoader title="Loading Announcements" subtitle="Fetching latest updates..." />;
+  }
+
   return (
     <div className="min-h-screen w-full bg-[#f5f6fa] pl-64">
       <div className="pt-4 min-h-[calc(100vh-1rem)] flex justify-center items-start">
@@ -144,11 +150,7 @@ export default function AnnouncementsPage() {
             </p>
           </header>
 
-          {loading ? (
-            <div className="text-sm text-gray-500">
-              Loading announcements...
-            </div>
-          ) : error ? (
+          {error ? (
             <div className="text-sm text-red-600">
               Failed to load announcements: {error}
             </div>
