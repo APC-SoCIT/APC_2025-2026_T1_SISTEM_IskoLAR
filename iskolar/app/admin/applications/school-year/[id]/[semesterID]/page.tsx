@@ -270,7 +270,7 @@ export default function SemesterApplicationsPage() {
       <div className="flex items-center justify-between pb-2">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.push('/admin/applications')}
+            onClick={() => router.push(`/admin/applications/school-year/${schoolYearId}`)}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
