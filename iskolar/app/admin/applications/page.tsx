@@ -8,21 +8,21 @@ import { SchoolYear } from '@/lib/types/school-year';
 import AddYearModal from './AddYearModal';
 import UndoYearModal from './UndoYearModal';
 import BrandedLoader from '@/app/components/ui/BrandedLoader';
-import { usePageGate } from '@/app/hooks/usePageGate';
 import { timeAsync } from '@/lib/utils/performance';
 
 export default function ApplicationsPage() {
   const [schoolYears, setSchoolYears] = useState<SchoolYear[]>([]);
   const [showAddYearModal, setShowAddYearModal] = useState(false);
   const [yearToUndo, setYearToUndo] = useState<SchoolYear | null>(null);
+  const [isLoadingYears, setIsLoadingYears] = useState(true);
   
-  const gate = usePageGate({ years: true, stats: true });
+  // Remove gate - we don't need to wait for stats to show the page
 
   // Fetch school years on mount
   useEffect(() => {
     (async () => {
       try {
-        gate.setTaskLoading('years', true);
+        setIsLoadingYears(true);
         await timeAsync('fetch-school-years', async () => {
           const response = await fetch('/api/admin/school-years');
           if (!response.ok) throw new Error('Failed to fetch school years');
@@ -32,14 +32,14 @@ export default function ApplicationsPage() {
       } catch (error) {
         console.error('Error fetching school years:', error);
       } finally {
-        gate.setTaskLoading('years', false);
+        setIsLoadingYears(false);
       }
     })();
   }, []);
 
   const fetchSchoolYears = async () => {
     try {
-      gate.setTaskLoading('years', true);
+      setIsLoadingYears(true);
       const response = await fetch('/api/admin/school-years');
       if (!response.ok) throw new Error('Failed to fetch school years');
       const data = await response.json();
@@ -47,7 +47,7 @@ export default function ApplicationsPage() {
     } catch (error) {
       console.error('Error fetching school years:', error);
     } finally {
-      gate.setTaskLoading('years', false);
+      setIsLoadingYears(false);
     }
   };
 
@@ -55,16 +55,12 @@ export default function ApplicationsPage() {
     setShowAddYearModal(true);
   };
 
-  const handleStatsLoadingChange = (loading: boolean) => {
-    gate.setTaskLoading('stats', loading);
-  };
-
-  // Single unified loader - wait for both years AND stats to load
-  if (!gate.allDone()) {
+  // Only wait for school years to load, not stats
+  if (isLoadingYears) {
     return (
       <BrandedLoader 
         title="Loading Applications" 
-        subtitle="Fetching school years and semester statistics…" 
+        subtitle="Fetching school years…" 
       />
     );
   }
@@ -115,7 +111,6 @@ export default function ApplicationsPage() {
         <ApplicationsSection 
           schoolYears={schoolYears}
           isLoading={false}
-          onLoadingChange={handleStatsLoadingChange}
         />
       </div>
 
@@ -136,7 +131,7 @@ export default function ApplicationsPage() {
           schoolYear={yearToUndo}
           onClose={() => setYearToUndo(null)}
           onUndo={async () => {
-            gate.setTaskLoading('years', true);
+            setIsLoadingYears(true);
             // Filter out the undone year locally
             setSchoolYears((prev) => prev.filter(y => y.id !== yearToUndo.id));
             setYearToUndo(null);

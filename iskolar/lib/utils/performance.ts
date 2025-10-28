@@ -20,6 +20,7 @@ export function perfMeasure(name: string, startMark: string, endMark: string) {
     try {
       const measure = performance.measure(name, startMark, endMark);
       console.log(`[perf] ${name}: ${measure.duration.toFixed(1)}ms`);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       // Marks may not exist
     }

@@ -175,7 +175,7 @@ export default function ApplicantDetailPage({ params }: PageProps) {
                 Viewing Applicant: {resolvedParams.id}
               </h4>
               <p className="text-sm text-blue-700 mt-1">
-                Click "View Transaction History" to see all disbursement records for this applicant.
+                Click &quot;View Transaction History&quot; to see all disbursement records for this applicant.
               </p>
             </div>
           </div>
