@@ -29,7 +29,7 @@ export default function TransactionHistory() {
             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        <h2 className="text-lg font-semibold text-gray-900">Transaction History</h2>
+        <h2 className="text-lg font-semibold text-gray-900">Applicant History</h2>
       </div>
 
       {/* Desktop Table View */}

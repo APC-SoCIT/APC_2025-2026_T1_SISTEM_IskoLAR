@@ -52,7 +52,7 @@ export default function ApplicantHistoryPage({ params }: PageProps) {
           Back to Applications
         </button>
 
-        {/* Transaction History Card */}
+        {/* Applicant History Card */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           {/* Header */}
           <div className="flex items-center mb-6">
@@ -70,7 +70,7 @@ export default function ApplicantHistoryPage({ params }: PageProps) {
               />
             </svg>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Transaction History</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Applicant History</h2>
               <p className="text-sm text-gray-600">
                 Disbursement records for {applicantName}
               </p>
