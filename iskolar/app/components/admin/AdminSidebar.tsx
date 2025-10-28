@@ -13,17 +13,22 @@ const AdminSidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { signOut } = useAuth();
-  const [title, setTitle] = useState('Administrator');
-  const [subtitle, setSubtitle] = useState('Application Management');
+  const [title, setTitle] = useState('');
+  const [subtitle, setSubtitle] = useState('');
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
     (async () => {
       try {
         const admin = await fetchCurrentAdmin();
-        if (!mounted) return;
+        if (!isMounted) return;
         
         if (!admin) {
           console.warn('AdminSidebar: fetchCurrentAdmin returned null');
@@ -44,11 +49,11 @@ const AdminSidebar = () => {
         setLoading(false);
       } catch (error) {
         console.error('AdminSidebar: error in useEffect:', error);
-        if (mounted) setLoading(false);
+        if (isMounted) setLoading(false);
       }
     })();
     return () => {
-      mounted = false;
+      isMounted = false;
     };
   }, []);
 
@@ -256,7 +261,7 @@ const AdminSidebar = () => {
         })}
 
         {/* Super Admin Only Section */}
-        {isSuperAdmin && (
+        {mounted && isSuperAdmin && (
           <>
             <div className="py-2 px-3 mt-6">
               <span className="text-xs font-medium text-purple-600 uppercase tracking-wider">Super Admin</span>
@@ -302,10 +307,10 @@ const AdminSidebar = () => {
             </div>
             <div>
               <div className="font-medium text-gray-900">
-                {loading ? '...' : title}
+                {!mounted || loading ? 'Administrator' : title || 'Administrator'}
               </div>
               <div className="text-sm text-gray-500">
-                {loading ? '' : subtitle}
+                {!mounted || loading ? 'Loading...' : subtitle || 'Application Management'}
               </div>
             </div>
           </div>
